@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Midpoint Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input[type="time"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="time"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .result-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .result-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            color: #333;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .window-highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏰ Abhijit Lagna Calculator</h1>
+        <p class="subtitle">Find the midpoint and 48-minute window between sunrise and sunset</p>
+        
+        <div class="input-group">
+            <label for="time1">Sunrise Time</label>
+            <input type="time" id="time1" value="09:30">
+        </div>
+        
+        <div class="input-group">
+            <label for="time2">Sunset Time</label>
+            <input type="time" id="time2" value="17:00">
+        </div>
+        
+        <button onclick="calculateMidpoint()">Calculate</button>
+        
+        <div class="results" id="results">
+            <div class="result-item">
+                <div class="result-label">Midpoint</div>
+                <div class="result-value" id="midpoint">--:--</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">48-Minute Window</div>
+                <div class="result-value window-highlight">
+                    <span id="windowStart">--:--</span> - <span id="windowEnd">--:--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function parseTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+            return date;
+        }
+
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        function calculateMidpoint() {
+            const time1Str = document.getElementById('time1').value;
+            const time2Str = document.getElementById('time2').value;
+            
+            if (!time1Str || !time2Str) {
+                alert('Please enter both times');
+                return;
+            }
+            
+            let time1 = parseTime(time1Str);
+            let time2 = parseTime(time2Str);
+            
+            // Handle times that cross midnight
+            if (time2 < time1) {
+                time2.setDate(time2.getDate() + 1);
+            }
+            
+            // Calculate midpoint
+            const timeDiff = time2 - time1;
+            const midpoint = new Date(time1.getTime() + timeDiff / 2);
+            
+            // Calculate 48-minute window (24 minutes before and after)
+            const windowStart = new Date(midpoint.getTime() - 24 * 60 * 1000);
+            const windowEnd = new Date(midpoint.getTime() + 24 * 60 * 1000);
+            
+            // Display results
+            document.getElementById('midpoint').textContent = formatTime(midpoint);
+            document.getElementById('windowStart').textContent = formatTime(windowStart);
+            document.getElementById('windowEnd').textContent = formatTime(windowEnd);
+            document.getElementById('results').classList.add('show');
+        }
+        
+        // Allow Enter key to calculate
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculateMidpoint();
+            }
+        });
+    </script>
+</body>
+</html>
