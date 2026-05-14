@@ -1,7 +1,7 @@
 # Hindu Panchanga Calendar — Technical Documentation
 
-> **File:** `index.html`
-> **Type:** Single-file standalone web app (no build step, no dependencies except Tabler Icons CDN)
+> **File:** `hindu_panchanga_calendar.html`  
+> **Type:** Single-file standalone web app (no build step, no dependencies except Tabler Icons CDN)  
 > **Last updated:** May 2026
 
 ---
@@ -23,8 +23,9 @@
    - 5.3 Yoga
    - 5.4 Karana
    - 5.5 Vara (Weekday)
-   - 5.6 Transition End Times
+   - 5.6 Lunar Month (Masa) Identification
    - 5.7 Guru & Sukra Moudhyam
+   - 5.8 Transition End Times
 6. [Inauspicious & Auspicious Periods](#6-inauspicious--auspicious-periods)
 7. [Auspiciousness Score](#7-auspiciousness-score)
 8. [Eclipse Calculations](#8-eclipse-calculations)
@@ -59,20 +60,22 @@ All calculations are done in the browser at runtime. Panchanga results are cache
 
 ## 2. Features at a Glance
 
+> **AI-generated tool — use with discretion.** Calculations use simplified astronomical models and may differ from printed almanacs by minutes to days. Always verify important muhurthas with a qualified jyotishi or a trusted printed panchanga before scheduling marriages, ceremonies, or other significant events.
+
 | Tab | What it shows |
 |-----|---------------|
-| **Calendar** | Monthly grid with tithi quality colour-coding, tithi end times, eclipse markers, festival dots |
-| **Panchanga** | Full five-anga detail for any date with transition end times, solar times, nakshatra metadata, eclipse card, festival card |
+| **Calendar** | Monthly grid with tithi quality colour-coding, tithi end times, eclipse markers, festival dots, lunar month header |
+| **Panchanga** | Full five-anga detail for any date with transition end times, solar times, nakshatra metadata, lunar month (with adhika/nija labels), eclipse card, festival card, moudhyam card |
 | **Festivals** | 35+ named festivals + all Ekadashis + Pradosh Vrat, grouped by month, filterable by category, countdown to each |
 | **Eclipses** | All solar & lunar eclipses for 3 years with visibility computed for the selected location |
-| **Muhurtha** | Date-range search with tithi / nakshatra / vara filters, min-score slider, optional eclipse exclusion |
+| **Muhurtha** | Date-range search with tithi / nakshatra / vara filters, min-score slider, moudhyam exclusion filters, optional eclipse exclusion. Headed by the muhurtha shloka *तदेव लग्नं सुदिनं तदेव…* |
 
 ---
 
 ## 3. Architecture
 
 ```
-index.html
+html_panchanga_calendar.html
 │
 ├── <style>          CSS custom properties (light + dark theme)
 │
@@ -339,6 +342,129 @@ The Hindu vara starts at **sunrise** (not midnight), so strictly speaking, the v
 
 ---
 
+---
+
+### 5.6 Lunar Month (Masa) Identification
+
+**Functions:** `sunRashi(J)`, `getLunarMasaInfo(J)`
+
+---
+
+#### Why the masa can't be read from the Sun's current sign
+
+The Sun's sidereal rashi on a given day gives the *solar masa*, not the *lunar masa*. These can disagree by up to several weeks. Example: on May 13, 2026 the Sun is at ~27° Mesha sidereal (solar masa = "Chaitra"), but the lunar month is Vaishakha — because the Sankranti that defines this month is the Sun's entry into Vrishabha, which occurs *within* the current lunation.
+
+---
+
+#### Core rule — amanta system
+
+A lunar month (lunation) runs from new moon to new moon. It is named for the **Sankranti** (solar rashi entry) that falls within it.
+
+**Detection:** compare the Sun's sidereal rashi at the *current* new moon (r0) with the Sun's rashi at the *next* new moon (r1):
+
+| r0 vs r1 | Meaning | Month type | Name |
+|----------|---------|------------|------|
+| r0 ≠ r1 | Sankranti occurred during this lunation | Normal (or Nija) | HM[r1] |
+| r0 = r1 | No Sankranti — Sun stayed in same rashi | Adhika (intercalary) | HM[Sun rashi at new moon k+2] |
+
+The **Nija** label applies when the *previous* month was adhika (its r0 = r1 = current r0), distinguishing the regular month from its adhika twin.
+
+```javascript
+function sunRashi(J) {
+  return Math.floor(nm(slong(J) - ayan(J)) / 30);
+}
+
+function getLunarMasaInfo(J) {
+  const k = Math.floor((J - 2451550.09766) / 29.530588861);
+  const r0 = sunRashi(phaseJDE(k,   false));  // Sun at current new moon
+  const r1 = sunRashi(phaseJDE(k+1, false));  // Sun at next new moon
+
+  if (r0 !== r1) {
+    // Sankranti occurred → normal month (or nija if previous was adhika)
+    const rPrev = sunRashi(phaseJDE(k-1, false));
+    const isNija = (rPrev === r0);
+    return { masaIdx: r1, isAdhika: false, isNija,
+             fullName: (isNija ? 'Nija ' : '') + HM[r1] };
+  } else {
+    // No Sankranti → adhika; named after the rashi the Sun enters in the next (nija) month
+    const r2 = sunRashi(phaseJDE(k+2, false));
+    return { masaIdx: r2, isAdhika: true, isNija: false,
+             fullName: 'Adhika ' + HM[r2] };
+  }
+}
+```
+
+---
+
+#### Worked example — 2026 Adhika Jyeshtha
+
+| New moon | Approx date | Sun's sidereal rashi | Conclusion |
+|----------|-------------|----------------------|------------|
+| k=325 | April 17 | Mesha (0) | — |
+| k=326 | May 16 | Vrishabha (1) | Month k=325→326: r0=Mesha, r1=Vrishabha → **normal Vaishakha** |
+| k=327 | June 14 | Vrishabha (1) | Month k=326→327: r0=Vrishabha, r1=Vrishabha → **Adhika!** → look to r2 |
+| k=328 | July 13 | Mithuna (2) | r2=Mithuna → **Adhika Jyeshtha** ✓ |
+| — | (within k=327→328) | — | Month k=327→328: r0=Vrishabha, r1=Mithuna, rPrev=Vrishabha=r0 → **Nija Jyeshtha** ✓ |
+
+The Sun moves slowly near aphelion (~July) at ≈0.95°/day; over one synodic month (29.5 days) it covers only ~28°, which is less than one rashi (30°). This is what allows the Sun to stay in a single rashi for two consecutive new moons, creating the adhika month.
+
+---
+
+#### Adhika masa traditional significance
+
+- **Adhika / Mala Masa / Purushottama Masa** — considered inauspicious for new ventures, marriages, and Upanayana. Religious activities (fasting, charity, scripture reading) are especially meritorious.
+- **Nija month** — the regular month that follows; normal muhurtha rules apply.
+- Occurs approximately **once every 2.5–3 years** when the Sun is near aphelion.
+
+---
+
+#### What is stored in `p.masaInfo`
+
+`calcP()` calls `getLunarMasaInfo(J)` and stores the result as `p.masaInfo`:
+
+```javascript
+const masaInfo = getLunarMasaInfo(J);
+const hm = masaInfo.fullName;          // e.g. "Adhika Jyeshtha", "Nija Jyeshtha", "Vaishakha"
+// In returned panchanga object:
+return { ..., hm, masaInfo, ... };
+```
+
+`p.masaInfo` fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `masaIdx` | 0–11 | Index into `HM[]` for the base masa name |
+| `isAdhika` | boolean | `true` if this is an intercalary month |
+| `isNija` | boolean | `true` if this follows an adhika month |
+| `fullName` | string | Display name: `"Adhika Jyeshtha"`, `"Nija Jyeshtha"`, or `"Vaishakha"` |
+
+---
+
+#### Where displayed
+
+- **Calendar month header:** `getLunarMasaInfo` is called for day 1 and the last day of the Gregorian month. If they return different `fullName` values, the header shows them hyphenated: `June 2026 · Adhika Jyeshtha–Nija Jyeshtha`.
+- **Calendar day detail** ("Lunar Month" card): shows `p.hm` (full name including prefix). Sub-label shows: "Mala Masa · intercalary month" for adhika, "Nija — follows Adhika Jyeshtha" for nija, or "[Paksha]" for normal months.
+- **Panchanga tab subtitle:** `${p.hm} masa · ${p.tithi.pak} Paksha`.
+- **Panchanga tab info card:** amber banner for adhika months with traditional guidance; blue banner for nija months.
+
+---
+
+#### Adhika masa detection edge case
+
+During an adhika month the auspiciousness score is not automatically penalised (the app leaves scoring to the pandit's discretion since opinions vary by tradition). To add a penalty, find the score calculation in `calcP()` and add:
+
+```javascript
+if (masaInfo.isAdhika) score = Math.max(5, score - 15);
+```
+
+---
+
+#### Note on festival detection
+
+Festivals use `mi(p)` (`Math.floor(p.sid/30)`) — the Sun's *current* sidereal rashi — not `p.masaInfo.masaIdx`. This is intentional: festival rules anchor to the solar position (e.g. "Diwali = Kartika Krishna Amavasya when Sun is in Vrischika"), which is unambiguous across traditions. `p.hm` and `mi(p)` may differ by one around Sankranti boundaries; that is by design. See the Festival Detection section (§9) for details.
+
+---
+
 ### 5.7 Guru & Sukra Moudhyam (Planetary Combustion)
 
 A planet is *moudhya* (combust) when it is too close to the Sun to be visible and is considered weakened in its influence. Traditional Hindu almanacs define combustion thresholds for each planet.
@@ -402,6 +528,8 @@ Fields: `L0` = mean longitude at J2000 (°), `dL` = rate (°/century), `a` = sem
 **Guru Moudhyam typical duration:** 20–30 days per year. Jupiter's combust period repeats annually.
 
 ---
+
+### 5.8 Transition End Times
 
 **Function:** `findEnd(date, getFn)` — binary search for when an anga changes value.
 
@@ -618,7 +746,7 @@ const masaIdx = Math.floor(sidereal_sun_longitude / 30);
 | 10 | Kumbha | Magha | Jan–Feb |
 | 11 | Meena | Phalguna | Feb–Mar |
 
-> **Solar vs. lunar masa:** Traditional panchangas use the *lunar* masa (starts at new moon after the sun enters a new sign). The solar masa used here agrees with the lunar masa ~90% of the time; dates within 1–2 days of a masa boundary may differ. For strict accuracy, replace the masa check with a full lunar month boundary tracker.
+> **Solar vs. lunar masa for festivals:** Festival rules use `mi(p)` (the Sun's current rashi, `Math.floor(p.sid/30)`) as their anchor — not the lunar month name shown in the UI. This is intentional: Diwali, Navratri, etc. are defined by which solar rashi the Sun occupies, which is astronomically unambiguous. The lunar month name displayed elsewhere (`p.hm`, computed by `getLunarMasa`) may differ by one from `mi(p)` around Sankranti boundaries — that difference is by design. See §5.6 for details.
 
 ### Festival Rule Format
 
@@ -1203,12 +1331,12 @@ This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 da
 
 | Limitation | Impact | Workaround |
 |------------|--------|------------|
-| Solar masa used for festivals instead of lunar masa | ±1–2 day discrepancy for some festivals in some years | Use dedicated lunar month tracker |
-| Moon longitude ±0.3° | Transition times ±15–30 minutes | Use Swiss Ephemeris (§11.12) |
-| Sun longitude ±0.01° | Minimal impact on panchanga | Already adequate |
+| Lunar masa uses Sun's rashi at current/next new moon boundaries — correct for normal and adhika months; the nija detection (rPrev check) may rarely misfire if two consecutive Sankrantis are very close to new moon boundaries | Extremely rare edge case (~once per decade) | Validate against a printed panchanga for the specific year |
+| Festival detection uses solar masa `mi(p)`, not the lunar `p.hm` | By design — festival rules are solar-anchored; the two names are offset ~2–4 weeks near Sankranti | No change needed; see §5.6 |
+| Moon longitude ±0.1° (extended ELP2000) | Transition times ±10 minutes | Use Swiss Ephemeris (§11.12) |
+| Sun longitude ±0.003° | Minimal impact on panchanga | Already adequate |
 | Eclipse type threshold is β-only | Penumbral eclipses may be mis-classified | Acceptable for most users |
 | Vara starts at midnight not sunrise | Off by up to 6 hours for hours before sunrise | Switch to sunrise-based vara |
-| No adhika masa (leap month) detection | Displayed masa name may shift for ~1 month every 3 years | Add lunar month counter |
 | Sunrise uses browser timezone | Correct for local wall-clock; incorrect if page opened with a different system timezone | Force timezone via `Intl.DateTimeFormat` |
 | No Ayanamsha interpolation for sub-day calculations | Eclipse midpoint ayanamsha is slightly off | Sub-arcsecond correction; negligible |
 
@@ -1231,7 +1359,11 @@ This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 da
 | `EK_SH[12]` | Constant | Shukla Ekadashi names by solar masa |
 | `EK_KR[12]` | Constant | Krishna Ekadashi names by solar masa |
 | `CITIES[]` | Static array | City list for location picker |
-| `pcache` | Global | Panchanga object cache (key: `lat-lon-Y-M-D`); now includes `moudhyam` |
+| `sunRashi(J)` | Function | Returns 0–11 sidereal rashi of the Sun at Julian Day J |
+| `getLunarMasaInfo(J)` | Function | Returns `{masaIdx, isAdhika, isNija, fullName}` — correct amanta lunar month with adhika/nija detection (see §5.6) |
+| `p.hm` | Panchanga object | Full lunar month name: `"Vaishakha"`, `"Adhika Jyeshtha"`, `"Nija Jyeshtha"`, etc. |
+| `p.masaInfo` | Panchanga object | Full `{masaIdx, isAdhika, isNija, fullName}` object for conditional rendering |
+| `pcache` | Global | Panchanga object cache (key: `lat-lon-Y-M-D`); includes `moudhyam` and `hm` |
 | `tcache` | Global | Transition-time cache (key: `tr-Y-M-D`) |
 | `edCache` | Global | Eclipse-per-day cache (key: `de-Y-M-D`) |
 | `festDayCache` | Global | First festival per day (key: `fd-Y-M-D`) |
@@ -1244,4 +1376,4 @@ This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 da
 
 ---
 
-*Documentation generated for `hindu_panchanga_calendar.html`. For bug reports or improvements, refer to the inline comments in the source file.*
+*Documentation for `index.html` (Hindu Panchanga Calendar). For bug reports or improvements, refer to the inline comments in the source file. Calculations are AI-generated approximations — verify critical muhurthas with a printed panchanga.*
