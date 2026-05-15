@@ -745,10 +745,10 @@ All festival checks also include `&&!p.masaInfo?.isAdhika` to prevent any festiv
 | 3 | Ashadha | Karka | Jun–Jul |
 | 4 | Shravana | Simha | Jul–Aug |
 | 5 | Bhadrapada | Kanya | Aug–Sep |
-| 6 | Ashwin | Tula | Sep–Oct |
+| 6 | Ashweeyuja | Tula | Sep–Oct |
 | 7 | Kartika | Vrischika | Oct–Nov |
 | 8 | Margashirsha | Dhanu | Nov–Dec |
-| 9 | Pausha | Makara | Dec–Jan |
+| 9 | Pushya | Makara | Dec–Jan |
 | 10 | Magha | Kumbha | Jan–Feb |
 | 11 | Phalguna | Meena | Feb–Mar |
 
