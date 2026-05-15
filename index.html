@@ -317,133 +317,138 @@ function ekName(mi,sh){return(sh?EK_SH:EK_KR)[mi%12]+" Ekadashi";}
 
 // Festival rules — check(p, prevP) where p=panchanga for the day, mi=sidereal masa index
 const FEST=[
-  // Solar transit
+  // ── Solar transit (uses solar rashi mi(), not lunar lmi()) ──
   {name:"Makar Sankranti",alt:"Pongal · Uttarayan",
    desc:"Sun crosses into Makara (Capricorn). Major harvest festival; marks start of Uttarayana (northward journey).",
    cat:"major",check:(p,pr)=>mi(p)===9&&pr&&mi(pr)===8},
-  // Magha masa (mi=10)
+  // ── All remaining festivals use lmi() (lunar masa) and skip adhika months ──
+  // Magha (lmi=10)
   {name:"Vasant Panchami",alt:"Saraswati Puja",
    desc:"Worship of Goddess Saraswati on Shukla Panchami; spring onset; auspicious for education and arts.",
-   cat:"major",check:(p)=>mi(p)===10&&p.tIdx===4},
+   cat:"major",check:(p)=>lmi(p)===10&&!p.masaInfo?.isAdhika&&p.tIdx===4},
   {name:"Jaya Ekadashi",alt:"Magha Shukla Ekadashi",
    desc:"Ekadashi in Magha Shukla Paksha; destroys sins accumulated over many lifetimes.",
-   cat:"vrat",check:(p)=>mi(p)===10&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===10&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Maha Shivaratri",alt:"Great Night of Shiva",
    desc:"Greatest of the four Shivaratris; Shiva and Parvati's wedding night; all-night vigil with fasting and abhisheka.",
-   cat:"major",check:(p,prevP)=>(mi(p)===10||mi(p)===11)&&p.tIdx===28&&(!prevP||prevP.tIdx!==28)},
-  // Phalguna masa (mi=11)
+   cat:"major",check:(p,prevP)=>(lmi(p)===10||lmi(p)===11)&&!p.masaInfo?.isAdhika&&p.tIdx===28&&(!prevP||prevP.tIdx!==28)},
+  // Phalguna (lmi=11)
   {name:"Amalaki Ekadashi",alt:"Phalguna Shukla Ekadashi",
    desc:"Worship of the Amalaki (Indian gooseberry) tree; equivalent in merit to all pilgrimages.",
-   cat:"vrat",check:(p)=>mi(p)===11&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===11&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Holi",alt:"Holika Dahan · Dhulandi",
    desc:"Festival of Colors; Holika Dahan bonfire on Purnima night; celebration of Prahlada's devotion and spring harvest.",
-   cat:"major",check:(p)=>mi(p)===11&&p.tIdx===14},
-  // Chaitra masa (mi=0)
+   cat:"major",check:(p)=>lmi(p)===11&&!p.masaInfo?.isAdhika&&p.tIdx===14},
+  // Chaitra (lmi=0)
   {name:"Ugadi / Gudi Padwa",alt:"Chaitra Navratri Day 1 · Telugu/Kannada New Year",
    desc:"Hindu lunisolar New Year; new Samvatsara begins. Also marks start of Chaitra Navratri (9 nights of Durga).",
-   cat:"major",check:(p)=>mi(p)===0&&p.tIdx===0},
+   cat:"major",check:(p)=>lmi(p)===0&&!p.masaInfo?.isAdhika&&p.tIdx===0},
   {name:"Kamada Ekadashi",alt:"Chaitra Shukla Ekadashi",
    desc:"Grants wishes and removes sins; one of the 24 Ekadashis of the year.",
-   cat:"vrat",check:(p)=>mi(p)===0&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===0&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Ram Navami",alt:"Ramavami",
    desc:"Birthday of Lord Rama on Chaitra Shukla Navami; marks the end of Chaitra Navratri.",
-   cat:"major",check:(p)=>mi(p)===0&&p.tIdx===8},
+   cat:"major",check:(p)=>lmi(p)===0&&!p.masaInfo?.isAdhika&&p.tIdx===8},
   {name:"Hanuman Jayanti",alt:"Chaitra Purnima",
    desc:"Birthday of Lord Hanuman; celebrated with Hanuman Chalisa recitation and sindoor offering.",
-   cat:"major",check:(p)=>mi(p)===0&&p.tIdx===14},
-  // Vaishakha masa (mi=1)
+   cat:"major",check:(p)=>lmi(p)===0&&!p.masaInfo?.isAdhika&&p.tIdx===14},
+  // Vaishakha (lmi=1)
   {name:"Akshaya Tritiya",alt:"Akha Teej",
    desc:"Supremely auspicious tithi — no separate muhurtha needed on this day. Ideal for gold, new ventures, marriages, and charity.",
-   cat:"major",check:(p)=>mi(p)===1&&p.tIdx===2},
+   cat:"major",check:(p)=>lmi(p)===1&&!p.masaInfo?.isAdhika&&p.tIdx===2},
   {name:"Mohini Ekadashi",alt:"Vaishakha Shukla Ekadashi",
    desc:"Removes the sins of many lifetimes; Lord Vishnu appeared as Mohini on this day.",
-   cat:"vrat",check:(p)=>mi(p)===1&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===1&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Buddha Purnima",alt:"Vaishakha Purnima · Vesak",
    desc:"Birthday of Gautama Buddha; also Vesak festival. Full moon of Vaishakha is highly sacred.",
-   cat:"major",check:(p)=>mi(p)===1&&p.tIdx===14},
-  // Jyeshtha masa (mi=2)
+   cat:"major",check:(p)=>lmi(p)===1&&!p.masaInfo?.isAdhika&&p.tIdx===14},
+  // Jyeshtha (lmi=2)
   {name:"Nirjala Ekadashi",alt:"Pandava Ekadashi · Bhima Ekadashi",
    desc:"Most important of all Ekadashis; strict fast without water for 24 hours; merit equal to observing all 24 Ekadashis combined.",
-   cat:"vrat",check:(p)=>mi(p)===2&&p.tIdx===10},
-  // Ashadha masa (mi=3)
+   cat:"vrat",check:(p)=>lmi(p)===2&&!p.masaInfo?.isAdhika&&p.tIdx===10},
+  // Ashadha (lmi=3)
   {name:"Devshayani Ekadashi",alt:"Ashadhi Ekadashi · Harishayani",
    desc:"Lord Vishnu goes to sleep for 4 months (Chaturmas). Major pilgrimage (Vari) to Pandharpur, Maharashtra.",
-   cat:"vrat",check:(p)=>mi(p)===3&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===3&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Guru Purnima",alt:"Vyasa Purnima",
    desc:"Day to honor the guru lineage; Maharshi Veda Vyasa's birthday. Disciple offers respect to spiritual teacher.",
-   cat:"major",check:(p)=>mi(p)===3&&p.tIdx===14},
-  // Shravana masa (mi=4)
+   cat:"major",check:(p)=>lmi(p)===3&&!p.masaInfo?.isAdhika&&p.tIdx===14},
+  // Shravana (lmi=4)
   {name:"Nag Panchami",alt:"Shravana Shukla Panchami",
    desc:"Worship of serpent deities (Nag Devata) with milk, flowers, and kusha grass.",
-   cat:"festival",check:(p)=>mi(p)===4&&p.tIdx===4},
+   cat:"festival",check:(p)=>lmi(p)===4&&!p.masaInfo?.isAdhika&&p.tIdx===4},
   {name:"Putrada Ekadashi",alt:"Pavitra Ekadashi",
    desc:"Shravana Shukla Ekadashi; grants progeny, removes sins; closely linked to Pavitra Ekadashi.",
-   cat:"vrat",check:(p)=>mi(p)===4&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===4&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Onam (Thiruvonam)",alt:"Kerala Harvest Festival",
    desc:"Celebrated when Moon is in Shravana nakshatra during Simha (Leo) solar month; commemorates King Mahabali's return.",
-   cat:"major",check:(p)=>mi(p)===4&&p.naksh.n===22},
+   cat:"major",check:(p)=>lmi(p)===4&&!p.masaInfo?.isAdhika&&p.naksh.n===22},
   {name:"Raksha Bandhan",alt:"Rakhi · Shravana Purnima",
    desc:"Bond of protection between siblings; sacred thread (rakhi) tied by sister to brother.",
-   cat:"major",check:(p)=>mi(p)===4&&p.tIdx===14},
+   cat:"major",check:(p)=>lmi(p)===4&&!p.masaInfo?.isAdhika&&p.tIdx===14},
   {name:"Varalakshmi Vratam",alt:"Vara Lakshmi Vrat",
    desc:"Worship of Goddess Varalakshmi — the boon-granting form of Lakshmi — on the Friday before Shravana Purnima; widely observed in South India, Maharashtra, and Telangana. Women tie a sacred thread on a kalasha and pray for family wellbeing.",
-   cat:"major",check:(p)=>mi(p)===4&&p.vara.n===5&&p.tIdx>=7&&p.tIdx<=13},
-  // Bhadrapada masa (mi=5)
+   cat:"major",check:(p)=>lmi(p)===4&&!p.masaInfo?.isAdhika&&p.vara.n===5&&p.tIdx>=7&&p.tIdx<=13},
+  // Bhadrapada (lmi=5)
   {name:"Janmashtami",alt:"Krishna Jayanti · Gokulashtami",
    desc:"Birthday of Lord Krishna on Bhadrapada Krishna Ashtami; midnight celebration with fasting and devotional singing.",
-   cat:"major",check:(p)=>mi(p)===5&&p.tIdx===22},
+   cat:"major",check:(p)=>lmi(p)===5&&!p.masaInfo?.isAdhika&&p.tIdx===22},
   {name:"Ganesh Chaturthi",alt:"Vinayaka Chaturthi",
    desc:"Birthday of Lord Ganesha on Bhadrapada Shukla Chaturthi; 10-day public celebration.",
-   cat:"major",check:(p)=>mi(p)===5&&p.tIdx===3},
+   cat:"major",check:(p)=>lmi(p)===5&&!p.masaInfo?.isAdhika&&p.tIdx===3},
   {name:"Parsva Ekadashi",alt:"Vamana Ekadashi",
    desc:"Bhadrapada Shukla Ekadashi; Lord Vishnu turns on his side in yogic sleep.",
-   cat:"vrat",check:(p)=>mi(p)===5&&p.tIdx===10},
-  // Ashwin masa (mi=6)
+   cat:"vrat",check:(p)=>lmi(p)===5&&!p.masaInfo?.isAdhika&&p.tIdx===10},
+  // Ashwin (lmi=6)
   {name:"Navratri",alt:"Sharad Navratri Day 1",
    desc:"Nine nights dedicated to Goddess Durga in her nine forms; most widely celebrated Navratri.",
-   cat:"major",check:(p)=>mi(p)===6&&p.tIdx===0},
+   cat:"major",check:(p)=>lmi(p)===6&&!p.masaInfo?.isAdhika&&p.tIdx===0},
   {name:"Dussehra",alt:"Vijayadashami",
    desc:"Tenth day of Navratri; Rama's victory over Ravana; Durga's victory over Mahishasura; Shastra Puja.",
-   cat:"major",check:(p)=>mi(p)===6&&p.tIdx===9},
+   cat:"major",check:(p)=>lmi(p)===6&&!p.masaInfo?.isAdhika&&p.tIdx===9},
   {name:"Pashatputrada Ekadashi",alt:"Ashwin Shukla Ekadashi",
    desc:"Grants the blessing of a worthy son; observed on Ashwin Shukla Ekadashi.",
-   cat:"vrat",check:(p)=>mi(p)===6&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===6&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Sharad Purnima",alt:"Kojagari Purnima",
    desc:"Brightest full moon; moonlight considered curative; Goddess Lakshmi walks the earth asking 'Who is awake?'",
-   cat:"festival",check:(p)=>mi(p)===6&&p.tIdx===14},
-  // Kartika masa (mi=7)
+   cat:"festival",check:(p)=>lmi(p)===6&&!p.masaInfo?.isAdhika&&p.tIdx===14},
+  // Kartika (lmi=7)
   {name:"Karva Chauth",alt:"Karaka Chaturthi",
    desc:"Fast by married women from sunrise to moonrise for husband's longevity; moon sighted through sieve.",
-   cat:"festival",check:(p)=>mi(p)===7&&p.tIdx===18},
+   cat:"festival",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===18},
   {name:"Dhanteras",alt:"Dhantrayodashi",
    desc:"Worship of Goddess Lakshmi and Lord Kubera; traditional purchase of gold, silver, and new utensils.",
-   cat:"major",check:(p)=>mi(p)===7&&p.tIdx===27},
+   cat:"major",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===27},
   {name:"Naraka Chaturdashi",alt:"Chhoti Diwali",
    desc:"Krishna's victory over demon Narakasura; ritual oil bath before sunrise; second day of Diwali celebrations.",
-   cat:"major",check:(p)=>mi(p)===7&&p.tIdx===28},
+   cat:"major",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===28},
   {name:"Diwali",alt:"Deepavali · Festival of Lights",
    desc:"Lakshmi puja on Kartika Amavasya night; Rama's return to Ayodhya; rows of lamps lit across India.",
-   cat:"major",check:(p)=>mi(p)===7&&p.tIdx===29},
+   cat:"major",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===29},
   {name:"Govardhan Puja",alt:"Annakut",
    desc:"Krishna lifted Govardhan hill to protect Vrindavan from Indra's storm; mountain of food (annakut) offered.",
-   cat:"major",check:(p)=>mi(p)===7&&p.tIdx===0},
+   cat:"major",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===0},
   {name:"Bhai Dooj",alt:"Yama Dwitiya · Bhau Beej",
    desc:"Celebration of sibling bond; sisters apply tilak to brothers and pray for their long life.",
-   cat:"festival",check:(p)=>mi(p)===7&&p.tIdx===1},
+   cat:"festival",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===1},
   {name:"Prabodhini Ekadashi",alt:"Devutthana · Tulsi Vivah",
    desc:"Lord Vishnu wakes from yogic sleep; Chaturmas ends; Tulsi-Shaligram wedding performed.",
-   cat:"vrat",check:(p)=>mi(p)===7&&p.tIdx===10},
+   cat:"vrat",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Kartik Purnima",alt:"Dev Diwali · Tripuri Purnima",
    desc:"Dev Diwali — lamps on Ganga ghats; massive celebration at Varanasi; Guru Nanak Jayanti.",
-   cat:"major",check:(p)=>mi(p)===7&&p.tIdx===14},
-  // Margashirsha masa (mi=8)
+   cat:"major",check:(p)=>lmi(p)===7&&!p.masaInfo?.isAdhika&&p.tIdx===14},
+  // Margashirsha (lmi=8)
   {name:"Vaikuntha Ekadashi",alt:"Mokshada Ekadashi · Gita Jayanti",
    desc:"Most sacred Ekadashi; gates of Vaikuntha open; Bhagavad Gita was spoken by Krishna on this day.",
-   cat:"major",check:(p)=>mi(p)===8&&p.tIdx===10},
-  // Pausha masa (mi=9) — Makar Sankranti already covered as solar event
+   cat:"major",check:(p)=>lmi(p)===8&&!p.masaInfo?.isAdhika&&p.tIdx===10},
+  // Pausha (lmi=9) — Makar Sankranti covered above as solar event
 ];
 
-function mi(p){return Math.floor(p.sid/30);}
+function mi(p){return Math.floor(p.sid/30);}  // solar masa (for solar-transit events only)
+/* lmi: lunar masa index for festival detection — uses masaInfo computed in calcP.
+   This is the correct anchor for all lunar-month festivals (Akshaya Tritiya, Diwali, etc.).
+   Without this, festivals miss their correct dates and fire incorrectly during adhika months. */
+function lmi(p){return p.masaInfo?.masaIdx??mi(p);}
 
 /* ─────────────────────────────────────────────────────────── */
 /*  CORE ASTRONOMY                                             */
@@ -707,11 +712,18 @@ const getTiIdx=J=>Math.floor(nm(mlong(J)-slong(J))/12);
 const getNkIdx=J=>Math.floor(nm(mlong(J))/(360/27));
 const getYgIdx=J=>Math.floor(nm(slong(J)+mlong(J))/(360/27))%27;
 const getKrIdx=J=>{const k=Math.floor(nm(mlong(J)-slong(J))/6);return k===0?10:k>=57?7+Math.min(k-57,2):(k-1)%7;};
+/* findEnd: find when the panchanga element active at NOON ends.
+   MUST search forward from Jn (noon), NOT from midnight.
+   Bug if searching from midnight: when an element transitions before noon
+   (e.g. Dwadashi ending at 1:50 AM, Trayodashi at noon), the search stops at step 1
+   and bisects to find the START of the noon element — returning 1:50 AM instead of
+   the correct 11:02 PM end of Trayodashi. Searching from noon avoids this entirely. */
 function findEnd(date,getFn){
   const midnight=new Date(date.getFullYear(),date.getMonth(),date.getDate(),0,0,0);
-  const J0=jdFull(midnight),Jn=jdFull(new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0));
+  const Jn=jdFull(new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0));
   const cur=getFn(Jn),step=20/(24*60);let Jlo=null,Jhi=null;
-  for(let i=1;i<=216;i++){const Jc=J0+i*step;if(getFn(Jc)!==cur){Jlo=Jc-step;Jhi=Jc;break;}}
+  // Search forward from noon (not midnight) — up to 72 hours covers all elements
+  for(let i=1;i<=216;i++){const Jc=Jn+i*step;if(getFn(Jc)!==cur){Jlo=Jc-step;Jhi=Jc;break;}}
   if(Jlo===null)return{fmted:"next day",isToday:false};
   for(let i=0;i<24;i++){const m=(Jlo+Jhi)/2;if(getFn(m)===cur)Jlo=m;else Jhi=m;}
   const ed=jdToLocal(Jhi),nextDay=new Date(midnight.getTime()+86400000);
@@ -1076,10 +1088,17 @@ function getFestivalsForYear(year){
         festDates.add(dt.toDateString());
       }
     }
-    // Generic Ekadashi for months not covered by named entries in FEST
+    // Generic Ekadashi: named entries in FEST take priority; this handles the rest
+    // During adhika months: Shukla Ekadashi = Padmini, Krishna = Parama
     if((p.tIdx===10||p.tIdx===25)&&!festDates.has(dt.toDateString())){
-      const masaI=mi(p),ek=ekName(masaI,p.tIdx===10);
-      out.push({name:ek,cat:'vrat',desc:'Ekadashi vrat — fasting day; devotion to Vishnu, reading Vishnu Sahasranam.',date:new Date(dt),p});
+      const isAd=p.masaInfo?.isAdhika;
+      let ek;
+      if(isAd){
+        ek=p.tIdx===10?'Padmini Ekadashi (Adhika)':'Parama Ekadashi (Adhika)';
+      } else {
+        ek=ekName(lmi(p),p.tIdx===10);
+      }
+      out.push({name:ek,cat:'vrat',desc:isAd?'Special Ekadashi during Adhika Masa (Purushottama Masa). Observing this Ekadashi is considered equivalent to all other Ekadashis combined.':'Ekadashi vrat — fasting day; devotion to Vishnu, reading Vishnu Sahasranam.',date:new Date(dt),p});
       festDates.add(dt.toDateString());
     }
     // Pradosh Vrat (Trayodashi, every fortnight)

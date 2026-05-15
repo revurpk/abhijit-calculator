@@ -461,7 +461,7 @@ if (masaInfo.isAdhika) score = Math.max(5, score - 15);
 
 #### Note on festival detection
 
-Festivals use `mi(p)` (`Math.floor(p.sid/30)`) — the Sun's *current* sidereal rashi — not `p.masaInfo.masaIdx`. This is intentional: festival rules anchor to the solar position (e.g. "Diwali = Kartika Krishna Amavasya when Sun is in Vrischika"), which is unambiguous across traditions. `p.hm` and `mi(p)` may differ by one around Sankranti boundaries; that is by design. See the Festival Detection section (§9) for details.
+Festivals use `lmi(p)` (`p.masaInfo.masaIdx`, the lunar masa) for all checks except Makar Sankranti (which uses `mi(p)`, the solar rashi, for its transit detection). All festival checks include `&&!p.masaInfo?.isAdhika` to prevent firing during intercalary months. During adhika months, Ekadashis are renamed Padmini (Shukla) and Parama (Krishna). See Festival Detection (§9) for details.
 
 ---
 
@@ -722,31 +722,37 @@ The `phaseJDE()` formula from Meeus is accurate to within **a few minutes** for 
 
 The `getFestivalsForYear(year)` function scans every day of the given year and applies rules from the `FEST` array plus generic Ekadashi and Pradosh rules.
 
-### Solar Masa Index
+### Lunar Masa Index for Festival Detection
 
-All festival checks use the **solar masa** — the sign of the zodiac the Sun occupies:
+All festival checks (except Makar Sankranti) use **`lmi(p)`** — the lunar masa index from `p.masaInfo.masaIdx`:
 
 ```js
-const masaIdx = Math.floor(sidereal_sun_longitude / 30);
-// 0=Chaitra (Mesha), 1=Vaishakha (Vrishabha), ... 11=Phalguna (Meena)
+function lmi(p) { return p.masaInfo?.masaIdx ?? mi(p); }
+// 0=Chaitra, 1=Vaishakha, 2=Jyeshtha, ..., 11=Phalguna
 ```
 
-| Index | Solar Rashi | Lunar Masa | Approx Gregorian |
-|-------|-------------|------------|-----------------|
-| 0 | Mesha | Chaitra | Mar–Apr |
-| 1 | Vrishabha | Vaishakha | Apr–May |
-| 2 | Mithuna | Jyeshtha | May–Jun |
-| 3 | Karka | Ashadha | Jun–Jul |
-| 4 | Simha | Shravana | Jul–Aug |
-| 5 | Kanya | Bhadrapada | Aug–Sep |
-| 6 | Tula | Ashwin | Sep–Oct |
-| 7 | Vrischika | Kartika | Oct–Nov |
-| 8 | Dhanu | Margashirsha | Nov–Dec |
-| 9 | Makara | Pausha | Dec–Jan |
-| 10 | Kumbha | Magha | Jan–Feb |
-| 11 | Meena | Phalguna | Feb–Mar |
+`mi(p)` (solar rashi, `Math.floor(p.sid/30)`) is retained only for the Makar Sankranti solar-transit check.
 
-> **Solar vs. lunar masa for festivals:** Festival rules use `mi(p)` (the Sun's current rashi, `Math.floor(p.sid/30)`) as their anchor — not the lunar month name shown in the UI. This is intentional: Diwali, Navratri, etc. are defined by which solar rashi the Sun occupies, which is astronomically unambiguous. The lunar month name displayed elsewhere (`p.hm`, computed by `getLunarMasa`) may differ by one from `mi(p)` around Sankranti boundaries — that difference is by design. See §5.6 for details.
+**Why `lmi` is necessary:** In years with an adhika masa, the solar and lunar masas diverge. In 2026, for example, the Sun is in Vrishabha (solar Vaishakha = `mi(p)===1`) throughout the entire Adhika Jyeshtha period (May 17–June 15). Using `mi(p)` would cause Akshaya Tritiya, Buddha Purnima, and Mohini Ekadashi to be missed on their correct dates in April/May and instead fire incorrectly during Adhika Jyeshtha. `lmi(p)` uses the lunar month boundary (new moon) for context, not the Sun's current position.
+
+All festival checks also include `&&!p.masaInfo?.isAdhika` to prevent any festival from firing during an intercalary month. During adhika months, the generic Ekadashi handler substitutes the traditional **Padmini Ekadashi** (Shukla Ekadashi) and **Parama Ekadashi** (Krishna Ekadashi) names.
+
+| Index | Lunar Masa | Solar Rashi | Approx Gregorian |
+|-------|-----------|-------------|-----------------|
+| 0 | Chaitra | Mesha | Mar–Apr |
+| 1 | Vaishakha | Vrishabha | Apr–May |
+| 2 | Jyeshtha | Mithuna | May–Jun |
+| 3 | Ashadha | Karka | Jun–Jul |
+| 4 | Shravana | Simha | Jul–Aug |
+| 5 | Bhadrapada | Kanya | Aug–Sep |
+| 6 | Ashwin | Tula | Sep–Oct |
+| 7 | Kartika | Vrischika | Oct–Nov |
+| 8 | Margashirsha | Dhanu | Nov–Dec |
+| 9 | Pausha | Makara | Dec–Jan |
+| 10 | Magha | Kumbha | Jan–Feb |
+| 11 | Phalguna | Meena | Feb–Mar |
+
+> **Festival rules for new additions** should use `lmi(p)===N&&!p.masaInfo?.isAdhika` for all lunar-month festivals, and `mi(p)===N` only for solar events like Sankrantis.
 
 ### Festival Rule Format
 
@@ -1076,7 +1082,7 @@ The `FEST` array is the single place to add or modify festivals. Each entry foll
   alt:  "Savatri Vrat",
   desc: "Married women fast and worship the banyan tree; commemorates Savitri's devotion.",
   cat:  "festival",
-  check: (p) => mi(p) === 2 && p.tIdx === 14   // Jyeshtha Purnima
+  check: (p) => lmi(p)=== 2 &&!p.masaInfo?.isAdhika&&p.tIdx === 14   // Jyeshtha Purnima
 },
 ```
 
@@ -1088,7 +1094,7 @@ The `FEST` array is the single place to add or modify festivals. Each entry foll
   alt:  "Surya Jayanti",
   desc: "Sun's birthday; chariot of the Sun turns northward. Special worship at Tirupati.",
   cat:  "major",
-  check: (p) => mi(p) === 10 && p.tIdx === 6   // Magha Shukla Saptami
+  check: (p) => lmi(p)=== 10 &&!p.masaInfo?.isAdhika&&p.tIdx === 6   // Magha Shukla Saptami
 },
 ```
 
@@ -1100,7 +1106,7 @@ The `FEST` array is the single place to add or modify festivals. Each entry foll
   alt:  "Dala Chhath",
   desc: "Four-day worship of Chhathi Maiya and the Sun; fasting from Chaturthi to Saptami. Major festival in Bihar and UP.",
   cat:  "major",
-  check: (p) => mi(p) === 7 && p.tIdx === 5   // Kartika Shukla Shashthi (6th day)
+  check: (p) => lmi(p)=== 7 &&!p.masaInfo?.isAdhika&&p.tIdx === 5   // Kartika Shukla Shashthi (6th day)
 },
 ```
 
@@ -1112,7 +1118,7 @@ The `FEST` array is the single place to add or modify festivals. Each entry foll
   name: "Shravana Shanivar",
   desc: "Saturn worship on Saturdays during Shravana month.",
   cat:  "festival",
-  check: (p) => mi(p) === 4 && p.vara.n === 6  // Shravana masa + Saturday
+  check: (p) => lmi(p)=== 4 &&!p.masaInfo?.isAdhika&&p.vara.n === 6  // Shravana masa + Saturday
 },
 ```
 
