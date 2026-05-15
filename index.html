@@ -11,6 +11,9 @@
 <meta name="theme-color" content="#7B1818"/>
 <title>Hindu Panchanga Calendar</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Tammudu+2:wght@400;500&display=swap"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -200,7 +203,12 @@ button.action:hover{background:var(--bg-tertiary);}
 <div class="panel" id="panel-search">
   <!-- Sanskrit shloka for Muhurtha -->
   <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:1rem;border-left:3px solid var(--accent);text-align:center;">
-    <div style="font-size:15px;line-height:1.9;color:var(--text-primary);font-family:serif;letter-spacing:.02em;">
+    <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:8px;">
+      <button id="shl-dev" class="ybtn" onclick="setShlokaScript('dev')" style="font-size:10px;padding:2px 8px;font-family:serif;font-weight:600;color:var(--text-primary);border-color:var(--border-med);">देव</button>
+      <button id="shl-tel" class="ybtn" onclick="setShlokaScript('tel')" style="font-size:10px;padding:2px 8px;">తె</button>
+      <button id="shl-iast" class="ybtn" onclick="setShlokaScript('iast')" style="font-size:10px;padding:2px 8px;font-style:italic;">IAST</button>
+    </div>
+    <div id="shloka-text" style="font-size:15px;line-height:1.9;color:var(--text-primary);font-family:serif;letter-spacing:.02em;">
       तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>
       विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥
     </div>
@@ -1326,6 +1334,21 @@ function viewResult(ds){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('panel-panchanga').classList.add('on');
   document.querySelectorAll('.tab')[1].classList.add('on');
+}
+const SHLOKA_TEXTS={
+  dev:{text:'तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥',font:'serif',ls:'.02em'},
+  tel:{text:'తదేవ లగ్నం సుదినం తదేవ తారాబలం చంద్రబలం తదేవ ।<br/>విద్యాబలం దైవబలం తదేవ లక్ష్మీపతే తేంఽఘ్రియుగం స్మరామి ॥',font:"'Baloo Tammudu 2','Nirmala UI',serif",ls:'0'},
+  iast:{text:"tadeva lagnaṃ sudinaṃ tadeva tārābalaṃ candrabalaṃ tadeva |<br/>vidyābalaṃ daivabalaṃ tadeva lakṣmīpate te'ṅghriyugaṃ smarāmi ||",font:'Georgia,serif',ls:'.01em'}
+};
+function setShlokaScript(s){
+  const d=SHLOKA_TEXTS[s],el=document.getElementById('shloka-text');
+  el.innerHTML=d.text;el.style.fontFamily=d.font;el.style.letterSpacing=d.ls;
+  ['dev','tel','iast'].forEach(k=>{
+    const b=document.getElementById('shl-'+k);
+    b.style.fontWeight=k===s?'600':'';
+    b.style.color=k===s?'var(--text-primary)':'';
+    b.style.borderColor=k===s?'var(--border-med)':'';
+  });
 }
 function showTab(name,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
