@@ -303,7 +303,7 @@ const NK=[
 const YG=[{n:1,name:"Vishkumbha",q:"bad"},{n:2,name:"Priti",q:"good"},{n:3,name:"Ayushman",q:"good"},{n:4,name:"Saubhagya",q:"excellent"},{n:5,name:"Shobhana",q:"good"},{n:6,name:"Atiganda",q:"bad"},{n:7,name:"Sukarma",q:"good"},{n:8,name:"Dhriti",q:"good"},{n:9,name:"Shula",q:"bad"},{n:10,name:"Ganda",q:"bad"},{n:11,name:"Vriddhi",q:"good"},{n:12,name:"Dhruva",q:"good"},{n:13,name:"Vyaghata",q:"bad"},{n:14,name:"Harshana",q:"good"},{n:15,name:"Vajra",q:"bad"},{n:16,name:"Siddhi",q:"excellent"},{n:17,name:"Vyatipata",q:"bad"},{n:18,name:"Variyana",q:"good"},{n:19,name:"Parigha",q:"bad"},{n:20,name:"Shiva",q:"good"},{n:21,name:"Siddha",q:"excellent"},{n:22,name:"Sadhya",q:"good"},{n:23,name:"Shubha",q:"good"},{n:24,name:"Shukla",q:"good"},{n:25,name:"Brahma",q:"good"},{n:26,name:"Indra",q:"good"},{n:27,name:"Vaidhriti",q:"bad"}];
 const KR=[{n:1,name:"Bava",q:"good"},{n:2,name:"Balava",q:"good"},{n:3,name:"Kaulava",q:"good"},{n:4,name:"Taitila",q:"good"},{n:5,name:"Garija",q:"mixed"},{n:6,name:"Vanija",q:"good"},{n:7,name:"Vishti",q:"bad"},{n:8,name:"Shakuni",q:"mixed"},{n:9,name:"Chatushpada",q:"mixed"},{n:10,name:"Naga",q:"bad"},{n:11,name:"Kimstughna",q:"mixed"}];
 const VA=[{n:0,name:"Ravivara",en:"Sunday",deity:"Sun",q:"mixed",rahu:8},{n:1,name:"Somavara",en:"Monday",deity:"Moon",q:"good",rahu:2},{n:2,name:"Mangalavara",en:"Tuesday",deity:"Mars",q:"mixed",rahu:7},{n:3,name:"Budhavara",en:"Wednesday",deity:"Mercury",q:"good",rahu:5},{n:4,name:"Guruvara",en:"Thursday",deity:"Jupiter",q:"excellent",rahu:6},{n:5,name:"Shukravara",en:"Friday",deity:"Venus",q:"good",rahu:4},{n:6,name:"Shanivara",en:"Saturday",deity:"Saturn",q:"bad",rahu:3}];
-const HM=["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashweeyuja","Kartika","Margashirsha","Pausha","Magha","Phalguna"];
+const HM=["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashweeyuja","Kartika","Margashirsha","Pushya","Magha","Phalguna"];
 const MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const GULIKA=[7,6,5,4,3,2,1],AMRITA={0:12,1:4,2:0,3:3,4:6,5:16,6:21};
 
@@ -326,7 +326,7 @@ const FEST=[
    cat:"major",check:(p,pr)=>mi(p)===9&&pr&&mi(pr)===8},
   {name:"Kanuma",alt:"Kanupu · Third day of Sankranti",
    desc:"Third day of Sankranti in Andhra Pradesh; cattle are worshipped and decorated with garlands; cock-fighting (kodi pandalu) in villages; farmers express gratitude to animals.",
-   cat:"major",check:(p,pr)=>mi(p)===9&&pr&&mi(pr)===9&&p.sid<272.5},
+   cat:"major",check:(p,pr)=>mi(p)===9&&pr&&mi(pr)===9&&p.sid<272},
   // ── All remaining festivals use lmi() (lunar masa) and skip adhika months ──
   // Magha (lmi=10)
   {name:"Ratha Saptami",alt:"Surya Jayanti · Achalamanotsava",
@@ -339,8 +339,11 @@ const FEST=[
    desc:"Ekadashi in Magha Shukla Paksha; destroys sins accumulated over many lifetimes.",
    cat:"vrat",check:(p)=>lmi(p)===10&&!p.masaInfo?.isAdhika&&p.tIdx===10},
   {name:"Maha Shivaratri",alt:"Great Night of Shiva",
-   desc:"Greatest of the four Shivaratris; Shiva and Parvati's wedding night; all-night vigil with fasting and abhisheka.",
-   cat:"major",check:(p,prevP)=>(lmi(p)===10||lmi(p)===11)&&!p.masaInfo?.isAdhika&&p.tIdx===28&&(!prevP||prevP.tIdx!==28)},
+   desc:"Greatest of all Shivaratris; Shiva and Parvati's wedding night; all-night vigil with fasting and abhisheka. Falls on Magha Krishna Chaturdashi (known as Phalguna Krishna Chaturdashi in the North Indian purnimanta calendar).",
+   cat:"major",check:(p,prevP)=>lmi(p)===10&&!p.masaInfo?.isAdhika&&p.tIdx===28&&(!prevP||prevP.tIdx!==28)},
+  {name:"Masa Shivaratri",alt:"Monthly Shivaratri",
+   desc:"Krishna Chaturdashi of every lunar month; monthly fast and vigil in honor of Lord Shiva. One of the twelve (or thirteen in adhika masa years) Shivaratris observed through the year.",
+   cat:"vrat",check:(p,prevP)=>lmi(p)!==10&&p.tIdx===28&&(!prevP||prevP.tIdx!==28)},
   // Phalguna (lmi=11)
   {name:"Amalaki Ekadashi",alt:"Phalguna Shukla Ekadashi",
    desc:"Worship of the Amalaki (Indian gooseberry) tree; equivalent in merit to all pilgrimages.",
@@ -448,11 +451,11 @@ const FEST=[
   {name:"Dhanteras",alt:"Dhantrayodashi · Dhanvantari Jayanti",
    desc:"Worship of Goddess Lakshmi and Lord Kubera; traditional purchase of gold, silver, and new utensils. Ashweeyuja Krishna Trayodashi. Also Dhanvantari Jayanti — birthday of the divine physician.",
    cat:"major",check:(p)=>lmi(p)===6&&!p.masaInfo?.isAdhika&&p.tIdx===27},
-  {name:"Naraka Chaturdashi",alt:"Chhoti Diwali · Narak Nivaran Chaturdashi",
-   desc:"Krishna's victory over demon Narakasura; ritual oil bath (abhyanga snanam) before sunrise; second day of Diwali celebrations. Ashweeyuja Krishna Chaturdashi.",
+  {name:"Naraka Chaturdashi",alt:"Chhoti Diwali · Narak Nivaran Chaturdashi · Atla Taddi (Telugu)",
+   desc:"Krishna's victory over demon Narakasura; ritual oil bath (abhyanga snanam) before sunrise. In Telugu tradition this night is Atla Taddi — married women fast, prepare rice-flour appams (atlu), and float lit lamps on water by the light of the late-rising crescent moon, praying for family wellbeing. Ashweeyuja Krishna Chaturdashi.",
    cat:"major",check:(p)=>lmi(p)===6&&!p.masaInfo?.isAdhika&&p.tIdx===28},
-  {name:"Diwali",alt:"Deepavali · Festival of Lights · Atla Taddi (Telugu)",
-   desc:"Lakshmi puja on Ashweeyuja Amavasya night; Rama's return to Ayodhya; rows of lamps lit across India. In Telugu tradition, also celebrated as Atla Taddi — married women observe a moonlit fast and float lit lamps for family wellbeing.",
+  {name:"Diwali",alt:"Deepavali · Festival of Lights",
+   desc:"Lakshmi puja on Ashweeyuja Amavasya night; Rama's return to Ayodhya; rows of lamps lit across India.",
    cat:"major",check:(p)=>lmi(p)===6&&!p.masaInfo?.isAdhika&&p.tIdx===29},
   // ── Kartika (lmi=7) — Shukla paksha starts the day after Diwali ──
   {name:"Govardhan Puja",alt:"Annakut · Kartika Shukla Pratipada",
@@ -483,7 +486,7 @@ const FEST=[
   {name:"Dattatreya Jayanti",alt:"Margashirsha Purnima",
    desc:"Birthday of Lord Dattatreya (trinity of Brahma-Vishnu-Shiva); special puja at Dattatreya temples. Observed with devotion in Andhra Pradesh, Karnataka, and Maharashtra.",
    cat:"festival",check:(p)=>lmi(p)===8&&!p.masaInfo?.isAdhika&&p.tIdx===14},
-  // Pausha (lmi=9) — Makar Sankranti covered above as solar event
+  // Pushya (lmi=9) — Makar Sankranti covered above as solar event
 ];
 
 function mi(p){return Math.floor(p.sid/30);}  // solar masa (for solar-transit events only)
