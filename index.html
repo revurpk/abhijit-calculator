@@ -217,6 +217,9 @@ button.action:hover{background:var(--bg-tertiary);}
       That alone the strength of knowledge, that alone divine grace — that very moment when I meditate on your divine feet, O Lord Lakshmi-pati."
     </div>
   </div>
+  <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:11px 15px;margin-bottom:1rem;font-size:12px;color:var(--info-text);line-height:1.65;">
+    <strong style="color:var(--text-primary);">Muhurtha is elective astrology</strong> — use it when you genuinely have a choice of timing. In the ordinary flow of life there is no need to consult an almanac before every action; doing what must be done, with good intent, is itself the highest auspice. Being good and doing good is the surest path to good tidings. Read these results as gentle suggestions rather than predictions — fortune cookie wisdom, not fate. No app can account for personal planetary periods, birth-chart conditions, or the nuanced judgement a trained jyotishi brings. <strong style="color:var(--text-primary);">For significant occasions — a wedding, griha pravesha, naming ceremony, or upanayana — always consult a qualified astrologer</strong> who can weigh all the relevant factors; do not rely on any app for such decisions.
+  </div>
   <div class="card" style="margin-bottom:1rem;">
     <div style="font-size:14px;font-weight:500;margin-bottom:1rem;">Search criteria</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -239,6 +242,7 @@ button.action:hover{background:var(--bg-tertiary);}
         <label class="ci"><input type="checkbox" id="sne"/> Exclude eclipse days</label>
         <label class="ci"><input type="checkbox" id="snsg"/> Exclude Guru Moudhyam</label>
         <label class="ci"><input type="checkbox" id="snss"/> Exclude Sukra Moudhyam</label>
+        <label class="ci" style="border-top:.5px solid var(--border-light);margin-top:4px;padding-top:6px;"><input type="checkbox" id="sneg" onchange="updateNegDisplay()"/> Show mixed/avoid labels &amp; all scores</label>
       </div>
     </div>
     <button class="action" onclick="runSearch()"><i class="ti ti-search" aria-hidden="true"></i> Find auspicious days</button>
@@ -843,7 +847,7 @@ function clearPCache(){for(const k in pcache)delete pcache[k];}
 /* ─────────────────────────────────────────────────────────── */
 function qcls(q){return{excellent:"bs",good:"bi",mixed:"bw",bad:"bd"}[q]||"bw";}
 function qlbl(q){return{excellent:"Excellent",good:"Good",mixed:"Mixed",bad:"Avoid"}[q]||q;}
-function bdg(q){return`<span class="bdg ${qcls(q)}">${qlbl(q)}</span>`;}
+function bdg(q){if(!showNeg&&(q==='mixed'||q==='bad'))return'';return`<span class="bdg ${qcls(q)}">${qlbl(q)}</span>`;}
 function dot(q){
   const c={excellent:"var(--success-bg)",good:"var(--info-bg)",mixed:"var(--warn-bg)",bad:"var(--danger-bg)"}[q]||"#888";
   const b={excellent:"var(--success-text)",good:"var(--info-text)",mixed:"var(--warn-text)",bad:"var(--danger-text)"}[q]||"#888";
@@ -857,6 +861,7 @@ const catC={major:"var(--accent)",vrat:"var(--info-text)",monthly:"var(--success
 const catBg={major:"var(--warn-bg)",vrat:"var(--info-bg)",monthly:"var(--success-bg)",festival:"var(--warn-bg)"};
 
 let today=new Date(),selD=new Date(today),vM=today.getMonth(),vY=today.getFullYear();
+let showNeg=false;
 
 /* ─────────────────────────────────────────────────────────── */
 /*  YEAR STRIP                                                 */
@@ -986,7 +991,7 @@ function renderCalDet(){
         ${mdHtml}
       </div>
       <div style="text-align:right;">
-        <div style="font-size:26px;font-weight:500;color:${scC(p.score)}">${p.score}</div>
+        <div style="font-size:26px;font-weight:500;color:${scC(p.score)}">${showNeg||p.score>=75?p.score:'–'}</div>
         <div style="font-size:10px;color:var(--text-tertiary);">auspiciousness</div>
       </div>
     </div>
@@ -1051,9 +1056,9 @@ function renderPanch(){
   </div>`:'';
   document.getElementById('p-content').innerHTML=`
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:1rem;flex-wrap:wrap;">
-      <div><div style="font-size:30px;font-weight:500;color:${scC(p.score)}">${p.score}</div>
+      <div><div style="font-size:30px;font-weight:500;color:${scC(p.score)}">${showNeg||p.score>=75?p.score:'–'}</div>
         <div style="font-size:11px;color:var(--text-tertiary);">Auspiciousness</div>
-        <div class="sbar" style="width:150px;"><div class="sfill" style="width:${p.score}%;background:${scB(p.score)};"></div></div>
+        ${showNeg||p.score>=75?`<div class="sbar" style="width:150px;"><div class="sfill" style="width:${p.score}%;background:${scB(p.score)};"></div></div>`:''}
       </div>
       <div style="flex:1;min-width:180px;">
         ${p.special.length?`<div style="margin-bottom:5px;">${p.special.map(s=>`<span class="spbdg">${s.name}</span>`).join('')}</div>`:''}
@@ -1309,15 +1314,14 @@ function runSearch(){
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:22px;font-weight:500;color:${scC(p.score)}">${p.score}</div>
-          <div style="font-size:10px;color:var(--text-tertiary);">score</div>
+          ${showNeg||p.score>=75?`<div style="font-size:22px;font-weight:500;color:${scC(p.score)}">${p.score}</div><div style="font-size:10px;color:var(--text-tertiary);">score</div>`:''}
         </div>
       </div>
       <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap;color:var(--text-secondary);">
         <span>${bdg(p.yoga.q)} ${p.yoga.name}</span><span>· ${bdg(p.karana.q)} ${p.karana.name}</span>
         <span>· Abhijit ${p.abhijit.s}–${p.abhijit.e}</span>
       </div>
-      <div class="sbar"><div class="sfill" style="width:${p.score}%;background:${scB(p.score)};"></div></div>
+      ${showNeg||p.score>=75?`<div class="sbar"><div class="sfill" style="width:${p.score}%;background:${scB(p.score)};"></div></div>`:''}
     </div>`;
   }
   if(res.length>30)h+=`<div style="text-align:center;font-size:11px;color:var(--text-secondary);padding:8px;">…and ${res.length-30} more.</div>`;
@@ -1334,6 +1338,12 @@ function viewResult(ds){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('panel-panchanga').classList.add('on');
   document.querySelectorAll('.tab')[1].classList.add('on');
+}
+function updateNegDisplay(){
+  showNeg=document.getElementById('sneg').checked;
+  renderCalDet();
+  if(document.getElementById('panel-panchanga').classList.contains('on'))renderPanch();
+  const sr=document.getElementById('sr');if(sr&&sr.innerHTML.trim())runSearch();
 }
 const SHLOKA_TEXTS={
   dev:{text:'तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥',font:'serif',ls:'.02em'},
