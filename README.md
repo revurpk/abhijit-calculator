@@ -46,7 +46,8 @@
     - 11.12 Swiss Ephemeris via WASM
     - 11.13 Adjusting Moudhyam Thresholds
 12. [Known Limitations](#12-known-limitations)
-13. [Quick-Reference: Key Variables](#13-quick-reference-key-variables)
+13. [Security & Privacy](#13-security--privacy)
+14. [Quick-Reference: Key Variables](#14-quick-reference-key-variables)
 
 ---
 
@@ -93,10 +94,11 @@ html_panchanga_calendar.html
     ├── Core astronomy
     │   jd(), jdFull(), jdToLocal()
     │   slong(J)     — tropical sun longitude
-    │   mlong(J)     — tropical moon longitude
-    │   ayan(J)      — ayanamsha (Lahiri approximation)
-    │   getSunTimes() — NOAA sunrise/sunset
+    │   mlong(J)     — tropical moon longitude (59-term Meeus Table 47.A)
+    │   ayan(J)      — Lahiri ayanamsha (23.85° + 1.39644°/century)
+    │   getSunTimes(date, lat, lon) — NOAA sunrise/sunset; uses LOC.tz
     │   getHY()      — Hindu year metadata
+    │   tzFromLon(lon) — approximate civil tz from longitude (custom-coords fallback)
     │
     ├── Eclipse module
     │   moonLat(J), phaseJDE(), moonAlt(), eclipseData()
@@ -124,12 +126,14 @@ html_panchanga_calendar.html
 
 | Cache | Key | Content |
 |-------|-----|---------|
-| `pcache` | `"lat-lon-Y-M-D"` | Full panchanga object |
+| `pcache` | `"lat-lon-Y-M-D"` | Full panchanga object (noon reference) |
 | `tcache` | `"tr-Y-M-D"` | Tithi/nakshatra/yoga/karana end times |
 | `edCache` | `"de-Y-M-D"` | Eclipse for that date (or null) |
 | `festDayCache` | `"fd-Y-M-D"` | First matching festival (or null) |
 
-Call `clearPCache()` after a location change to force recalculation of solar times.
+All caches are soft-capped at `CACHE_MAX = 5000` entries. When exceeded, the 1000 oldest insertions are dropped via `cacheSet(cache, k, v)`. This prevents unbounded growth across heavy navigation sessions.
+
+Call `clearPCache()` after a location change to invalidate all four caches at once (location affects solar times, sunrise-based panchanga, eclipse visibility, and festival timing).
 
 ---
 
@@ -226,15 +230,15 @@ return nm(L0+sl*1e-6);
 
 ```js
 function ayan(J) {
-  return 23.853 + (J - 2451545) / 36525 * 1.397;
+  return 23.85 + (J - 2451545) / 36525 * 1.39644;
 }
 ```
 
 This gives approximately:
-- J2000 (Jan 1.5, 2000): **23.853°**
-- Rate: **1.397° per century** ≈ **50.29″ per year**
+- J2000 (Jan 1.5, 2000): **23.85°**
+- Rate: **1.39644° per century** = **50.2719″ per year** (canonical IAU/IIA)
 
-The Lahiri (Chitrapaksha) ayanamsha is the official ayanamsha of the Indian Government and is used by most North Indian panchangas.
+The Lahiri (Chitrapaksha) ayanamsha is the official ayanamsha of the Government of India and is used by most North Indian panchangas. The constant 50.2719″/yr was earlier coded as 50.29″/yr (≈1.397°/century) — the corrected rate brings results within ±2″ of Swiss Ephemeris (the nutation term is still omitted; that's the dominant residual).
 
 **Sidereal longitude:**
 ```
@@ -248,7 +252,13 @@ All panchanga elements (tithi, nakshatra, yoga, masa, ritu) use sidereal longitu
 ### 4.5 Sunrise & Sunset
 
 **Function:** `getSunTimes(date, lat, lon)`  
-**Returns:** `{ sunrise, sunset, solarNoon }` in minutes from midnight (local wall-clock)
+**Returns:** `{ sunrise, sunset, solarNoon, tz }` in minutes from midnight in the **location's** clock (not the browser's clock). `tz` is the UTC offset in minutes that was applied.
+
+**Timezone handling:**
+
+The app stores a `tz` field (UTC offset in minutes, no DST) on each entry in `CITIES`. When a user picks a city, `LOC.tz` is copied from the city record. For custom coordinates the offset is approximated from longitude via `tzFromLon(lon) = Math.round(lon × 4 / 15) × 15`, rounding to the nearest 15 min so half-hour zones (India +5:30, Nepal +5:45) and 15-min outliers (some Pacific islands) are reasonable.
+
+`getSunTimes` consults `LOC.tz` directly. This means a Boston-based user viewing **Delhi** sees Delhi-local sunrise (≈ 05:30 IST), not the Boston wall-clock equivalent. The previous implementation incorrectly used `-date.getTimezoneOffset()` (the browser's offset) for every location.
 
 **Algorithm:** NOAA solar algorithm (based on Meeus). Steps:
 
@@ -609,19 +619,25 @@ const GULIKA = [7,6,5,4,3,2,1];  // indexed by date.getDay()
 
 ### Abhijit Muhurtha
 
-Solar noon ± 24 minutes (48-minute window centred on solar noon). This is considered the best muhurtha of the day, overriding all negative influences.
+Abhijit is the **8th of the 15 day-muhurthas**, centred on solar noon. Width = day-length / 15, so the window scales seasonally — about 48 min near the equinox, 60 min in mid-summer at mid-latitudes, ~36 min near the winter solstice.
 
 ```js
-abhijit = { start: solarNoon − 24, end: solarNoon + 24 };
+const dMu = dayLen / 15;
+abhijit = { start: solarNoon − dMu/2, end: solarNoon + dMu/2 };
 ```
+
+This corrects an earlier fixed-width approximation of ±24 min that was inaccurate at high latitudes and in seasons with very long or short days.
 
 ### Brahma Muhurtha
 
-96 to 48 minutes before sunrise — optimal time for meditation and religious study.
+The **14th of the 15 night-muhurthas**, ending one night-muhurtha before sunrise. Width = night-length / 15 (also scales seasonally). Optimal time for meditation and religious study.
 
 ```js
-brahma = { start: sunrise − 96, end: sunrise − 48 };
+const nMu = (1440 − dayLen) / 15;
+brahma = { start: sunrise − 2·nMu, end: sunrise − nMu };
 ```
+
+For a 12-hour night this matches the traditional "96 to 48 min before sunrise" definition; at high latitudes in summer the window correctly shrinks to (~24 to ~12 min before sunrise).
 
 ---
 
@@ -663,12 +679,14 @@ Clamped to [5, 100].
 | Ekadashi | tIdx 10 (Shukla) or 25 (Krishna) | +10 |
 | Saubhagya/Siddhi/Siddha Yoga | yoga.n ∈ {4, 16, 21} | +10 |
 
-**AMRITA table** (Vara → Nakshatra index for Amrita Siddhi Yoga):
+**AMRITA table** (Vara → 0-based nakshatra index for Amrita Siddhi Yoga):
 ```js
-const AMRITA = { 0:12, 1:4, 2:0, 3:3, 4:6, 5:16, 6:21 };
-// Sunday→Hasta, Monday→Mrigashira, Tuesday→Ashwini,
-// Wednesday→Rohini, Thursday→Punarvasu, Friday→Vishakha, Saturday→Uttara Ashadha
+const AMRITA = { 0:12, 1:4, 2:0, 3:16, 4:7, 5:26, 6:3 };
+// Sunday→Hasta(12), Monday→Mrigashira(4), Tuesday→Ashwini(0),
+// Wednesday→Anuradha(16), Thursday→Pushya(7), Friday→Revati(26), Saturday→Rohini(3)
 ```
+
+The four Wed/Thu/Fri/Sat entries were previously transcribed wrong (mapping to Rohini, Ardra, Vishakha, Uttara Ashadha respectively), causing Amrita Siddhi Yoga to fire on the wrong day-nakshatra combinations. The canonical list above follows Brihat Samhita and standard printed almanacs.
 
 ---
 
@@ -694,17 +712,19 @@ The `phaseJDE(ki, isFull)` function computes the Julian Ephemeris Date of a give
 ```js
 function moonLat(J)  // 15-term series from ELP2000
 ```
-If |β| > 1.57°, no eclipse of any kind occurs.
+If |β| > 1.60°, no eclipse of any kind occurs. (1.57° was the previous cutoff; bumped to 1.60° to capture borderline penumbrals.)
 
 **Step 4 — Classify:**
 
 | Condition | Eclipse type |
 |-----------|-------------|
-| Full moon, \|β\| ≤ 0.58° | Total Lunar |
-| Full moon, 0.58° < \|β\| ≤ 1.04° | Partial Lunar |
-| Full moon, 1.04° < \|β\| ≤ 1.57° | Penumbral Lunar |
-| New moon, \|β\| ≤ 1.00° | Total/Annular Solar |
-| New moon, 1.00° < \|β\| ≤ 1.57° | Partial Solar |
+| Full moon, \|β\| ≤ 0.47° | Total Lunar |
+| Full moon, 0.47° < \|β\| ≤ 1.04° | Partial Lunar |
+| Full moon, 1.04° < \|β\| ≤ 1.60° | Penumbral Lunar |
+| New moon, \|β\| ≤ 0.99° | Total/Annular Solar |
+| New moon, 0.99° < \|β\| ≤ 1.60° | Partial Solar |
+
+The lunar `0.47°` is umbra-radius minus moon-radius (Meeus Ch. 54), tightened from `0.58°` so that marginal partials are not mis-labelled total. The solar `0.99°` is the geocentric central-eclipse limit (γ ≈ 1 Earth-radius from the shadow axis); above this only partial geometry is possible.
 
 ### Visibility Computation
 
@@ -1347,19 +1367,57 @@ This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 da
 | Festival detection uses solar masa `mi(p)`, not the lunar `p.hm` | By design — festival rules are solar-anchored; the two names are offset ~2–4 weeks near Sankranti | No change needed; see §5.6 |
 | Moon longitude ±0.01° (Meeus 59-term ELP2000) | Transition times ±1 minute | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
 | Sun longitude ±0.003° | Minimal impact on panchanga | Already adequate |
-| Eclipse type threshold is β-only | Penumbral eclipses may be mis-classified | Acceptable for most users |
-| Vara (weekday) derived from `date.getDay()` | Correct for most of the day; may be off by one vara for the pre-sunrise hours (Hindu vara is sunrise-to-sunrise). The Panchanga tab computes at sunrise so this edge case rarely matters there; the calendar grid uses noon so it is always correct for noon onwards. | Acceptable for practical use |
-| Sunrise uses browser timezone | Correct for local wall-clock; incorrect if page opened with a different system timezone | Force timezone via `Intl.DateTimeFormat` |
+| Eclipse type threshold is β-only (geocentric) | Solar eclipses near the central/partial boundary may be classified slightly differently than path-of-totality maps would show, because lunar parallax is not applied | Cross-check with NASA / timeanddate.com for high-stakes uses |
+| Eclipse visibility uses daytime-at-location for solar, Moon-above-horizon for lunar | A daytime solar eclipse is reported "visible" anywhere the Sun is up; this overstates: only points on the path of totality see totality. Lunar visibility is exact for the midpoint instant | Use authoritative eclipse maps for path-of-totality |
+| Vara (weekday) derived from `date.getDay()` | Correct on the Panchanga tab (sunrise reference) and all daytime hours; may be off by one only in the narrow pre-sunrise window on the calendar grid | Acceptable for practical use |
+| Timezone offset stored per CITIES entry; custom coords use longitude estimate | Most cities correct; civil-time-aware DST is NOT applied (off by 1 h during DST) and the longitude estimate may miss by up to 30 min in regions with eccentric zones (Western China, parts of Russia) | Add the city to CITIES with the correct `tz` |
 | No ayanamsha interpolation for sub-day calculations | Eclipse midpoint ayanamsha is slightly off | Sub-arcsecond correction; negligible |
-| Nakshatra and yoga previously used tropical Moon/Sun longitudes (fixed) | With the fix applied and the 59-term Moon formula, nakshatra is correct to ±1–2 min and yoga to ±3 min | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
+| Nakshatra / yoga ±0.01° (sidereal Moon + Sun, 59-term ELP2000 + apparent Sun) | Transition timing ±1–2 min for nakshatra, ±3 min for yoga | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
+| `findMoudhyamEnd` assumes monotonic elongation between daily samples | Around inferior conjunction (Venus), the U-shaped elongation curve can be sampled wrong, mis-estimating end date by 1–2 weeks at worst | Use hourly samples or a planetary ephemeris service |
+| Sunrise zenith fixed at 90.833° (refraction + semi-diameter, sea level) | At elevated cities (Bengaluru, Kathmandu, Mexico City) the geometric horizon is depressed; sunrise may be 1–3 min early | Add an `elev` field to CITIES and include `0.0353°·√h` in the zenith |
 
 ---
 
-## 13. Quick-Reference: Key Variables
+## 13. Security & Privacy
+
+This is a fully static, in-browser app — no backend, no `fetch`, no `localStorage`, no telemetry, no analytics. Everything you see is computed in your browser from your inputs. Here is the deliberate posture:
+
+### What the app does NOT do
+
+- **No network requests after page load.** The HTML is loaded once; CSS/font CDNs are fetched per request, but the JavaScript itself never makes XHR/`fetch` calls.
+- **No data persistence.** Your location, dates, and search filters are not stored across sessions.
+- **No third-party scripts.** Only stylesheet/font CDNs (Tabler Icons, Google Fonts) are loaded, and Tabler is pinned with SRI.
+- **No reverse-geocoding.** When you click "Auto-detect", your coordinates stay in the browser — they are matched against the static `CITIES` list locally to pick a nearby name.
+
+### Defences in place
+
+| Mitigation | Implementation |
+|------------|----------------|
+| **Content-Security-Policy** | `<meta http-equiv="Content-Security-Policy">` restricts script/style/font/img/connect sources. `connect-src 'none'` blocks any future runtime exfiltration. `frame-ancestors 'none'` prevents clickjacking. |
+| **Subresource Integrity (SRI)** | Tabler Icons stylesheet pinned to SHA-384. CDN compromise → browser refuses the file. |
+| **Referrer policy** | `no-referrer` set globally and per-link, so font/icon requests do not leak the page URL. |
+| **HTML-escape helper** | `esc(s)` is applied wherever `LOC.name` (the only string with a path from user input) reaches `innerHTML`. |
+| **Input validation** | `applyCustomLoc` rejects `NaN`, `Infinity`, and lat/lon outside ±90/±180. `parseInt` always specifies radix 10 and is followed by a `Number.isFinite` guard. Date inputs check `isNaN(date.getTime())`. |
+| **Geolocation flow** | No auto-prompt on load (poor UX, browsers often auto-deny). Explicit click → 10 s timeout, error codes are translated to friendly strings. |
+| **Cache bounding** | All caches soft-capped at 5000 entries to prevent unbounded growth. |
+
+### Known residual risks
+
+- **Inline event handlers (`onclick=`)** prevent dropping `'unsafe-inline'` from `script-src`. A future refactor to `addEventListener` would let CSP block injected inline scripts entirely.
+- **Google Fonts CSS is not SRI-pinned** because its response varies per user-agent. The risk is a compromised Google Fonts CDN serving malicious `@font-face` declarations; the CSP `font-src` restriction limits the blast radius.
+- **`unsafe-inline` for `style-src`** is required by the heavy inline-style usage. Refactor to classes would let us tighten this.
+
+### If you self-host
+
+Replace the two CDN `<link>` tags with locally-hosted copies of the CSS/font files (and update SRI accordingly). Then you can drop the `https://cdn.jsdelivr.net` and `https://fonts.*` allowances from the CSP, leaving `'self'` and `'unsafe-inline'` only.
+
+---
+
+## 14. Quick-Reference: Key Variables
 
 | Variable | Location | What it controls |
 |----------|----------|-----------------|
-| `LOC` | Global | `{ lat, lon, name }` — current location |
+| `LOC` | Global | `{ lat, lon, name, tz }` — current location with UTC offset in minutes |
 | `TI[30]` | Static array | Tithi names and quality ratings |
 | `NK[27]` | Static array | Nakshatra names, rulers, qualities, gana, nature |
 | `YG[27]` | Static array | Yoga names and quality ratings |

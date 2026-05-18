@@ -10,10 +10,26 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="theme-color" content="#7B1818"/>
 <title>Hindu Panchanga Calendar</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<!--
+  Content-Security-Policy: locks down where the page can fetch resources from.
+  The app uses inline scripts and inline event handlers, so script-src must allow
+  'unsafe-inline' for now. style/font/img/connect are tightly restricted.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';"/>
+<meta name="referrer" content="no-referrer"/>
+<!--
+  Subresource Integrity: Tabler Icons CSS is pinned to a known SHA-384 hash.
+  If jsdelivr ever serves a different file (CDN compromise, MitM), the browser
+  refuses to apply the stylesheet. Hash regenerated with PowerShell SHA384.
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"
+      integrity="sha384-mY6asDzXlnHeimHHXw8cavPeArhEcAfnCibDFiaDPex3Fudo+edh/hnT7siZz8bg"
+      crossorigin="anonymous" referrerpolicy="no-referrer"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Tammudu+2:wght@400;500&display=swap"/>
+<!-- Google Fonts CSS URL is dynamic per UA so SRI is not feasible; URL is pinned & HTTPS-only. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Tammudu+2:wght@400;500&display=swap"
+      referrerpolicy="no-referrer"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -284,12 +300,13 @@ button.action:hover{background:var(--bg-tertiary);}
     <div class="ab-body">
       <table class="ab-tbl">
         <tr><th>Function</th><th>Algorithm</th><th>Accuracy</th></tr>
-        <tr><td><code>jd()</code></td><td>Meeus Ch. 7 — Julian Day baseline (local noon); Panchanga tab shifts to sunrise via <code>jd(dt)+(sr−720)/1440</code></td><td>exact</td></tr>
-        <tr><td><code>slong()</code></td><td>VSOP87 simplified — apparent tropical Sun longitude</td><td>±0.003°</td></tr>
-        <tr><td><code>mlong()</code></td><td>ELP2000 — full Meeus Table 47.A, 59 terms</td><td>±0.01°</td></tr>
-        <tr><td><code>ayan()</code></td><td>Lahiri — 23.853° + 1.397°/century from J2000</td><td>±0.01°</td></tr>
-        <tr><td><code>getSunTimes()</code></td><td>NOAA solar algorithm — sunrise / solar noon / sunset</td><td>±1 min</td></tr>
+        <tr><td><code>jd()</code></td><td>Meeus Ch. 7 — Julian Day baseline (local noon); Panchanga tab back-shifts to the true UT JD of local sunrise using <code>LOC.tz</code></td><td>exact</td></tr>
+        <tr><td><code>slong()</code></td><td>VSOP87 simplified — apparent tropical Sun longitude (incl. nutation + aberration)</td><td>±0.003°</td></tr>
+        <tr><td><code>mlong()</code></td><td>ELP2000 — full Meeus Table 47.A, 59 longitude terms with automatic E/E² eccentricity factors</td><td>±0.01°</td></tr>
+        <tr><td><code>ayan()</code></td><td>Lahiri — 23.85° + 1.39644°/century from J2000 (canonical 50.2719″/yr)</td><td>±0.005°</td></tr>
+        <tr><td><code>getSunTimes()</code></td><td>NOAA solar algorithm — uses <code>LOC.tz</code> so a remote location shows its own clock, not the browser's</td><td>±1 min</td></tr>
         <tr><td><code>moonLat()</code></td><td>ELP2000 latitude, 15 terms — used for eclipse geometry</td><td>±0.1°</td></tr>
+        <tr><td><code>moonAlt()</code></td><td>Meeus GMST (cubic), normalised HA, topocentric altitude</td><td>±0.02°</td></tr>
         <tr><td><code>getPlanetElongation()</code></td><td>Meeus Ch. 31 heliocentric → geocentric (Kepler, 5 iterations)</td><td>±3°</td></tr>
       </table>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;line-height:1.6;">
@@ -377,8 +394,8 @@ button.action:hover{background:var(--bg-tertiary);}
         <span class="spbdg">Saubhagya / Siddhi / Siddha yoga</span>
       </div>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;">
-        Amrita Siddhi Yoga fires when vara × nakshatra match the traditional AMRITA table:
-        Sun→Hasta, Mon→Rohini, Tue→Ashwini, Wed→Mrigashira, Thu→Punarvasu, Fri→Swati, Sat→Vishakha.
+        Amrita Siddhi Yoga fires when vara × nakshatra match the canonical pairings:
+        Sun→Hasta, Mon→Mrigashira, Tue→Ashwini, Wed→Anuradha, Thu→Pushya, Fri→Revati, Sat→Rohini.
       </div>
     </div>
   </details>
@@ -391,8 +408,8 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><th>Period</th><th>Definition</th></tr>
         <tr><td><strong>Rahu Kalam</strong></td><td>Day (sunrise→sunset) ÷ 8 equal parts; the Rahu-ruled part: Sun=8, Mon=2, Tue=7, Wed=5, Thu=6, Fri=4, Sat=3</td></tr>
         <tr><td><strong>Gulika Kalam</strong></td><td>Same 8-part division; Saturn/Gulika part: Sun=7, Mon=6, Tue=5, Wed=4, Thu=3, Fri=2, Sat=1</td></tr>
-        <tr><td><strong>Abhijit Muhurtha</strong></td><td>Solar noon ±24 min — the strongest muhurtha of the day, overrides negative influences</td></tr>
-        <tr><td><strong>Brahma Muhurtha</strong></td><td>Sunrise −96 to −48 min — ideal for meditation and study</td></tr>
+        <tr><td><strong>Abhijit Muhurtha</strong></td><td>The 8th of 15 day-muhurthas, centred on solar noon (width = dayLen/15, scales seasonally). The strongest muhurtha of the day; overrides negative influences.</td></tr>
+        <tr><td><strong>Brahma Muhurtha</strong></td><td>The 14th of 15 night-muhurthas, ending one night-muhurtha before sunrise (width = nightLen/15). Ideal for meditation and study.</td></tr>
         <tr><td><strong>Amrita Kalam</strong></td><td>Varies by vara × nakshatra (AMRITA table); ~48 min window</td></tr>
       </table>
     </div>
@@ -422,14 +439,40 @@ button.action:hover{background:var(--bg-tertiary);}
     <div class="ab-body">
       <table class="ab-tbl">
         <tr><th>Limitation</th><th>Impact</th></tr>
-        <tr><td>Moon ±0.01° (59-term ELP2000)</td><td>Nakshatra / yoga transition times ±1–2 min</td></tr>
+        <tr><td>Moon ±0.01° (59-term Meeus ELP2000)</td><td>Nakshatra / yoga transition times ±1–2 min</td></tr>
         <tr><td>Sun ±0.003° (VSOP87 simplified)</td><td>Minimal — adequate for all panchanga purposes</td></tr>
-        <tr><td>Vara derived from <code>date.getDay()</code></td><td>Correct for Panchanga tab (sunrise reference) and all daytime hours; may be off by one only in the narrow pre-sunrise window on the calendar grid</td></tr>
+        <tr><td>Lahiri ayanamsha excludes nutation term</td><td>±10–15″ residual vs Swiss Ephemeris; well below nakshatra-boundary tolerance</td></tr>
+        <tr><td>Timezone offset is standard-time only (no DST)</td><td>Times may be off by 1 h during DST in DST-observing regions</td></tr>
+        <tr><td>Sunrise zenith fixed at 90.833° (sea-level)</td><td>At elevated cities (Bengaluru, Kathmandu) sunrise may be 1–3 min early</td></tr>
         <tr><td>Moudhyam elongation ±3°</td><td>Combustion period start/end off by ±3–5 days</td></tr>
-        <tr><td>Eclipse type from β (latitude) only</td><td>Penumbral eclipses may be mis-classified as partial</td></tr>
+        <tr><td>Eclipse classification is geocentric only</td><td>Solar eclipses near the central/partial limit may differ from path-of-totality maps; cross-check with NASA for high-stakes uses</td></tr>
+        <tr><td>Solar eclipse visibility = "daytime at location"</td><td>True visibility requires the location to be on the eclipse path; consult authoritative maps</td></tr>
         <tr><td>Adhika/Nija detection near Sankranti boundary</td><td>Extremely rare mis-label (~once per decade)</td></tr>
         <tr><td>No birth-chart context</td><td>Auspiciousness is generic — personal Dasha/Antardasha and natal chart not considered</td></tr>
       </table>
+    </div>
+  </details>
+
+  <!-- Security & Privacy -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-lock" aria-hidden="true"></i> Security &amp; Privacy</summary>
+    <div class="ab-body">
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.65;margin-bottom:10px;">
+        Everything you see is computed in your browser. The app has <strong style="color:var(--text-primary);">no backend</strong>, makes <strong style="color:var(--text-primary);">no network requests</strong> after the initial page load, and stores <strong style="color:var(--text-primary);">nothing</strong> across sessions (no cookies, no localStorage, no telemetry). Your location, dates, and searches never leave this tab.
+      </div>
+      <table class="ab-tbl">
+        <tr><th>Defence</th><th>What it does</th></tr>
+        <tr><td><strong>Content-Security-Policy</strong></td><td>Restricts script/style/font/img sources. <code>connect-src 'none'</code> blocks any runtime exfiltration. <code>frame-ancestors 'none'</code> prevents clickjacking.</td></tr>
+        <tr><td><strong>Subresource Integrity</strong></td><td>Tabler Icons CDN pinned to a SHA-384 hash — CDN compromise → browser refuses the file.</td></tr>
+        <tr><td><strong>Referrer policy</strong></td><td><code>no-referrer</code> globally, so font/icon requests do not leak the page URL.</td></tr>
+        <tr><td><strong>HTML escaping</strong></td><td>An <code>esc()</code> helper wraps every interpolation of <code>LOC.name</code> into HTML so a future code path that brings in untrusted location strings can't inject markup.</td></tr>
+        <tr><td><strong>Input validation</strong></td><td>Lat/lon range-checked; <code>NaN</code>/<code>Infinity</code> rejected. Date inputs verified before use. <code>parseInt</code> always with radix and finite-number guard.</td></tr>
+        <tr><td><strong>Geolocation</strong></td><td>Not auto-requested on load (cold prompt is poor UX and often auto-denied). User clicks "Auto-detect" explicitly; 10 s timeout; error codes translated to readable messages. Coordinates never leave the browser.</td></tr>
+        <tr><td><strong>Cache bounding</strong></td><td>All caches soft-capped at 5000 entries; oldest 1000 dropped when exceeded.</td></tr>
+      </table>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;line-height:1.6;">
+        Residual risks: inline event handlers prevent the strictest CSP variant (no <code>'unsafe-inline'</code>); Google Fonts cannot be SRI-pinned because its CSS varies per user-agent. If you self-host, both concerns disappear.
+      </div>
     </div>
   </details>
 
@@ -467,22 +510,30 @@ button.action:hover{background:var(--bg-tertiary);}
 /* ─────────────────────────────────────────────────────────── */
 const D2R=Math.PI/180,R2D=180/Math.PI;
 const nm=d=>((d%360)+360)%360;
-let LOC={lat:42.360,lon:-71.059,name:"Boston"};
+let LOC={lat:42.360,lon:-71.059,name:"Boston",tz:-300};
+// HTML-escape helper for any string that ends up in innerHTML.
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// Approximate civil tz from longitude (no DST awareness; rounds toward nearest 15-min).
+// 1° lon = 4 min mean solar time; we round to the nearest 15-min step so India (+5:30),
+// Nepal (+5:45), Newfoundland (-3:30) etc. land in reasonable zones.
+const tzFromLon=lon=>Math.round(lon*4/15)*15;
 
 const SAMVATSARA=["Prabhava","Vibhava","Shukla","Pramoda","Prajapati","Angirasa","Shrimukha","Bhava","Yuva","Dhata","Ishvara","Bahudhanya","Pramathi","Vikrama","Vrisha","Chitrabhanu","Subhanu","Tarana","Parthiva","Vyaya","Sarvajit","Sarvadharin","Virodhi","Vikrita","Khara","Nandana","Vijaya","Jaya","Manmatha","Durmukhi","Hevilambi","Vilambi","Vikari","Sharvari","Plava","Shubhakrit","Shobhakrit","Krodhi","Vishvavasu","Parabhava","Plavanga","Keelaka","Saumya","Sadharana","Virodhikrit","Paridhavi","Pramadi","Ananda","Rakshasa","Nala","Pingala","Kalayukti","Siddharthi","Raudra","Durmati","Dundubhi","Rudhirodgari","Raktakshi","Krodhana","Akshaya"];
 const RITU=[{name:"Vasanta",en:"Spring",rng:"Mesha–Vrishabha"},{name:"Grishma",en:"Summer",rng:"Mithuna–Karka"},{name:"Varsha",en:"Monsoon",rng:"Simha–Kanya"},{name:"Sharad",en:"Autumn",rng:"Tula–Vrischika"},{name:"Hemanta",en:"Pre-winter",rng:"Dhanu–Makara"},{name:"Shishira",en:"Winter",rng:"Kumbha–Meena"}];
+// tz = standard-time UTC offset in minutes (no DST applied; users in DST regions
+// will see times off by 60 min during the active DST period).
 const CITIES=[
-  {name:"Boston",lat:42.360,lon:-71.059},
-  {name:"Delhi",lat:28.614,lon:77.209},{name:"Mumbai",lat:19.076,lon:72.878},{name:"Chennai",lat:13.083,lon:80.270},
-  {name:"Kolkata",lat:22.573,lon:88.363},{name:"Bengaluru",lat:12.972,lon:77.594},{name:"Hyderabad",lat:17.387,lon:78.491},
-  {name:"Ahmedabad",lat:23.023,lon:72.571},{name:"Pune",lat:18.520,lon:73.856},{name:"Jaipur",lat:26.912,lon:75.788},
-  {name:"Varanasi",lat:25.318,lon:82.975},{name:"Prayagraj",lat:25.436,lon:81.844},{name:"Haridwar",lat:29.945,lon:78.164},
-  {name:"Tirupati",lat:13.628,lon:79.420},{name:"Mathura",lat:27.496,lon:77.674},{name:"Ujjain",lat:23.183,lon:75.779},
-  {name:"Kochi",lat:9.931,lon:76.267},{name:"Kathmandu",lat:27.700,lon:85.318},{name:"Colombo",lat:6.927,lon:79.862},
-  {name:"New York",lat:40.713,lon:-74.006},{name:"London",lat:51.507,lon:-0.128},{name:"Dubai",lat:25.204,lon:55.270},
-  {name:"Singapore",lat:1.352,lon:103.820},{name:"Sydney",lat:-33.869,lon:151.209},{name:"Toronto",lat:43.651,lon:-79.347},
-  {name:"San Francisco",lat:37.779,lon:-122.418},{name:"Chicago",lat:41.878,lon:-87.630},{name:"Houston",lat:29.760,lon:-95.370},
-  {name:"Auckland",lat:-36.848,lon:174.763},{name:"Nairobi",lat:-1.292,lon:36.822},{name:"Johannesburg",lat:-26.204,lon:28.047},
+  {name:"Boston",lat:42.360,lon:-71.059,tz:-300},
+  {name:"Delhi",lat:28.614,lon:77.209,tz:330},{name:"Mumbai",lat:19.076,lon:72.878,tz:330},{name:"Chennai",lat:13.083,lon:80.270,tz:330},
+  {name:"Kolkata",lat:22.573,lon:88.363,tz:330},{name:"Bengaluru",lat:12.972,lon:77.594,tz:330},{name:"Hyderabad",lat:17.387,lon:78.491,tz:330},
+  {name:"Ahmedabad",lat:23.023,lon:72.571,tz:330},{name:"Pune",lat:18.520,lon:73.856,tz:330},{name:"Jaipur",lat:26.912,lon:75.788,tz:330},
+  {name:"Varanasi",lat:25.318,lon:82.975,tz:330},{name:"Prayagraj",lat:25.436,lon:81.844,tz:330},{name:"Haridwar",lat:29.945,lon:78.164,tz:330},
+  {name:"Tirupati",lat:13.628,lon:79.420,tz:330},{name:"Mathura",lat:27.496,lon:77.674,tz:330},{name:"Ujjain",lat:23.183,lon:75.779,tz:330},
+  {name:"Kochi",lat:9.931,lon:76.267,tz:330},{name:"Kathmandu",lat:27.700,lon:85.318,tz:345},{name:"Colombo",lat:6.927,lon:79.862,tz:330},
+  {name:"New York",lat:40.713,lon:-74.006,tz:-300},{name:"London",lat:51.507,lon:-0.128,tz:0},{name:"Dubai",lat:25.204,lon:55.270,tz:240},
+  {name:"Singapore",lat:1.352,lon:103.820,tz:480},{name:"Sydney",lat:-33.869,lon:151.209,tz:600},{name:"Toronto",lat:43.651,lon:-79.347,tz:-300},
+  {name:"San Francisco",lat:37.779,lon:-122.418,tz:-480},{name:"Chicago",lat:41.878,lon:-87.630,tz:-360},{name:"Houston",lat:29.760,lon:-95.370,tz:-360},
+  {name:"Auckland",lat:-36.848,lon:174.763,tz:720},{name:"Nairobi",lat:-1.292,lon:36.822,tz:180},{name:"Johannesburg",lat:-26.204,lon:28.047,tz:120},
 ];
 const TI=[
   {n:1,name:"Pratipada",pak:"Shukla",q:"good"},{n:2,name:"Dwitiya",pak:"Shukla",q:"good"},{n:3,name:"Tritiya",pak:"Shukla",q:"good"},
@@ -519,7 +570,12 @@ const HM=["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","As
 const RASHI=["Mesha","Vrishabha","Mithuna","Karka","Simha","Kanya","Tula","Vrischika","Dhanu","Makara","Kumbha","Meena"];
 const RASHI_EN=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 const MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
-const GULIKA=[7,6,5,4,3,2,1],AMRITA={0:12,1:4,2:0,3:3,4:6,5:16,6:21};
+const GULIKA=[7,6,5,4,3,2,1];
+// Amrita Siddhi Yoga: traditional vara × nakshatra pairings (Brihat Samhita / common almanacs).
+// Key = date.getDay() (0=Sun … 6=Sat).  Value = 0-based nakshatra index into NK[].
+// Canonical: Sun→Hasta(12), Mon→Mrigashira(4), Tue→Ashwini(0), Wed→Anuradha(16),
+//            Thu→Pushya(7), Fri→Revati(26), Sat→Rohini(3).
+const AMRITA={0:12,1:4,2:0,3:16,4:7,5:26,6:3};
 
 /* ─────────────────────────────────────────────────────────── */
 /*  FESTIVAL DEFINITIONS                                       */
@@ -767,7 +823,10 @@ function mlong(J){
   for(const[d,m,mp,f,c]of T47){const ef=m===0?1:Math.abs(m)===1?E:E*E;sl+=c*ef*Math.sin(d*D+m*M+mp*Mp+f*F);}
   return nm(L0+sl*1e-6);
 }
-function ayan(J){return 23.853+(J-2451545)/36525*1.397;}
+// Lahiri (Chitrapaksha) ayanamsha — government-of-India standard.
+// Epoch value 23.85° at J2000, rate 50.2719″/yr = 1.39644°/century (IAU/IIA).
+// Note: this approximation excludes the small nutation term used by Swiss Ephemeris (~±15″).
+function ayan(J){return 23.85+(J-2451545)/36525*1.39644;}
 
 /* ─────────────────────────────────────────────────────────── */
 /*  PLANETARY POSITIONS & MOUDHYAM (Guru / Sukra combustion)  */
@@ -828,8 +887,11 @@ function getSunTimes(date,lat,lon){
   const eot=4*((y2*Math.sin(2*L0r)-2*e*Math.sin(Mr)+4*e*y2*Math.sin(Mr)*Math.cos(2*L0r)-0.5*y2*y2*Math.sin(4*L0r)-1.25*e*e*Math.sin(2*Mr))*R2D);
   const cosH=(Math.cos(90.833*D2R)-Math.sin(lat*D2R)*sinDec)/(Math.cos(lat*D2R)*Math.cos(dec));
   if(Math.abs(cosH)>1)return{sunrise:6*60,sunset:18*60,solarNoon:12*60};
-  const H=Math.acos(cosH)*R2D,nu=720-4*lon-eot,tzOff=-date.getTimezoneOffset();
-  return{sunrise:((nu-H*4)+tzOff+1440)%1440,sunset:((nu+H*4)+tzOff+1440)%1440,solarNoon:(nu+tzOff+1440)%1440};
+  const H=Math.acos(cosH)*R2D,nu=720-4*lon-eot;
+  // Use the location's tz (from CITIES or estimated from lon) so a Boston user
+  // viewing Delhi sees Delhi-local sunrise, not Boston-local sunrise.
+  const tzOff=(typeof LOC.tz==='number')?LOC.tz:-date.getTimezoneOffset();
+  return{sunrise:((nu-H*4)+tzOff+1440)%1440,sunset:((nu+H*4)+tzOff+1440)%1440,solarNoon:(nu+tzOff+1440)%1440,tz:tzOff};
 }
 
 function getHY(date){
@@ -915,13 +977,15 @@ function phaseJDE(ki,isFull){
   return J;
 }
 function moonAlt(J,lat,lon){
-  const T=(J-2451545)/36525;
+  const T=(J-2451545)/36525,T3=T*T*T;
   const ml=mlong(J)*D2R,mb=moonLat(J)*D2R,eps=(23.439291111-0.013004167*T)*D2R;
   const sinDec=Math.sin(mb)*Math.cos(eps)+Math.cos(mb)*Math.sin(eps)*Math.sin(ml);
   const dec=Math.asin(Math.max(-1,Math.min(1,sinDec)));
   const ra=Math.atan2(Math.sin(ml)*Math.cos(eps)-Math.tan(mb)*Math.sin(eps),Math.cos(ml));
-  const GMST=nm(280.46061837+360.98564736629*(J-2451545)+0.000387933*T*T)*D2R;
-  const HA=GMST+lon*D2R-ra;
+  // Greenwich mean sidereal time — Meeus 12.4 with cubic term included.
+  const GMST=nm(280.46061837+360.98564736629*(J-2451545)+0.000387933*T*T-T3/38710000)*D2R;
+  // Normalise hour angle to (−π, π] so the cos is read from the closer principal value.
+  let HA=GMST+lon*D2R-ra;HA=((HA+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
   return Math.asin(Math.sin(lat*D2R)*sinDec+Math.cos(lat*D2R)*Math.cos(dec)*Math.cos(HA))*R2D;
 }
 function sunDecl(J){
@@ -930,10 +994,12 @@ function sunDecl(J){
 }
 function eclipseData(ki,isFull){
   const J=phaseJDE(ki,isFull),beta=moonLat(J),ab=Math.abs(beta);
-  if(ab>1.57)return null;
+  // 1.60° covers all real penumbral lunar eclipses (penumbra ~1.16° + Moon ~0.27° + margin).
+  if(ab>1.60)return null;
   let type;
-  if(isFull)type=ab<=0.58?'Total Lunar':ab<=1.04?'Partial Lunar':'Penumbral Lunar';
-  else type=ab<=1.00?'Total/Annular Solar':'Partial Solar';
+  if(isFull)type=ab<=0.47?'Total Lunar':ab<=1.04?'Partial Lunar':'Penumbral Lunar';
+  // Solar: geocentric |β| < ~0.99° is the central-limit equivalent (γ ≈ 1 Earth-radius).
+  else type=ab<=0.99?'Total/Annular Solar':'Partial Solar';
   return{type,jde:J,date:jdToLocal(J),beta:ab,isSolar:!isFull};
 }
 function addVisibility(e){
@@ -942,7 +1008,11 @@ function addVisibility(e){
     const d=new Date(e.date),st=getSunTimes(d,LOC.lat,LOC.lon);
     const em=e.date.getHours()*60+e.date.getMinutes();
     const isDaytime=em>st.sunrise&&em<st.sunset;
-    return{...e,visible:isDaytime&&Math.abs(LOC.lat-sunDecl(e.jde))<70,isDaytime};
+    // Visibility = "daytime here". The previous |LOC.lat − sunDecl| < 70° heuristic
+    // wrongly rejected eclipses at high latitudes in winter; we leave path-of-totality
+    // determination to authoritative sources (NASA / timeanddate.com) and only flag
+    // "you would see SOMETHING during daylight hours" here.
+    return{...e,visible:isDaytime,isDaytime};
   } else {
     const alt=moonAlt(e.jde,LOC.lat,LOC.lon);
     return{...e,visible:alt>-0.5,alt:Math.round(alt)};
@@ -996,8 +1066,10 @@ function findEnd(date,getFn){
   for(let i=1;i<=216;i++){const Jc=Jn+i*step;if(getFn(Jc)!==cur){Jlo=Jc-step;Jhi=Jc;break;}}
   if(Jlo===null)return{fmted:"next day",isToday:false};
   for(let i=0;i<24;i++){const m=(Jlo+Jhi)/2;if(getFn(m)===cur)Jlo=m;else Jhi=m;}
-  const ed=jdToLocal(Jhi),nextDay=new Date(midnight.getTime()+86400000);
-  return{fmted:fmtT(ed),isToday:ed>=midnight&&ed<nextDay};
+  const ed=jdToLocal(Jhi);
+  // Day offset from the calendar date: 0 = today, 1 = tomorrow, 2+ = N days away.
+  const dayDelta=Math.floor((ed-midnight)/86400000);
+  return{fmted:fmtT(ed),isToday:dayDelta===0,dayDelta};
 }
 function calcTr(date){
   return{tithi:findEnd(date,getTiIdx),naksh:findEnd(date,getNkIdx),yoga:findEnd(date,getYgIdx),karana:findEnd(date,getKrIdx)};
@@ -1022,8 +1094,11 @@ function calcP(date,Joverride){
   const st=getSunTimes(date,LOC.lat,LOC.lon),dayLen=st.sunset-st.sunrise,pt=dayLen/8;
   const rS=st.sunrise+(vara.rahu-1)*pt,gS=st.sunrise+(GULIKA[date.getDay()]-1)*pt;
   const rahuK={s:fmtMin(rS),e:fmtMin(rS+pt)},guliK={s:fmtMin(gS),e:fmtMin(gS+pt)};
-  const abhijit={s:fmtMin(st.solarNoon-24),e:fmtMin(st.solarNoon+24)};
-  const brahma={s:fmtMin(st.sunrise-96),e:fmtMin(st.sunrise-48)};
+  // Abhijit = 8th of the 15 day-muhurthas (centred on solar noon).
+  // Brahma  = 14th of the 15 night-muhurthas, ending one night-muhurtha before sunrise.
+  const dMu=dayLen/15,nightLen=1440-dayLen,nMu=nightLen/15;
+  const abhijit={s:fmtMin(st.solarNoon-dMu/2),e:fmtMin(st.solarNoon+dMu/2)};
+  const brahma={s:fmtMin(st.sunrise-2*nMu),e:fmtMin(st.sunrise-nMu)};
   const sid=nm(sl-ay);
   const masaInfo=getLunarMasaInfo(J);
   const hm=masaInfo.fullName;
@@ -1046,16 +1121,23 @@ function calcP(date,Joverride){
     hm,masaInfo,special,score,moudhyam,nextTithi:TI[(tIdx+1)%30],nextNaksh:NK[(nIdx+1)%27],nextYoga:YG[(Math.floor(nm(sl+ml-2*ay)/(360/27))%27+1)%27]};
 }
 
-const pcache={},tcache={};
+const pcache={},tcache={};const CACHE_MAX=5000;
+// Soft cap: when a cache exceeds CACHE_MAX entries, drop the 1000 oldest insertions.
+// Prevents unbounded growth if a user clicks "next month" thousands of times.
+function cacheSet(cache,k,v){
+  cache[k]=v;
+  const keys=Object.keys(cache);
+  if(keys.length>CACHE_MAX){for(let i=0;i<1000;i++)delete cache[keys[i]];}
+}
 function gp(date){
   const k=`${LOC.lat.toFixed(1)}${LOC.lon.toFixed(1)}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-  if(!pcache[k])pcache[k]=calcP(date);return pcache[k];
+  if(!pcache[k])cacheSet(pcache,k,calcP(date));return pcache[k];
 }
 function gt(date){
   const k=`tr-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-  if(!tcache[k])tcache[k]=calcTr(date);return tcache[k];
+  if(!tcache[k])cacheSet(tcache,k,calcTr(date));return tcache[k];
 }
-function clearPCache(){for(const k in pcache)delete pcache[k];}
+function clearPCache(){for(const k in pcache)delete pcache[k];for(const k in tcache)delete tcache[k];for(const k in edCache)delete edCache[k];for(const k in festDayCache)delete festDayCache[k];}
 
 /* ─────────────────────────────────────────────────────────── */
 /*  UI HELPERS                                                 */
@@ -1120,9 +1202,14 @@ function onCitySel(){
 }
 function applyCustomLoc(){
   const la=parseFloat(document.getElementById('lat-in').value),lo=parseFloat(document.getElementById('lon-in').value);
-  if(isNaN(la)||isNaN(lo)){document.getElementById('loc-status').textContent='Enter valid coordinates';return;}
+  if(!isFinite(la)||!isFinite(lo)||la<-90||la>90||lo<-180||lo>180){
+    document.getElementById('loc-status').textContent='Coordinates out of range (lat ±90, lon ±180)';return;
+  }
   const sel=document.getElementById('city-sel').value;
-  LOC={lat:la,lon:lo,name:sel||`${la.toFixed(2)}°, ${lo.toFixed(2)}°`};
+  const matchedCity=sel?CITIES.find(c=>c.name===sel):null;
+  // tz: prefer matched city's tz, else estimate from longitude.
+  const tz=matchedCity&&typeof matchedCity.tz==='number'?matchedCity.tz:tzFromLon(lo);
+  LOC={lat:la,lon:lo,name:sel||`${la.toFixed(2)}°, ${lo.toFixed(2)}°`,tz};
   clearPCache();document.getElementById('loc-picker').style.display='none';document.getElementById('loc-status').textContent='';
   renderAll();
 }
@@ -1131,17 +1218,21 @@ function detectLoc(){
   if(!navigator.geolocation){document.getElementById('loc-status').textContent='Geolocation not supported';return;}
   navigator.geolocation.getCurrentPosition(pos=>{
     const la=pos.coords.latitude,lo=pos.coords.longitude;
-    let nm2=`${la.toFixed(2)}°, ${lo.toFixed(2)}°`,minD=Infinity;
-    for(const c of CITIES){const d=Math.abs(c.lat-la)+Math.abs(c.lon-lo);if(d<minD){minD=d;if(d<3)nm2=c.name;}}
-    LOC={lat:la,lon:lo,name:nm2};clearPCache();
+    let nm2=`${la.toFixed(2)}°, ${lo.toFixed(2)}°`,matched=null,minD=Infinity;
+    for(const c of CITIES){const d=Math.abs(c.lat-la)+Math.abs(c.lon-lo);if(d<minD){minD=d;if(d<3){nm2=c.name;matched=c;}}}
+    const tz=matched&&typeof matched.tz==='number'?matched.tz:tzFromLon(lo);
+    LOC={lat:la,lon:lo,name:nm2,tz};clearPCache();
     document.getElementById('loc-picker').style.display='none';document.getElementById('loc-status').textContent='';
     document.getElementById('lat-in').value=la.toFixed(4);document.getElementById('lon-in').value=lo.toFixed(4);
     renderAll();
-  },()=>{document.getElementById('loc-status').textContent='Could not detect';});
+  },err=>{
+    const msg={1:'Permission denied',2:'Position unavailable',3:'Geolocation timeout'}[err&&err.code]||'Could not detect';
+    document.getElementById('loc-status').textContent=msg;
+  },{timeout:10000,maximumAge:600000,enableHighAccuracy:false});
 }
 function buildCitySelect(){
   let h='<option value="">— select city —</option>';
-  for(const c of CITIES)h+=`<option value="${c.name}">${c.name}</option>`;
+  for(const c of CITIES){const n=esc(c.name);h+=`<option value="${n}">${n}</option>`;}
   document.getElementById('city-sel').innerHTML=h;
 }
 
@@ -1235,20 +1326,24 @@ function chM(delta){vM+=delta;if(vM>11){vM=0;vY++;}if(vM<0){vM=11;vY--;}renderCa
 /* ─────────────────────────────────────────────────────────── */
 function renderPanch(){
   const ds=document.getElementById('pd').value,dt=ds?new Date(ds+'T12:00:00'):today;
-  // Compute panchanga at local sunrise (traditional reference for almanac values)
+  if(isNaN(dt.getTime())){document.getElementById('p-content').textContent='Invalid date';return;}
+  // Compute panchanga at local sunrise (traditional reference moment for almanac values).
+  // Jsr must be the TRUE UT JD of sunrise at LOC, so we back out LOC.tz from sunrise minutes.
   const st=getSunTimes(dt,LOC.lat,LOC.lon);
-  const Jsr=jd(dt)+(st.sunrise-720)/1440;   // shift from noon JD to sunrise JD
+  const J0=jd(dt)-0.5;                              // JD at UT-midnight of the date
+  const Jsr=J0+(st.sunrise-st.tz)/1440;             // (local-min − tz) = UT-min from UT-midnight
   const p=calcP(dt,Jsr),tr=gt(dt),hy=getHY(dt),ecl=getDayEclipse(dt);
   const fests=FEST.filter(r=>r.check(p,null));
   document.getElementById('p-hdate').textContent=`☀ ${RASHI[mi(p)]} · ${p.hm} masa · ${p.tithi.pak} Paksha`;
   renderYearStrip(dt);
   function aRow(lbl,val,sub,trObj,nextN,prog){
+    const dayLabel=trObj?(trObj.dayDelta===0?'':trObj.dayDelta===1?' (next day)':trObj.dayDelta>=2?` (+${trObj.dayDelta} days)`:''):'';
     const ep=trObj&&trObj.fmted
       ?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
-          <span class="pill-end${trObj.isToday?' td':''}"><i class="ti ti-clock" style="font-size:10px;" aria-hidden="true"></i> ends ${trObj.fmted}${!trObj.isToday?' (next day)':''}</span>
+          <span class="pill-end${trObj.isToday?' td':''}"><i class="ti ti-clock" style="font-size:10px;" aria-hidden="true"></i> ends ${trObj.fmted}${dayLabel}</span>
           ${nextN?`<span style="font-size:10px;color:var(--text-tertiary);">→ <em>${nextN}</em></span>`:''}
         </div>`
-      :'<div style="font-size:10px;color:var(--text-tertiary);margin-top:3px;">continues next day</div>';
+      :'<div style="font-size:10px;color:var(--text-tertiary);margin-top:3px;">continues beyond search range</div>';
     const bar=prog!==undefined?`<div class="tbar"><div class="tfill" style="width:${prog}%;"></div></div>`:'';
     return`<div class="anga-row"><div class="anga-lbl">${lbl}</div><div class="anga-main"><div class="anga-val">${val}</div><div class="anga-sub">${sub}</div>${bar}${ep}</div></div>`;
   }
@@ -1272,7 +1367,7 @@ function renderPanch(){
     <div style="font-size:12px;font-weight:500;color:${eclC(ecl)};margin-bottom:3px;"><i class="ti ${ecl.isSolar?'ti-sun':'ti-moon'}" style="font-size:12px;" aria-hidden="true"></i> ${ecl.type} Eclipse</div>
     <div style="font-size:11px;color:var(--text-secondary);">Midpoint at ${fmtT(ecl.date)} local time · β=${ecl.beta.toFixed(2)}°</div>
     <div style="font-size:11px;color:${ecl.visible?eclC(ecl):'var(--text-tertiary)'};margin-top:2px;"><i class="ti ti-${ecl.visible?'eye':'eye-off'}" style="font-size:11px;" aria-hidden="true"></i>
-      ${ecl.isSolar?(ecl.visible?`Daytime at ${LOC.name} — partial eclipse likely visible; check eclipse maps for totality path.`:`Nighttime at ${LOC.name} — eclipse not visible.`):(ecl.visible?`Moon altitude ${ecl.alt}° — eclipse visible from ${LOC.name}.`:`Moon altitude ${ecl.alt}° — eclipse not visible from ${LOC.name}.`)}
+      ${ecl.isSolar?(ecl.visible?`Daytime at ${esc(LOC.name)} — partial eclipse likely visible; check eclipse maps for totality path.`:`Nighttime at ${esc(LOC.name)} — eclipse not visible.`):(ecl.visible?`Moon altitude ${ecl.alt}° — eclipse visible from ${esc(LOC.name)}.`:`Moon altitude ${ecl.alt}° — eclipse not visible from ${esc(LOC.name)}.`)}
     </div>
   </div>`:'';
   document.getElementById('p-content').innerHTML=`
@@ -1321,7 +1416,7 @@ function renderPanch(){
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div class="card">
-          <div class="sec-title">Solar times · ${LOC.name}</div>
+          <div class="sec-title">Solar times · ${esc(LOC.name)}</div>
           <div class="anga-row"><div class="anga-lbl">Sunrise</div><div class="anga-main"><div class="anga-val" style="color:var(--warn-text);">${p.sunrise}</div></div></div>
           <div class="anga-row"><div class="anga-lbl">Solar noon</div><div class="anga-main"><div class="anga-val">${p.solarNoon}</div></div></div>
           <div class="anga-row"><div class="anga-lbl">Sunset</div><div class="anga-main"><div class="anga-val" style="color:var(--text-tertiary);">${p.sunset}</div></div></div>
@@ -1393,7 +1488,10 @@ function getFestivalsForYear(year){
 }
 
 function renderFestivals(){
-  const year=parseInt(document.getElementById('fest-year').value);
+  const year=parseInt(document.getElementById('fest-year').value,10);
+  if(!Number.isFinite(year)||year<1900||year>2200){
+    document.getElementById('fest-list').textContent='Invalid year';return;
+  }
   const all=getFestivalsForYear(year);
   const filtered=all.filter(f=>
     festCat==='all'||(festCat==='major'&&f.cat==='major')||
@@ -1441,19 +1539,22 @@ function renderFestivals(){
 /* ─────────────────────────────────────────────────────────── */
 function renderEclipses(){
   const eclipses=getUpcomingEclipses(36);
+  // Capture LOC.name at queue time so the deferred render is consistent if the user
+  // changes location while the 10 ms setTimeout is pending.
+  const locName=esc(LOC.name);
   document.getElementById('ecl-list').innerHTML='<div style="font-size:12px;color:var(--text-tertiary);">Computing…</div>';
   setTimeout(()=>{
-    let h=`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${eclipses.length} eclipses · visibility for <strong>${LOC.name}</strong></div>`;
+    let h=`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${eclipses.length} eclipses · visibility for <strong>${locName}</strong></div>`;
     for(const e of eclipses){
       const isPast=e.date<today,col=eclC(e),bg=eclBg(e);
       const ds=e.date.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
       let vis,visCol;
       if(e.isSolar){
-        vis=e.visible?`Daytime — partial eclipse likely visible. Check NASA eclipse maps for totality path.`:`${e.isDaytime?'Daytime but low probability of totality path':'Nighttime'} at ${LOC.name} — not visible.`;
+        vis=e.visible?`Daytime — partial eclipse likely visible. Check NASA eclipse maps for totality path.`:`${e.isDaytime?'Daytime but low probability of totality path':'Nighttime'} at ${locName} — not visible.`;
         visCol=e.visible?col:'var(--text-tertiary)';
       } else {
         const altStr=e.alt>20?'well positioned':e.alt>5?'low in sky':e.alt>0?'on horizon':'below horizon';
-        vis=e.visible?`Moon ${e.alt}° — ${altStr}; eclipse visible from ${LOC.name}.`:`Moon ${e.alt}° (below horizon) — not visible from ${LOC.name}.`;
+        vis=e.visible?`Moon ${e.alt}° — ${altStr}; eclipse visible from ${locName}.`:`Moon ${e.alt}° (below horizon) — not visible from ${locName}.`;
         visCol=e.visible?col:'var(--text-tertiary)';
       }
       h+=`<div class="res-item" onclick="viewEclDate('${e.date.toISOString().split('T')[0]}')" style="${isPast?'opacity:0.55':''};${e.visible?`border-left:3px solid ${col};padding-left:11px;border-radius:0 var(--radius-lg) var(--radius-lg) 0`:''}">
@@ -1492,13 +1593,17 @@ function runSearch(){
   const ss=document.getElementById('ss').value,se=document.getElementById('se').value,sr=document.getElementById('sr');
   if(!ss||!se){sr.innerHTML='<p style="color:var(--danger-text);font-size:13px;padding:6px 0;">Select a date range.</p>';return;}
   const s0=new Date(ss+'T12:00:00'),s1=new Date(se+'T12:00:00');
-  if(Math.round((s1-s0)/86400000)<0||Math.round((s1-s0)/86400000)>365){sr.innerHTML='<p style="color:var(--danger-text);font-size:13px;padding:6px 0;">Max range 365 days.</p>';return;}
-  const minSc=parseInt(document.getElementById('ssc').value);
+  if(isNaN(s0.getTime())||isNaN(s1.getTime())){sr.innerHTML='<p style="color:var(--danger-text);font-size:13px;padding:6px 0;">Invalid date(s).</p>';return;}
+  const days=Math.round((s1-s0)/86400000);
+  if(days<0||days>365){sr.innerHTML='<p style="color:var(--danger-text);font-size:13px;padding:6px 0;">Range must be 0–365 days.</p>';return;}
+  const minSc=parseInt(document.getElementById('ssc').value,10);
+  if(!Number.isFinite(minSc)){return;}
   const nob=document.getElementById('snb').checked,nos=document.getElementById('sns').checked,noe=document.getElementById('sne').checked;
   const nosg=document.getElementById('snsg').checked,noss=document.getElementById('snss').checked;
-  const tf=[...document.querySelectorAll('.tc:checked')].map(c=>parseInt(c.value));
-  const nf=[...document.querySelectorAll('.nc:checked')].map(c=>parseInt(c.value));
-  const vf=[...document.querySelectorAll('.vc:checked')].map(c=>parseInt(c.value));
+  const toInt=c=>parseInt(c.value,10);
+  const tf=[...document.querySelectorAll('.tc:checked')].map(toInt).filter(Number.isFinite);
+  const nf=[...document.querySelectorAll('.nc:checked')].map(toInt).filter(Number.isFinite);
+  const vf=[...document.querySelectorAll('.vc:checked')].map(toInt).filter(Number.isFinite);
   const res=[];
   for(let d=new Date(s0);d<=s1;d.setDate(d.getDate()+1)){
     const p=gp(new Date(d));
@@ -1688,7 +1793,9 @@ function init(){
   const tp=gp(today);
   document.getElementById('hdr-sum').textContent=`${today.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})} · ${tp.tithi.pak} ${tp.tithi.name} · ${tp.naksh.name}`;
   renderCal();renderPanch();
-  detectLoc();
+  // Note: auto-geolocation on load was removed (cold-prompt is poor UX and many
+  // browsers auto-deny it). Default location is Boston; users can click "Auto-detect"
+  // in the location bar to fetch their current coordinates explicitly.
 }
 init();
 </script>
