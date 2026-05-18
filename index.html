@@ -1001,8 +1001,8 @@ function calcTr(date){
 /* ─────────────────────────────────────────────────────────── */
 /*  CORE PANCHANGA CALCULATION                                 */
 /* ─────────────────────────────────────────────────────────── */
-function calcP(date){
-  const J=jd(date),sl=slong(J),ml=mlong(J),ay=ayan(J),diff=nm(ml-sl);
+function calcP(date,Joverride){
+  const J=(Joverride!==undefined)?Joverride:jd(date),sl=slong(J),ml=mlong(J),ay=ayan(J),diff=nm(ml-sl);
   const tIdx=Math.floor(diff/12);
   const tithi={...TI[tIdx],tIdx,progress:Math.round((diff/12-tIdx)*100)};
   // Nakshatra: sidereal Moon longitude (tropical − ayanamsha)
@@ -1230,7 +1230,10 @@ function chM(delta){vM+=delta;if(vM>11){vM=0;vY++;}if(vM<0){vM=11;vY--;}renderCa
 /* ─────────────────────────────────────────────────────────── */
 function renderPanch(){
   const ds=document.getElementById('pd').value,dt=ds?new Date(ds+'T12:00:00'):today;
-  const p=gp(dt),tr=gt(dt),hy=getHY(dt),ecl=getDayEclipse(dt);
+  // Compute panchanga at local sunrise (traditional reference for almanac values)
+  const st=getSunTimes(dt,LOC.lat,LOC.lon);
+  const Jsr=jd(dt)+(st.sunrise-720)/1440;   // shift from noon JD to sunrise JD
+  const p=calcP(dt,Jsr),tr=gt(dt),hy=getHY(dt),ecl=getDayEclipse(dt);
   const fests=FEST.filter(r=>r.check(p,null));
   document.getElementById('p-hdate').textContent=`☀ ${RASHI[mi(p)]} · ${p.hm} masa · ${p.tithi.pak} Paksha`;
   renderYearStrip(dt);
@@ -1304,7 +1307,7 @@ function renderPanch(){
     })()}
     <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:12px;" class="two-col">
       <div class="card">
-        <div class="sec-title">Five Angas — with transition times</div>
+        <div class="sec-title">Five Angas <span style="font-weight:400;text-transform:none;letter-spacing:0;">· at sunrise ${p.sunrise}</span></div>
         ${aRow('Tithi',`${p.tithi.pak} ${p.tithi.name}`,`${p.tithi.n} of 30 · ${bdg(p.tithi.q)}`,tr.tithi,p.nextTithi?`${p.nextTithi.pak} ${p.nextTithi.name}`:null,p.tithi.progress)}
         ${aRow('Nakshatra',p.naksh.name,`Pada ${p.naksh.pada} · ${p.naksh.ruler} · ${p.naksh.nat} · ${bdg(p.naksh.q)}`,tr.naksh,p.nextNaksh?p.nextNaksh.name:null)}
         ${aRow('Yoga',p.yoga.name,`Nityayoga #${p.yoga.n} · ${bdg(p.yoga.q)}`,tr.yoga,p.nextYoga?p.nextYoga.name:null)}
