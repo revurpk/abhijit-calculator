@@ -284,7 +284,7 @@ button.action:hover{background:var(--bg-tertiary);}
     <div class="ab-body">
       <table class="ab-tbl">
         <tr><th>Function</th><th>Algorithm</th><th>Accuracy</th></tr>
-        <tr><td><code>jd()</code></td><td>Meeus Ch. 7 — Julian Day for local noon</td><td>exact</td></tr>
+        <tr><td><code>jd()</code></td><td>Meeus Ch. 7 — Julian Day baseline (local noon); Panchanga tab shifts to sunrise via <code>jd(dt)+(sr−720)/1440</code></td><td>exact</td></tr>
         <tr><td><code>slong()</code></td><td>VSOP87 simplified — apparent tropical Sun longitude</td><td>±0.003°</td></tr>
         <tr><td><code>mlong()</code></td><td>ELP2000 — full Meeus Table 47.A, 59 terms</td><td>±0.01°</td></tr>
         <tr><td><code>ayan()</code></td><td>Lahiri — 23.853° + 1.397°/century from J2000</td><td>±0.01°</td></tr>
@@ -304,6 +304,11 @@ button.action:hover{background:var(--bg-tertiary);}
   <details class="ab-sec">
     <summary><i class="ti ti-sun" aria-hidden="true"></i> Panchanga Elements</summary>
     <div class="ab-body">
+      <div style="font-size:11px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:7px 10px;margin-bottom:10px;color:var(--text-secondary);line-height:1.6;">
+        <i class="ti ti-sunrise" style="font-size:11px;color:var(--warn-text);" aria-hidden="true"></i>
+        All five angas on the <strong style="color:var(--text-primary);">Panchanga tab</strong> are evaluated at <strong style="color:var(--text-primary);">local sunrise</strong> for the selected date and location — the reference moment used by traditional printed almanacs.
+        The calendar grid uses noon as a representative snapshot for quick browsing.
+      </div>
       <div class="ab-elem">
         <div class="ab-el-name">Tithi <span class="ab-el-sub">Moon−Sun elongation ÷ 12°</span></div>
         <code class="ab-code">diff = nm(mlong − slong);  tIdx = ⌊diff / 12⌋  →  0–29</code>
@@ -327,7 +332,7 @@ button.action:hover{background:var(--bg-tertiary);}
       <div class="ab-elem" style="border-bottom:none;">
         <div class="ab-el-name">Vara <span class="ab-el-sub">weekday from calendar date</span></div>
         <code class="ab-code">vara = date.getDay()  (0 = Sun … 6 = Sat)</code>
-        <div class="ab-el-note">⚠ Hindu vara starts at sunrise; the date-based vara may be off by one for hours before sunrise</div>
+        <div class="ab-el-note">Hindu vara is sunrise-to-sunrise; <code>date.getDay()</code> is correct for the Panchanga tab (which samples at sunrise) and for daytime hours. It may be off by one only for the narrow pre-sunrise window on the calendar grid.</div>
       </div>
     </div>
   </details>
@@ -419,7 +424,7 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><th>Limitation</th><th>Impact</th></tr>
         <tr><td>Moon ±0.01° (59-term ELP2000)</td><td>Nakshatra / yoga transition times ±1–2 min</td></tr>
         <tr><td>Sun ±0.003° (VSOP87 simplified)</td><td>Minimal — adequate for all panchanga purposes</td></tr>
-        <tr><td>Vara uses calendar midnight, not sunrise</td><td>May be off by one vara for hours before sunrise</td></tr>
+        <tr><td>Vara derived from <code>date.getDay()</code></td><td>Correct for Panchanga tab (sunrise reference) and all daytime hours; may be off by one only in the narrow pre-sunrise window on the calendar grid</td></tr>
         <tr><td>Moudhyam elongation ±3°</td><td>Combustion period start/end off by ±3–5 days</td></tr>
         <tr><td>Eclipse type from β (latitude) only</td><td>Penumbral eclipses may be mis-classified as partial</td></tr>
         <tr><td>Adhika/Nija detection near Sankranti boundary</td><td>Extremely rare mis-label (~once per decade)</td></tr>

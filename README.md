@@ -107,8 +107,8 @@ html_panchanga_calendar.html
     │   calcTr()  — all four transitions for a date
     │
     ├── Core panchanga
-    │   calcP()   — full panchanga for a date
-    │   gp()      — cached wrapper for calcP()
+    │   calcP(date, Joverride?)  — full panchanga; optional JD overrides noon default
+    │   gp()      — cached wrapper for calcP() at noon (used by calendar grid)
     │   gt()      — cached wrapper for calcTr()
     │
     ├── Festival engine
@@ -142,9 +142,20 @@ function jd(date) { /* uses noon as reference point */ }
 function jdFull(date) { /* UTC-based, for precise moment calculations */ }
 ```
 
-`jd()` computes the Julian Day Number for **local noon** of the given date — used for daily panchanga values where the traditional Hindu day starts at sunrise.
+`jd()` computes the Julian Day Number for **local noon** of the given date. It is used as the baseline JD and by the calendar grid (`gp()`).
 
 `jdFull()` uses UTC hours/minutes/seconds — used for eclipse midpoints and transition binary searches.
+
+**Panchanga tab reference time — sunrise:**
+
+The Panchanga tab calls `calcP(date, Jsr)` where:
+```js
+const st  = getSunTimes(date, LOC.lat, LOC.lon);
+const Jsr = jd(date) + (st.sunrise - 720) / 1440;  // shift from noon to local sunrise
+```
+This follows the traditional almanac convention that panchanga values are read at the moment of sunrise. The calendar grid continues to use `gp()` (noon) for overview display and caching purposes.
+
+`calcP(date, Joverride?)` accepts an optional second argument. When provided it replaces the `jd(date)` noon value for all astronomical calculations (tithi, nakshatra, yoga, karana, masa, score, moudhyam). Calendar-date fields (vara weekday, `getSunTimes`) are not affected since they are derived from `date`, not `J`.
 
 **Standard formula** (Jean Meeus, *Astronomical Algorithms* Ch. 7):
 
@@ -1337,7 +1348,7 @@ This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 da
 | Moon longitude ±0.01° (Meeus 59-term ELP2000) | Transition times ±1 minute | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
 | Sun longitude ±0.003° | Minimal impact on panchanga | Already adequate |
 | Eclipse type threshold is β-only | Penumbral eclipses may be mis-classified | Acceptable for most users |
-| Vara starts at midnight not sunrise | Off by up to 6 hours for hours before sunrise | Switch to sunrise-based vara |
+| Vara (weekday) derived from `date.getDay()` | Correct for most of the day; may be off by one vara for the pre-sunrise hours (Hindu vara is sunrise-to-sunrise). The Panchanga tab computes at sunrise so this edge case rarely matters there; the calendar grid uses noon so it is always correct for noon onwards. | Acceptable for practical use |
 | Sunrise uses browser timezone | Correct for local wall-clock; incorrect if page opened with a different system timezone | Force timezone via `Intl.DateTimeFormat` |
 | No ayanamsha interpolation for sub-day calculations | Eclipse midpoint ayanamsha is slightly off | Sub-arcsecond correction; negligible |
 | Nakshatra and yoga previously used tropical Moon/Sun longitudes (fixed) | With the fix applied and the 59-term Moon formula, nakshatra is correct to ±1–2 min and yoga to ±3 min | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
