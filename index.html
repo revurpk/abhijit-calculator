@@ -103,6 +103,21 @@ button.action:hover{background:var(--bg-tertiary);}
 .legend{display:flex;gap:12px;margin-top:.7rem;flex-wrap:wrap;}
 .leg{font-size:11px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;}
 @media(max-width:600px){.two-col{grid-template-columns:1fr!important;}body{padding:.75rem .6rem 2rem;}}
+.ab-sec{background:var(--bg-primary);border:.5px solid var(--border-light);border-radius:var(--radius-lg);margin-bottom:6px;overflow:hidden;}
+.ab-sec>summary{padding:.75rem 1.1rem;font-size:13px;font-weight:500;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;}
+.ab-sec>summary::after{content:'›';margin-left:auto;font-size:16px;color:var(--text-tertiary);transition:transform .15s;}
+.ab-sec[open]>summary::after{transform:rotate(90deg);}
+.ab-sec summary::-webkit-details-marker{display:none;}
+.ab-body{padding:.5rem 1.1rem 1rem;border-top:.5px solid var(--border-light);}
+.ab-tbl{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;}
+.ab-tbl th{text-align:left;color:var(--text-tertiary);font-weight:500;padding:4px 6px 4px 0;border-bottom:.5px solid var(--border-light);}
+.ab-tbl td{padding:5px 6px 5px 0;border-bottom:.5px solid var(--border-light);color:var(--text-secondary);vertical-align:top;}
+.ab-tbl tr:last-child td{border-bottom:none;}
+.ab-elem{padding:8px 0;border-bottom:.5px solid var(--border-light);}
+.ab-el-name{font-size:13px;font-weight:500;margin-bottom:3px;}
+.ab-el-sub{font-size:11px;font-weight:400;color:var(--text-tertiary);margin-left:4px;}
+.ab-el-note{font-size:11px;color:var(--text-secondary);margin-top:3px;}
+.ab-code{font-family:ui-monospace,monospace;font-size:11px;background:var(--bg-secondary);padding:4px 8px;border-radius:4px;color:var(--text-primary);margin:4px 0;display:block;white-space:nowrap;overflow-x:auto;}
 </style>
 </head>
 <body>
@@ -142,6 +157,7 @@ button.action:hover{background:var(--bg-tertiary);}
   <button class="tab" onclick="showTab('festivals',this)"><i class="ti ti-confetti" aria-hidden="true"></i> Festivals</button>
   <button class="tab" onclick="showTab('eclipses',this)"><i class="ti ti-moon-stars" aria-hidden="true"></i> Eclipses</button>
   <button class="tab" onclick="showTab('search',this)"><i class="ti ti-search" aria-hidden="true"></i> Search</button>
+  <button class="tab" onclick="showTab('about',this)"><i class="ti ti-info-circle" aria-hidden="true"></i> About</button>
 </div>
 
 <!-- Calendar -->
@@ -249,6 +265,185 @@ button.action:hover{background:var(--bg-tertiary);}
   </div>
   <div id="sr"></div>
 </div>
+
+<!-- About -->
+<div class="panel" id="panel-about">
+
+  <div class="card" style="margin-bottom:1rem;">
+    <div style="font-size:14px;font-weight:500;margin-bottom:.4rem;">Hindu Panchanga Calculator</div>
+    <div style="font-size:12px;color:var(--text-secondary);line-height:1.65;">
+      A self-contained single-file web app — no server, no framework, no build step.
+      All five panchanga elements (tithi, nakshatra, yoga, karana, vara) plus lunar masa, eclipse, moudhyam, festivals, and auspiciousness scores are computed live in your browser using JavaScript astronomical models.
+      Results may differ from printed almanacs by minutes to a day depending on the element.
+    </div>
+  </div>
+
+  <!-- Astronomical Engine -->
+  <details class="ab-sec" open>
+    <summary><i class="ti ti-calculator" aria-hidden="true"></i> Astronomical Engine</summary>
+    <div class="ab-body">
+      <table class="ab-tbl">
+        <tr><th>Function</th><th>Algorithm</th><th>Accuracy</th></tr>
+        <tr><td><code>jd()</code></td><td>Meeus Ch. 7 — Julian Day for local noon</td><td>exact</td></tr>
+        <tr><td><code>slong()</code></td><td>VSOP87 simplified — apparent tropical Sun longitude</td><td>±0.003°</td></tr>
+        <tr><td><code>mlong()</code></td><td>ELP2000 — full Meeus Table 47.A, 59 terms</td><td>±0.01°</td></tr>
+        <tr><td><code>ayan()</code></td><td>Lahiri — 23.853° + 1.397°/century from J2000</td><td>±0.01°</td></tr>
+        <tr><td><code>getSunTimes()</code></td><td>NOAA solar algorithm — sunrise / solar noon / sunset</td><td>±1 min</td></tr>
+        <tr><td><code>moonLat()</code></td><td>ELP2000 latitude, 15 terms — used for eclipse geometry</td><td>±0.1°</td></tr>
+        <tr><td><code>getPlanetElongation()</code></td><td>Meeus Ch. 31 heliocentric → geocentric (Kepler, 5 iterations)</td><td>±3°</td></tr>
+      </table>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;line-height:1.6;">
+        <strong style="color:var(--text-primary);">Sidereal vs tropical:</strong>
+        <code style="font-family:monospace;">sidereal = nm(tropical − ayan)</code> — used for nakshatra, yoga, masa identification, and rashi.
+        Tithi and karana use the Moon−Sun difference, where ayanamsha cancels and tropical values suffice.
+      </div>
+    </div>
+  </details>
+
+  <!-- Panchanga Elements -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-sun" aria-hidden="true"></i> Panchanga Elements</summary>
+    <div class="ab-body">
+      <div class="ab-elem">
+        <div class="ab-el-name">Tithi <span class="ab-el-sub">Moon−Sun elongation ÷ 12°</span></div>
+        <code class="ab-code">diff = nm(mlong − slong);  tIdx = ⌊diff / 12⌋  →  0–29</code>
+        <div class="ab-el-note">0–14: Shukla Pratipada → Purnima &nbsp;·&nbsp; 15–29: Krishna Pratipada → Amavasya &nbsp;·&nbsp; duration ~19–26 h</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Nakshatra <span class="ab-el-sub">sidereal Moon ÷ 13°20′</span></div>
+        <code class="ab-code">nRaw = nm(mlong − ayan) / (360/27);  nIdx = ⌊nRaw⌋;  pada = ⌊(nRaw − nIdx)×4⌋ + 1</code>
+        <div class="ab-el-note">27 nakshatras × 4 padas = 108 navamshas &nbsp;·&nbsp; average duration ~27 h 13 min</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Yoga <span class="ab-el-sub">sidereal (Sun+Moon) sum ÷ 13°20′</span></div>
+        <code class="ab-code">yIdx = ⌊nm(slong + mlong − 2·ayan) / (360/27)⌋ % 27</code>
+        <div class="ab-el-note">27 yogas &nbsp;·&nbsp; ayanamsha subtracted twice (once per body) &nbsp;·&nbsp; duration ~12–26 h, advances faster than nakshatra</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Karana <span class="ab-el-sub">Moon−Sun elongation ÷ 6°  (½ tithi)</span></div>
+        <code class="ab-code">kIdx = ⌊diff / 6⌋  (0–59 per lunation)</code>
+        <div class="ab-el-note">11 types: 7 movable (Bava, Balava, Kaulava, Taitila, Garija, Vanija, Vishti) cycle from kIdx 1–56 &nbsp;·&nbsp; 4 fixed at month boundaries (Kimstughna, Shakuni, Chatushpada, Naga)</div>
+      </div>
+      <div class="ab-elem" style="border-bottom:none;">
+        <div class="ab-el-name">Vara <span class="ab-el-sub">weekday from calendar date</span></div>
+        <code class="ab-code">vara = date.getDay()  (0 = Sun … 6 = Sat)</code>
+        <div class="ab-el-note">⚠ Hindu vara starts at sunrise; the date-based vara may be off by one for hours before sunrise</div>
+      </div>
+    </div>
+  </details>
+
+  <!-- Lunar Month -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-moon" aria-hidden="true"></i> Lunar Month (Masa) — Amanta System</summary>
+    <div class="ab-body">
+      <div style="font-size:12px;line-height:1.65;color:var(--text-secondary);margin-bottom:10px;">
+        A lunar month runs new-moon to new-moon and is named for the <strong style="color:var(--text-primary);">Sankranti</strong> (solar rashi entry) that falls within it.
+        Let r₀ = Sun's sidereal rashi at the current new moon, r₁ = rashi at the next new moon.
+      </div>
+      <table class="ab-tbl">
+        <tr><th>r₀ vs r₁</th><th>Type</th><th>Name</th><th>Significance</th></tr>
+        <tr><td>r₀ ≠ r₁</td><td>Normal (or Nija)</td><td>HM[r₁]</td><td>Standard muhurtha rules apply</td></tr>
+        <tr><td>r₀ = r₁</td><td>Adhika (intercalary)</td><td>HM[r₂]</td><td>Avoid new ventures; merit for religious acts</td></tr>
+      </table>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;line-height:1.6;">
+        <em>Nija</em> = the regular month immediately following an adhika month.
+        Adhika months occur ~every 2.5–3 years, when the Sun stays in one rashi across two consecutive new moons (near aphelion, ~July). 2026 has Adhika Jyeshtha (June).
+      </div>
+    </div>
+  </details>
+
+  <!-- Auspiciousness Score -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-star" aria-hidden="true"></i> Auspiciousness Score</summary>
+    <div class="ab-body">
+      <code class="ab-code">score = 50  +  tithi  +  nakshatra  +  yoga×0.6  +  karana×0.5  +  vara  +  specials×10</code>
+      <div style="font-size:11px;color:var(--text-secondary);margin:8px 0 6px;">
+        Quality weights: <strong>excellent</strong> +20 &nbsp;·&nbsp; <strong>good</strong> +10 &nbsp;·&nbsp; <strong>mixed</strong> 0 &nbsp;·&nbsp; <strong>bad</strong> −15.
+        Clamped to [5, 100]. Active moudhyam subtracts 5 per planet.
+      </div>
+      <div style="font-size:11px;font-weight:500;color:var(--text-primary);margin-bottom:5px;">Special yogas (+10 each):</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        <span class="spbdg">Amrita Siddhi Yoga</span>
+        <span class="spbdg">Pushya nakshatra</span>
+        <span class="spbdg">Rohini nakshatra</span>
+        <span class="spbdg">Purnima</span>
+        <span class="spbdg">Amavasya</span>
+        <span class="spbdg">Ekadashi</span>
+        <span class="spbdg">Saubhagya / Siddhi / Siddha yoga</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;">
+        Amrita Siddhi Yoga fires when vara × nakshatra match the traditional AMRITA table:
+        Sun→Hasta, Mon→Rohini, Tue→Ashwini, Wed→Mrigashira, Thu→Punarvasu, Fri→Swati, Sat→Vishakha.
+      </div>
+    </div>
+  </details>
+
+  <!-- Daily Periods -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-clock" aria-hidden="true"></i> Daily Auspicious &amp; Inauspicious Periods</summary>
+    <div class="ab-body">
+      <table class="ab-tbl">
+        <tr><th>Period</th><th>Definition</th></tr>
+        <tr><td><strong>Rahu Kalam</strong></td><td>Day (sunrise→sunset) ÷ 8 equal parts; the Rahu-ruled part: Sun=8, Mon=2, Tue=7, Wed=5, Thu=6, Fri=4, Sat=3</td></tr>
+        <tr><td><strong>Gulika Kalam</strong></td><td>Same 8-part division; Saturn/Gulika part: Sun=7, Mon=6, Tue=5, Wed=4, Thu=3, Fri=2, Sat=1</td></tr>
+        <tr><td><strong>Abhijit Muhurtha</strong></td><td>Solar noon ±24 min — the strongest muhurtha of the day, overrides negative influences</td></tr>
+        <tr><td><strong>Brahma Muhurtha</strong></td><td>Sunrise −96 to −48 min — ideal for meditation and study</td></tr>
+        <tr><td><strong>Amrita Kalam</strong></td><td>Varies by vara × nakshatra (AMRITA table); ~48 min window</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <!-- Moudhyam -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-planet" aria-hidden="true"></i> Planetary Combustion (Moudhyam)</summary>
+    <div class="ab-body">
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">
+        A planet is <em>moudhya</em> (combust) when its elongation from the Sun falls below the visibility threshold.
+      </div>
+      <table class="ab-tbl">
+        <tr><th>Planet</th><th>Threshold</th><th>Traditional restriction</th><th>Typical duration</th></tr>
+        <tr><td>Venus (Śukra)</td><td>&lt; 10° from Sun</td><td>Marriages, engagements, auspicious ceremonies</td><td>40–75 days per cycle (~585-day cycle)</td></tr>
+        <tr><td>Jupiter (Guru)</td><td>&lt; 11° from Sun</td><td>Upanayana, initiation, new learning</td><td>20–30 days per year</td></tr>
+      </table>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;">
+        Geocentric elongation computed via full inclination-corrected heliocentric → geocentric conversion (Meeus Ch. 31, Kepler's equation with 5 iterations). Accuracy ±3° → timing error ±3–5 days at period boundaries.
+      </div>
+    </div>
+  </details>
+
+  <!-- Known Limitations -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-alert-triangle" aria-hidden="true"></i> Known Limitations</summary>
+    <div class="ab-body">
+      <table class="ab-tbl">
+        <tr><th>Limitation</th><th>Impact</th></tr>
+        <tr><td>Moon ±0.01° (59-term ELP2000)</td><td>Nakshatra / yoga transition times ±1–2 min</td></tr>
+        <tr><td>Sun ±0.003° (VSOP87 simplified)</td><td>Minimal — adequate for all panchanga purposes</td></tr>
+        <tr><td>Vara uses calendar midnight, not sunrise</td><td>May be off by one vara for hours before sunrise</td></tr>
+        <tr><td>Moudhyam elongation ±3°</td><td>Combustion period start/end off by ±3–5 days</td></tr>
+        <tr><td>Eclipse type from β (latitude) only</td><td>Penumbral eclipses may be mis-classified as partial</td></tr>
+        <tr><td>Adhika/Nija detection near Sankranti boundary</td><td>Extremely rare mis-label (~once per decade)</td></tr>
+        <tr><td>No birth-chart context</td><td>Auspiciousness is generic — personal Dasha/Antardasha and natal chart not considered</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <!-- References -->
+  <details class="ab-sec" style="margin-bottom:0;">
+    <summary><i class="ti ti-book" aria-hidden="true"></i> References</summary>
+    <div class="ab-body">
+      <ul style="font-size:12px;line-height:2;color:var(--text-secondary);padding-left:18px;margin:0;">
+        <li>Jean Meeus, <em>Astronomical Algorithms</em>, 2nd ed., Willmann-Bell, 1998 — JD, VSOP87, ELP2000 (Ch. 47), eclipse, sunrise, planetary elements (Ch. 31)</li>
+        <li>N. C. Lahiri, <em>Indian Ephemeris and Nautical Almanac</em> — Chitrapaksha ayanamsha, official standard of the Government of India</li>
+        <li>NOAA Solar Calculator algorithm — sunrise/sunset zenith angle 90.833° (refraction + semi-diameter) and equation of time</li>
+        <li>PyMeeus library (architest/pymeeus on GitHub) — used to verify ELP2000 Table 47.A term coefficients</li>
+        <li>Tabler Icons v2.44 (CDN) — UI icon set</li>
+        <li>Google Fonts — Baloo Tammudu 2 (Telugu script rendering in shloka)</li>
+      </ul>
+    </div>
+  </details>
+
+</div><!-- panel-about -->
 
 </div><!-- .app -->
 
