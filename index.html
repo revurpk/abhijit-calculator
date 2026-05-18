@@ -141,7 +141,7 @@ button.action:hover{background:var(--bg-tertiary);}
   <button class="tab" onclick="showTab('panchanga',this)"><i class="ti ti-sun" aria-hidden="true"></i> Panchanga</button>
   <button class="tab" onclick="showTab('festivals',this)"><i class="ti ti-confetti" aria-hidden="true"></i> Festivals</button>
   <button class="tab" onclick="showTab('eclipses',this)"><i class="ti ti-moon-stars" aria-hidden="true"></i> Eclipses</button>
-  <button class="tab" onclick="showTab('search',this)"><i class="ti ti-search" aria-hidden="true"></i> Muhurtha</button>
+  <button class="tab" onclick="showTab('search',this)"><i class="ti ti-search" aria-hidden="true"></i> Search</button>
 </div>
 
 <!-- Calendar -->
@@ -208,7 +208,7 @@ button.action:hover{background:var(--bg-tertiary);}
       <button id="shl-tel" class="ybtn" onclick="setShlokaScript('tel')" style="font-size:10px;padding:2px 8px;">తె</button>
       <button id="shl-iast" class="ybtn" onclick="setShlokaScript('iast')" style="font-size:10px;padding:2px 8px;font-style:italic;">IAST</button>
     </div>
-    <div id="shloka-text" style="font-size:15px;line-height:1.9;color:var(--text-primary);font-family:serif;letter-spacing:.02em;">
+    <div id="shloka-text" style="font-size:clamp(11px,3.5vw,15px);line-height:1.9;color:var(--text-primary);font-family:serif;letter-spacing:.02em;">
       तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>
       विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥
     </div>
@@ -218,7 +218,7 @@ button.action:hover{background:var(--bg-tertiary);}
     </div>
   </div>
   <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:11px 15px;margin-bottom:1rem;font-size:12px;color:var(--info-text);line-height:1.65;">
-    <strong style="color:var(--text-primary);">Muhurtha is elective astrology</strong> — use it when you genuinely have a choice of timing. In the ordinary flow of life there is no need to consult an almanac before every action; doing what must be done, with good intent, is itself the highest auspice. Being good and doing good is the surest path to good tidings. Read these results as gentle suggestions rather than predictions — fortune cookie wisdom, not fate. No app can account for personal planetary periods, birth-chart conditions, or the nuanced judgement a trained jyotishi brings. <strong style="color:var(--text-primary);">For significant occasions — a wedding, griha pravesha, naming ceremony, or upanayana — always consult a qualified astrologer</strong> who can weigh all the relevant factors; do not rely on any app for such decisions.
+    In the ordinary flow of life there is no need to consult an almanac before every action; doing what must be done, with good intent, is itself the highest auspice. Read these results as gentle suggestions rather than predictions — fortune cookie wisdom, not fate. No app can account for personal planetary periods, birth-chart conditions, or the nuanced judgement a trained astrologer brings. <strong style="color:var(--text-primary);">For significant occasions — a wedding, griha pravesha, naming ceremony, or upanayana — always consult a qualified astrologer</strong> who can weigh all the relevant factors; do not rely on any app for such decisions.
   </div>
   <div class="card" style="margin-bottom:1rem;">
     <div style="font-size:14px;font-weight:500;margin-bottom:1rem;">Search criteria</div>
@@ -257,7 +257,7 @@ button.action:hover{background:var(--bg-tertiary);}
   <div style="font-size:11px;color:var(--text-secondary);line-height:1.6;">
     <strong style="color:var(--text-primary);">AI-generated tool — use with discretion.</strong>
     Astronomical calculations (tithi, nakshatra, yoga, eclipse, moudhyam, lunar masa) are computed using simplified mathematical models and may differ from printed almanacs by minutes to days depending on the element.
-    Always verify important muhurthas with a qualified jyotishi or a trusted printed panchanga before scheduling ceremonies, marriages, or other significant events.
+    Always verify important muhurthas with a qualified astrologer or a trusted printed panchanga before scheduling ceremonies, marriages, or other significant events.
   </div>
 </div>
 
@@ -316,6 +316,8 @@ const YG=[{n:1,name:"Vishkumbha",q:"bad"},{n:2,name:"Priti",q:"good"},{n:3,name:
 const KR=[{n:1,name:"Bava",q:"good"},{n:2,name:"Balava",q:"good"},{n:3,name:"Kaulava",q:"good"},{n:4,name:"Taitila",q:"good"},{n:5,name:"Garija",q:"mixed"},{n:6,name:"Vanija",q:"good"},{n:7,name:"Vishti",q:"bad"},{n:8,name:"Shakuni",q:"mixed"},{n:9,name:"Chatushpada",q:"mixed"},{n:10,name:"Naga",q:"bad"},{n:11,name:"Kimstughna",q:"mixed"}];
 const VA=[{n:0,name:"Ravivara",en:"Sunday",deity:"Sun",q:"mixed",rahu:8},{n:1,name:"Somavara",en:"Monday",deity:"Moon",q:"good",rahu:2},{n:2,name:"Mangalavara",en:"Tuesday",deity:"Mars",q:"mixed",rahu:7},{n:3,name:"Budhavara",en:"Wednesday",deity:"Mercury",q:"good",rahu:5},{n:4,name:"Guruvara",en:"Thursday",deity:"Jupiter",q:"excellent",rahu:6},{n:5,name:"Shukravara",en:"Friday",deity:"Venus",q:"good",rahu:4},{n:6,name:"Shanivara",en:"Saturday",deity:"Saturn",q:"bad",rahu:3}];
 const HM=["Chaitra","Vaishakha","Jyeshtha","Ashadha","Shravana","Bhadrapada","Ashweeyuja","Kartika","Margashirsha","Pushya","Magha","Phalguna"];
+const RASHI=["Mesha","Vrishabha","Mithuna","Karka","Simha","Kanya","Tula","Vrischika","Dhanu","Makara","Kumbha","Meena"];
+const RASHI_EN=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 const MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const GULIKA=[7,6,5,4,3,2,1],AMRITA={0:12,1:4,2:0,3:3,4:6,5:16,6:21};
 
@@ -528,7 +530,7 @@ function fmtMin(m){
   if(mi2===60)return String(h+1).padStart(2,'0')+':00';
   return String(h).padStart(2,'0')+':'+String(mi2).padStart(2,'0');
 }
-// Enhanced ephemeris: VSOP87 truncated for Sun (±0.003°), ELP2000 extended for Moon (±0.1°),
+// Enhanced ephemeris: VSOP87 truncated for Sun (±0.003°), ELP2000/Meeus 59-term Moon (±0.01°),
 // plus geocentric Venus/Jupiter for Moudhyam detection (elongation ±3°).
 // Swiss Ephemeris WASM integration (requiring a build step) is documented in §11.12 of the docs.
 function slong(J){
@@ -543,16 +545,27 @@ function mlong(J){
   const T=(J-2451545)/36525,L0=nm(218.3164477+481267.88123421*T);
   const D=nm(297.8501921+445267.1114034*T)*D2R,M=nm(357.5291092+35999.0502909*T)*D2R;
   const Mp=nm(134.9633964+477198.8675055*T)*D2R,F=nm(93.2720950+483202.0175233*T)*D2R;
-  const E=1-0.002516*T-0.0000074*T*T;  // eccentricity correction for solar terms
-  return nm(L0+6.288774*Math.sin(Mp)+1.274027*Math.sin(2*D-Mp)+0.658314*Math.sin(2*D)
-    +0.213618*Math.sin(2*Mp)-0.185116*E*Math.sin(M)-0.114332*Math.sin(2*F)
-    +0.058793*Math.sin(2*D-2*Mp)+0.057066*E*Math.sin(2*D-M-Mp)+0.053322*Math.sin(2*D+Mp)
-    +0.045758*E*Math.sin(2*D-M)-0.040923*E*Math.sin(M-Mp)-0.034720*Math.sin(D)
-    -0.030383*E*Math.sin(M+Mp)+0.015327*Math.sin(2*D-2*F)+0.010980*Math.sin(Mp-2*F)
-    +0.010675*Math.sin(4*D-Mp)+0.010034*Math.sin(3*Mp)-0.005163*Math.sin(D-Mp)
-    +0.004607*E*Math.sin(D+M)+0.004307*Math.sin(2*D+Mp-2*F)+0.003773*Math.sin(2*D-Mp-2*F)
-    -0.003239*E*Math.sin(Mp+M)-0.002819*Math.sin(2*D+3*Mp)+0.002737*Math.sin(2*D-2*Mp+2*F)
-    -0.002349*Math.sin(D+Mp)+0.002028*E*E*Math.sin(2*M));
+  const E=1-0.002516*T-0.0000074*T*T;
+  // Meeus "Astronomical Algorithms" Table 47.A — 59 longitude terms (Σl ×10⁻⁶ °)
+  // [D, M, M′, F, Σl]  E-factor: ×E when |M|=1, ×E² when |M|=2
+  const T47=[[0,0,1,0,6288774],[2,0,-1,0,1274027],[2,0,0,0,658314],[0,0,2,0,213618],
+    [0,1,0,0,-185116],[0,0,0,2,-114332],[2,0,-2,0,58793],[2,-1,-1,0,57066],
+    [2,0,1,0,53322],[2,-1,0,0,45758],[0,1,-1,0,-40923],[1,0,0,0,-34720],
+    [0,1,1,0,-30383],[2,0,0,-2,15327],[0,0,1,2,-12528],[0,0,1,-2,10980],
+    [4,0,-1,0,10675],[0,0,3,0,10034],[4,0,-2,0,8548],[2,1,-1,0,-7888],
+    [2,1,0,0,-6766],[1,0,-1,0,-5163],[1,1,0,0,4987],[2,-1,1,0,4036],
+    [2,0,2,0,3994],[4,0,0,0,3861],[2,0,-3,0,3665],[0,1,-2,0,-2689],
+    [2,0,-1,2,-2602],[2,-1,-2,0,2390],[1,0,1,0,-2348],[2,-2,0,0,2236],
+    [0,1,2,0,-2120],[0,2,0,0,-2069],[2,-2,-1,0,2048],[2,0,1,-2,-1773],
+    [2,0,0,2,-1595],[4,-1,-1,0,1215],[0,0,2,2,-1110],[3,0,-1,0,-892],
+    [2,1,1,0,-810],[4,-1,-2,0,759],[0,2,-1,0,-713],[2,2,-1,0,-700],
+    [2,1,-2,0,691],[2,-1,0,-2,596],[4,0,1,0,549],[0,0,4,0,537],
+    [4,-1,0,0,520],[1,0,-2,0,-487],[2,1,0,-2,-399],[0,0,2,-2,-381],
+    [1,1,1,0,351],[3,0,-2,0,-340],[4,0,-3,0,330],[2,-1,2,0,327],
+    [0,2,1,0,-323],[1,1,-1,0,299],[2,0,3,0,294]];
+  let sl=0;
+  for(const[d,m,mp,f,c]of T47){const ef=m===0?1:Math.abs(m)===1?E:E*E;sl+=c*ef*Math.sin(d*D+m*M+mp*Mp+f*F);}
+  return nm(L0+sl*1e-6);
 }
 function ayan(J){return 23.853+(J-2451545)/36525*1.397;}
 
@@ -766,8 +779,8 @@ function getUpcomingEclipses(months=36){
 /*  PANCHANGA TRANSITION FINDERS                               */
 /* ─────────────────────────────────────────────────────────── */
 const getTiIdx=J=>Math.floor(nm(mlong(J)-slong(J))/12);
-const getNkIdx=J=>Math.floor(nm(mlong(J))/(360/27));
-const getYgIdx=J=>Math.floor(nm(slong(J)+mlong(J))/(360/27))%27;
+const getNkIdx=J=>Math.floor(nm(mlong(J)-ayan(J))/(360/27));
+const getYgIdx=J=>Math.floor(nm(slong(J)+mlong(J)-2*ayan(J))/(360/27))%27;
 const getKrIdx=J=>{const k=Math.floor(nm(mlong(J)-slong(J))/6);return k===0?10:k>=57?7+Math.min(k-57,2):(k-1)%7;};
 /* findEnd: find when the panchanga element active at NOON ends.
    MUST search forward from Jn (noon), NOT from midnight.
@@ -794,12 +807,14 @@ function calcTr(date){
 /*  CORE PANCHANGA CALCULATION                                 */
 /* ─────────────────────────────────────────────────────────── */
 function calcP(date){
-  const J=jd(date),sl=slong(J),ml=mlong(J),diff=nm(ml-sl);
+  const J=jd(date),sl=slong(J),ml=mlong(J),ay=ayan(J),diff=nm(ml-sl);
   const tIdx=Math.floor(diff/12);
   const tithi={...TI[tIdx],tIdx,progress:Math.round((diff/12-tIdx)*100)};
-  const nRaw=nm(ml)/(360/27),nIdx=Math.floor(nRaw),pada=Math.floor((nRaw-nIdx)*4)+1;
+  // Nakshatra: sidereal Moon longitude (tropical − ayanamsha)
+  const nRaw=nm(ml-ay)/(360/27),nIdx=Math.floor(nRaw),pada=Math.floor((nRaw-nIdx)*4)+1;
   const naksh={...NK[nIdx],pada};
-  const yoga=YG[Math.floor(nm(sl+ml)/(360/27))%27];
+  // Yoga: sum of sidereal Sun + Moon longitudes (tropical sum − 2×ayanamsha)
+  const yoga=YG[Math.floor(nm(sl+ml-2*ay)/(360/27))%27];
   const kIdx=Math.floor(diff/6);
   let karana;
   if(kIdx===0)karana=KR[10];else if(kIdx>=57)karana=KR[7+Math.min(kIdx-57,2)];else karana=KR[(kIdx-1)%7];
@@ -809,7 +824,7 @@ function calcP(date){
   const rahuK={s:fmtMin(rS),e:fmtMin(rS+pt)},guliK={s:fmtMin(gS),e:fmtMin(gS+pt)};
   const abhijit={s:fmtMin(st.solarNoon-24),e:fmtMin(st.solarNoon+24)};
   const brahma={s:fmtMin(st.sunrise-96),e:fmtMin(st.sunrise-48)};
-  const ay=ayan(J),sid=nm(sl-ay);
+  const sid=nm(sl-ay);
   const masaInfo=getLunarMasaInfo(J);
   const hm=masaInfo.fullName;
   const special=[];
@@ -828,7 +843,7 @@ function calcP(date){
   if(moudhyam.jupiter.active)score=Math.max(5,score-5);
   return{date,sl,ml,sid,tIdx,tithi,naksh,yoga,karana,vara,rahuK,guliK,abhijit,brahma,
     sunrise:fmtMin(st.sunrise),sunset:fmtMin(st.sunset),solarNoon:fmtMin(st.solarNoon),
-    hm,masaInfo,special,score,moudhyam,nextTithi:TI[(tIdx+1)%30],nextNaksh:NK[(nIdx+1)%27],nextYoga:YG[(Math.floor(nm(sl+ml)/(360/27))%27+1)%27]};
+    hm,masaInfo,special,score,moudhyam,nextTithi:TI[(tIdx+1)%30],nextNaksh:NK[(nIdx+1)%27],nextYoga:YG[(Math.floor(nm(sl+ml-2*ay)/(360/27))%27+1)%27]};
 }
 
 const pcache={},tcache={};
@@ -950,7 +965,9 @@ function renderCal(){
   const first=new Date(vY,vM,1),last=new Date(vY,vM+1,0);
   const hmFirst=getLunarMasaInfo(jd(first)).fullName,hmLast=getLunarMasaInfo(jd(last)).fullName;
   const masaLabel=hmFirst===hmLast?hmFirst:`${hmFirst}–${hmLast}`;
-  document.getElementById('m-title').textContent=`${MN[vM]} ${vY} · ${masaLabel}`;
+  const srFirst=RASHI[mi(gp(first))],srLast=RASHI[mi(gp(last))];
+  const solLabel=srFirst===srLast?srFirst:`${srFirst}–${srLast}`;
+  document.getElementById('m-title').textContent=`${MN[vM]} ${vY} · ${masaLabel} · ☀ ${solLabel}`;
   let h='';
   for(let i=0;i<first.getDay();i++)h+='<div></div>';
   for(let d=1;d<=last.getDate();d++){
@@ -997,6 +1014,7 @@ function renderCalDet(){
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;">
       <div class="mc" style="border-left:2px solid var(--accent);border-radius:0 var(--radius-md) var(--radius-md) 0;"><div class="mc-label">Lunar Month</div><div class="mc-val" style="font-size:13px;">${p.hm}</div><div class="mc-sub">${p.masaInfo.isAdhika?'Mala Masa · intercalary month':p.masaInfo.isNija?`Nija — follows Adhika ${HM[p.masaInfo.masaIdx]}`:p.tithi.pak+' Paksha'}</div></div>
+      <div class="mc"><div class="mc-label">Solar Month</div><div class="mc-val" style="font-size:13px;">${RASHI[mi(p)]}</div><div class="mc-sub">${RASHI_EN[mi(p)]} · ☀ ${(p.sid%30).toFixed(1)}° in sign</div></div>
       <div class="mc"><div class="mc-label">Tithi</div><div class="mc-val" style="font-size:13px;">${p.tithi.pak} ${p.tithi.name}</div><div class="mc-sub">${bdg(p.tithi.q)}</div>${eT(tr.tithi)}</div>
       <div class="mc"><div class="mc-label">Nakshatra</div><div class="mc-val" style="font-size:13px;">${p.naksh.name}</div><div class="mc-sub">Pada ${p.naksh.pada} · ${p.naksh.ruler}</div>${eT(tr.naksh)}</div>
       <div class="mc"><div class="mc-label">Yoga</div><div class="mc-val" style="font-size:13px;">${p.yoga.name}</div><div class="mc-sub">${bdg(p.yoga.q)}</div>${eT(tr.yoga)}</div>
@@ -1019,7 +1037,7 @@ function renderPanch(){
   const ds=document.getElementById('pd').value,dt=ds?new Date(ds+'T12:00:00'):today;
   const p=gp(dt),tr=gt(dt),hy=getHY(dt),ecl=getDayEclipse(dt);
   const fests=FEST.filter(r=>r.check(p,null));
-  document.getElementById('p-hdate').textContent=`${p.hm} masa · ${p.tithi.pak} Paksha`;
+  document.getElementById('p-hdate').textContent=`☀ ${RASHI[mi(p)]} · ${p.hm} masa · ${p.tithi.pak} Paksha`;
   renderYearStrip(dt);
   function aRow(lbl,val,sub,trObj,nextN,prog){
     const ep=trObj&&trObj.fmted

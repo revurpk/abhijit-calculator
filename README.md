@@ -184,24 +184,25 @@ C  = (1.914602 − 0.004817·T − 0.000014·T²)·sin(M)   ← full equation of
 **Function:** `mlong(J)`  
 **Returns:** Tropical geocentric ecliptic longitude of the Moon in degrees [0–360)
 
-**Algorithm:** Extended ELP2000 — 26 terms (vs. 18 in the previous version), now including the eccentricity correction factor **E** for terms involving the Sun's mean anomaly M.
+**Algorithm:** Full Meeus Table 47.A (ELP2000) — all 59 contributing longitude terms, table-driven with automatic E/E² eccentricity weighting. Coefficients are in units of 10⁻⁶ °; the loop accumulates `Σl` and divides by 10⁶ at the end.
 
-**Eccentricity factor E** (applied to all terms containing M):
+**Eccentricity factor E** (applied to all terms where Sun's mean anomaly M ≠ 0):
 ```
-E = 1 − 0.002516·T − 0.0000074·T²
-```
-
-This corrects for the slow decrease in Earth's orbital eccentricity over time, improving accuracy by ~0.01° for dates far from J2000.
-
-**Additional terms added:**
-```
-+0.004607·E·sin(D+M)          +0.004307·sin(2D+Mp−2F)
-+0.003773·sin(2D−Mp−2F)       −0.003239·E·sin(Mp+M)
-−0.002819·sin(2D+3Mp)         +0.002737·sin(2D−2Mp+2F)
-−0.002349·sin(D+Mp)           +0.002028·E²·sin(2M)
+E = 1 − 0.002516·T − 0.0000074·T²    (|M|=1 → ×E,  |M|=2 → ×E²)
 ```
 
-**Accuracy:** ±0.1° (vs. ±0.3° previously). Nakshatra transition timing improves from ±30 min to ±10 min.
+**Implementation (table-driven):**
+```js
+const T47=[[0,0,1,0,6288774],[2,0,-1,0,1274027],[2,0,0,0,658314], ...  // 59 rows
+let sl=0;
+for(const[d,m,mp,f,c]of T47){
+  const ef=m===0?1:Math.abs(m)===1?E:E*E;
+  sl+=c*ef*Math.sin(d*D+m*M+mp*Mp+f*F);
+}
+return nm(L0+sl*1e-6);
+```
+
+**Accuracy:** ±0.01° (improved from ±0.1° with the previous 26-term version). Nakshatra transition timing improves from ±10 min to ±1 min. The previous 26-term version had several incorrect coefficients and three terms not present in Meeus at all, which could push boundary nakshatras (e.g. Bharani/Krittika) to the wrong side.
 
 ---
 
@@ -285,13 +286,16 @@ progress = (diff/12 − tIdx) × 100  // 0–100%
 
 ### 5.2 Nakshatra
 
-The Moon's sidereal longitude divided into 27 equal segments of 13°20′ each.
+The Moon's **sidereal** longitude divided into 27 equal segments of 13°20′ each.
 
 ```js
-const nRaw = moonLong_sidereal / (360/27);
-const nIdx = Math.floor(nRaw);        // 0–26 (Ashwini to Revati)
-const pada = Math.floor((nRaw - nIdx) × 4) + 1;  // 1–4
+const ay   = ayan(J);                        // Lahiri ayanamsha (~24.2° in 2026)
+const nRaw = nm(mlong(J) - ay) / (360/27);  // tropical Moon − ayanamsha = sidereal Moon
+const nIdx = Math.floor(nRaw);              // 0–26 (Ashwini to Revati)
+const pada = Math.floor((nRaw - nIdx) * 4) + 1;  // 1–4
 ```
+
+> **Important:** `mlong(J)` returns the **tropical** ecliptic longitude. Subtracting `ayan(J)` converts it to sidereal before dividing into nakshatra segments. Using the tropical value directly would shift the nakshatra by ~1–2 positions (~24° ÷ 13.3°/nakshatra).
 
 Each nakshatra has 4 padas of 3°20′ each, corresponding to the 108 navamshas.
 
@@ -301,10 +305,15 @@ Each nakshatra has 4 padas of 3°20′ each, corresponding to the 108 navamshas.
 
 ### 5.3 Yoga
 
-The sum of the sidereal longitudes of Sun and Moon, divided into 27 equal segments.
+The sum of the **sidereal** longitudes of Sun and Moon, divided into 27 equal segments.
 
 ```js
-const yogaIdx = Math.floor((sunLong_sid + moonLong_sid) / (360/27)) % 27;
+const ay      = ayan(J);   // Lahiri ayanamsha — subtracted from both bodies
+const yogaIdx = Math.floor(nm(slong(J) + mlong(J) - 2*ay) / (360/27)) % 27;
+//                                                  ^^^^
+//  Both slong() and mlong() return tropical longitudes; subtracting ayanamsha
+//  twice converts the sum to its sidereal equivalent.
+//  Using the tropical sum would shift yoga by ~3–4 positions (2 × 24° ÷ 13.3°).
 ```
 
 Yoga advances faster than either tithi or nakshatra alone because it accumulates the motions of both bodies (~1° per hour on average). A yoga lasts roughly **12–26 hours**.
@@ -891,21 +900,7 @@ This adds the **apparent longitude** correction (nutation + aberration ≈ −0.
 
 ### 11.3 Improving Moon Accuracy
 
-The current `mlong()` uses 20 terms. The full ELP2000-82B series has 1,200+ terms for 0.001° accuracy, but a 60-term truncation gives ±0.05°:
-
-Add the following additional terms to `mlong()` just before the final `return`:
-
-```js
-// Additional terms (add inside mlong, before the return statement)
-+ 0.003958*Math.sin(2*D - 2*F)
-+ 0.003229*Math.sin(2*D + Mp - M)
-+ 0.002550*Math.sin(2*D - Mp + M)
-+ 0.002520*Math.sin(-M + Mp)
-+ 0.002459*Math.sin(3*D - Mp)
-+ 0.002174*Math.sin(2*D - 3*Mp)
-```
-
-Where `D`, `M`, `Mp`, `F` are already computed in the function.
+`mlong()` now uses the complete Meeus Table 47.A (59 terms). The full ELP2000-82B series has 1,200+ terms for sub-arcsecond accuracy; beyond 59 terms the returns diminish rapidly for panchanga purposes. The next improvement level would be Swiss Ephemeris (see §11.12).
 
 For full Swiss Ephemeris accuracy, see section 11.12.
 
@@ -1339,12 +1334,13 @@ This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 da
 |------------|--------|------------|
 | Lunar masa uses Sun's rashi at current/next new moon boundaries — correct for normal and adhika months; the nija detection (rPrev check) may rarely misfire if two consecutive Sankrantis are very close to new moon boundaries | Extremely rare edge case (~once per decade) | Validate against a printed panchanga for the specific year |
 | Festival detection uses solar masa `mi(p)`, not the lunar `p.hm` | By design — festival rules are solar-anchored; the two names are offset ~2–4 weeks near Sankranti | No change needed; see §5.6 |
-| Moon longitude ±0.1° (extended ELP2000) | Transition times ±10 minutes | Use Swiss Ephemeris (§11.12) |
+| Moon longitude ±0.01° (Meeus 59-term ELP2000) | Transition times ±1 minute | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
 | Sun longitude ±0.003° | Minimal impact on panchanga | Already adequate |
 | Eclipse type threshold is β-only | Penumbral eclipses may be mis-classified | Acceptable for most users |
 | Vara starts at midnight not sunrise | Off by up to 6 hours for hours before sunrise | Switch to sunrise-based vara |
 | Sunrise uses browser timezone | Correct for local wall-clock; incorrect if page opened with a different system timezone | Force timezone via `Intl.DateTimeFormat` |
-| No Ayanamsha interpolation for sub-day calculations | Eclipse midpoint ayanamsha is slightly off | Sub-arcsecond correction; negligible |
+| No ayanamsha interpolation for sub-day calculations | Eclipse midpoint ayanamsha is slightly off | Sub-arcsecond correction; negligible |
+| Nakshatra and yoga previously used tropical Moon/Sun longitudes (fixed) | With the fix applied and the 59-term Moon formula, nakshatra is correct to ±1–2 min and yoga to ±3 min | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
 
 ---
 
