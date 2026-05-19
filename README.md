@@ -106,8 +106,11 @@ html_panchanga_calendar.html
     │   addVisibility(), getDayEclipse(), getUpcomingEclipses()
     │
     ├── Panchanga transition finders
-    │   findEnd() — binary-search for anga end time
-    │   calcTr()  — all four transitions for a date
+    │   findEnd(date, getFn, startJD?)   — forward bisection from startJD
+    │   findEndJD(getFn, refJD)          — pure-JD forward bisection
+    │   findStartJD(getFn, refJD)        — pure-JD backward bisection
+    │   calcTr(date, startJD?)           — all four transitions
+    │   calcVarjyam(Jsr, tz, J0)         — Varjyam window(s) for the day
     │
     ├── Core panchanga
     │   calcP(date, Joverride?)  — full panchanga; optional JD overrides noon default
@@ -669,6 +672,26 @@ brahma = { start: sunrise − 2·nMu, end: sunrise − nMu };
 
 For a 12-hour night this matches the traditional "96 to 48 min before sunrise" definition; at high latitudes in summer the window correctly shrinks to (~24 to ~12 min before sunrise).
 
+### Varjyam
+
+An inauspicious window located inside the currently-active nakshatra. Each nakshatra has a specific "Varjyam start ghatika" — an elapsed value in nakshatra-ghatikas where 1 = 1/60 of the nakshatra's actual time-duration (not the 24-minute civil ghatika). Varjyam length is fixed at **4 nakshatra-ghatikas** = (4/60) of the nakshatra duration, which works out to ~85–95 min for a typical 21–24 h nakshatra.
+
+```js
+// 0-indexed Ashwini..Revati. Source: Brihat Samhita / "Lectures on Vedic Calendar".
+const VARJYAM_GHATI = [50,24,30,40,14,21,30,20,32,30,20,18,21,20,14,14,10,14,56,24,20,10,10,18,16,24,30];
+
+// Formula (given Jsr = sunrise JD, J0 = JD at UT midnight, tzOff = location offset):
+// 1. Find nakshatra-start (when getNkIdx transitioned into current) by backward bisection.
+// 2. Find nakshatra-end (forward bisection).
+// 3. dur = end − start
+// 4. V_start = start + (VARJYAM_GHATI[nIdx] / 60) × dur
+// 5. V_end   = V_start + (4 / 60) × dur
+```
+
+`calcVarjyam(Jsr, tzOff, J0)` walks the day starting at sunrise, computes the Varjyam window for each nakshatra it touches, and returns the windows whose START falls within [sunrise, next-day-sunrise). Most days have exactly one Varjyam window; rarely two when a nakshatra ends shortly after sunrise.
+
+**Verification:** matched SVBF-2026 NJ for ten consecutive January days within 3–5 minutes (residual from the sunrise-zenith convention difference).
+
 ---
 
 ## 7. Auspiciousness Score
@@ -865,7 +888,7 @@ let LOC = { lat: 28.614, lon: 77.209, name: "Delhi", tz: 330, iana: "Asia/Kolkat
 
 After changing location, call `clearPCache()` to invalidate cached panchanga (solar times are embedded in the cache).
 
-**Auto-detect** uses the browser's `navigator.geolocation` API. The closest city within 3° is automatically selected as the display name; the matched city's `iana` and `tz` are copied into `LOC`.
+**Auto-detect** uses the browser's `navigator.geolocation` API. The closest city within 3° is automatically selected as the display name; the matched city's `iana` and `tz` are copied into `LOC`. When no city matches, the **browser's resolved timezone** (`Intl.DateTimeFormat().resolvedOptions().timeZone`) is used as the IANA name — because for auto-detect, the user is physically at that location, so the browser's timezone is authoritative. **No DST prompt is ever shown.**
 
 Solar times are returned in **the location's local wall-clock minutes from midnight** (not the browser's). `resolveTz(date)` provides DST-aware offsets via `Intl.DateTimeFormat` with `LOC.iana`, so US/EU summer dates show DST times automatically.
 
@@ -1455,6 +1478,8 @@ Replace the two CDN `<link>` tags with locally-hosted copies of the CSS/font fil
 | `VA[7]` | Static array | Vara names, deities, qualities, Rahu slot numbers |
 | `GULIKA[7]` | Constant | Gulika Kalam part numbers indexed by weekday |
 | `AMRITA` | Constant | Map of weekday → nakshatra index for Amrita Siddhi Yoga |
+| `VARJYAM_GHATI[27]` | Constant | Per-nakshatra elapsed-ghatika (in /60 of nakshatra duration) at which Varjyam begins |
+| `YAMAGANDA[7]` | Constant | 1-based day-part number for Yamaganda Kalam, indexed by weekday |
 | `SAMVATSARA[60]` | Static array | 60-year Samvatsara cycle names |
 | `FEST[]` | Static array | Festival detection rules — add here to add festivals |
 | `EK_SH[12]` | Constant | Shukla Ekadashi names by solar masa |
