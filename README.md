@@ -71,7 +71,7 @@ All calculations are done in the browser at runtime. Panchanga results are cache
 | **Festivals** | 35+ named festivals + all Ekadashis + Pradosh Vrat, grouped by month, filterable by category, countdown to each |
 | **Eclipses** | All solar & lunar eclipses for 3 years with visibility computed for the selected location |
 | **Search** | Date-range search with tithi / nakshatra / vara filters, min-score slider, moudhyam exclusion filters, optional eclipse exclusion. Headed by the muhurtha shloka *तदेव लग्नं सुदिनं तदेव…* |
-| **Sky** | Two side-by-side South-Indian Rashi charts for any date & time at the chosen location: a fixed D-1 Rashi chart and a switchable divisional chart (D-2 Hora through D-27 Bhamsa). All nine grahas + Lagna are placed by their sidereal longitude. Includes a table of exact longitudes and a **viewing guide** with each body's altitude/azimuth, twilight phase, rise times for bodies below the horizon, and the Moon's current nakshatra with its principal stars. |
+| **Sky** | Two side-by-side South-Indian Rashi charts for any date & time at the chosen location: a fixed D-1 Rashi chart and a switchable divisional chart (D-2 Hora through D-27 Bhamsa). All nine grahas + Lagna are placed by their sidereal longitude. Optional **reference overlay** lets you superimpose a second moment (birth chart, past event) onto both charts in blue italic. Includes a table of exact longitudes and a **viewing guide** with each body's altitude/azimuth, twilight phase, rise times for bodies below the horizon, and the Moon's current nakshatra with its principal stars. |
 | **About** | Astronomical engine table, panchanga formulas, lunar-month rules, score weights, daily periods, planetary combustion, known limitations, security/privacy, references |
 
 ---
@@ -1487,6 +1487,26 @@ D-30 (Trimshamsa) is omitted because Parashara's rule is non-uniform (5 unequal 
 | Lagna | Meeus RAMC formula | ±0.05° (limited by Sun & GMST precision) |
 
 For higher precision on the outer planets, replace the linear orbital elements with the full VSOP87 series or Swiss Ephemeris.
+
+### Reference / overlay chart
+
+The Sky tab has an **optional reference moment** that is overlaid on both charts. Common use cases:
+
+- **Birth chart vs current transit** — pin the birth moment as reference; the primary date/time tracks "now" so you can see how the current sky maps onto the natal placements
+- **Comparing two events** — set primary = event A, reference = event B
+- **Comparing locations** — same date/time but different lat/lon to see how Lagna shifts
+
+**UI:** a collapsible `<details>` card with a checkbox toggle, separate reference date / time / city / lat / lon inputs. Location resolution priority:
+
+1. If both `sky-ref-lat` and `sky-ref-lon` are filled → use those (longitude-estimated tz)
+2. Else if a city is chosen → use the city's lat / lon / iana / tz
+3. Else → reuse the primary `LOC`
+
+The reference's UTC offset is resolved via `Intl.DateTimeFormat` against its own IANA tz (DST-aware), so a 1990 Delhi reference uses +5:30 IST and a 2010 Boston reference correctly chooses EST or EDT for the date.
+
+**`getRefMoment()`** returns `{J, lat, lon, name, label, tz}` when the overlay is enabled and inputs are valid, otherwise `null`.
+
+**Display:** reference planets are rendered in the chart cells in *blue italic* below the primary set, with a dashed separator. The cell gets a blue inset border when the reference Lagna falls in that rashi. The sidereal-longitudes table gains a fourth column showing the reference position. The viewing guide remains primary-only — "where to look" answers only one moment at a time.
 
 ### Viewing guide (where to look)
 

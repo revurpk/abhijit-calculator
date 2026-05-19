@@ -148,6 +148,10 @@ button.action:hover{background:var(--bg-tertiary);}
 .csign.has-lagna{border-color:var(--accent);}
 .cmid{grid-column:2 / span 2;grid-row:2 / span 2;background:var(--bg-tertiary);border:.5px solid var(--border-light);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;color:var(--text-tertiary);font-size:10px;line-height:1.4;}
 .cmid-title{font-size:14px;font-weight:500;color:var(--text-primary);letter-spacing:.04em;}
+.csign-ref{color:var(--info-text);font-style:italic;font-size:10.5px;margin-top:2px;padding-top:2px;border-top:.5px dashed var(--border-light);}
+.csign-ref .lagna{color:var(--info-text);font-weight:600;}
+.csign.has-ref-lagna{box-shadow:inset 0 0 0 1px var(--info-text);}
+.ref-card{background:var(--info-bg);border:.5px solid var(--info-text);}
 </style>
 </head>
 <body>
@@ -307,6 +311,27 @@ button.action:hover{background:var(--bg-tertiary);}
       <div style="flex:1;min-width:140px;font-size:11px;color:var(--text-tertiary);align-self:flex-end;padding-bottom:6px;">Computed for <strong id="sky-loc-name" style="color:var(--text-secondary);"></strong> · sidereal longitudes shown using Lahiri ayanamsha.</div>
     </div>
   </div>
+  <!-- Optional reference / overlay (e.g. birth chart vs transit) -->
+  <details class="card ref-card" style="margin-bottom:1rem;padding:0;" id="sky-ref-card">
+    <summary style="padding:.7rem 1.1rem;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--info-text);">
+      <input type="checkbox" id="sky-ref-on" onchange="renderSky();event.stopPropagation();" onclick="event.stopPropagation();" style="margin:0;"/>
+      <span>Overlay a reference moment (e.g. birth chart, past event)</span>
+      <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--text-tertiary);">click to expand</span>
+    </summary>
+    <div style="padding:.2rem 1.1rem 1rem;">
+      <div style="font-size:11px;color:var(--text-secondary);line-height:1.55;margin-bottom:10px;">
+        When enabled, planets from the reference moment are overlaid on both charts in <em style="color:var(--info-text);">blue italic</em> below the primary set. Useful for comparing a birth chart against the current transit, or seeing how a past horoscope maps onto a divisional chart.
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
+        <div><label class="form-lbl">Reference date</label><input type="date" id="sky-ref-date" onchange="renderSky()" style="width:100%;"/></div>
+        <div><label class="form-lbl">Reference time</label><input type="time" id="sky-ref-time" onchange="renderSky()" style="width:100%;"/></div>
+        <div><label class="form-lbl">Reference city</label><select id="sky-ref-city" onchange="renderSky()" style="width:100%;font-size:12px;padding:5px 8px;"><option value="">(same as primary)</option></select></div>
+        <div><label class="form-lbl">Reference lat</label><input type="number" id="sky-ref-lat" step="0.001" onchange="renderSky()" placeholder="(same)" style="width:100%;font-size:12px;padding:5px 8px;"/></div>
+        <div><label class="form-lbl">Reference lon</label><input type="number" id="sky-ref-lon" step="0.001" onchange="renderSky()" placeholder="(same)" style="width:100%;font-size:12px;padding:5px 8px;"/></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">If a city is chosen, lat/lon/tz come from it. If lat & lon are filled, they override the city. If everything is blank, the primary location is reused.</div>
+    </div>
+  </details>
   <div class="sky-wrap">
     <div class="chart">
       <div class="chart-title"><i class="ti ti-sun" aria-hidden="true"></i> Rashi · D-1</div>
@@ -374,6 +399,7 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><td><code>vargaRashi()</code></td><td>Divisional chart placement for D-1 / 2 / 3 / 4 / 7 / 9 / 10 / 12 / 16 / 20 / 24 / 27 per Parashara rules</td><td>exact (rule-based)</td></tr>
         <tr><td><code>eclToHor()</code></td><td>Ecliptic (λ, β) → horizontal (alt, az) coords at observer; used by the Sky-tab viewing guide</td><td>±0.05°</td></tr>
         <tr><td><code>findRiseTime()</code></td><td>Steps forward and bisects the first 0°-altitude crossing for any body within 24 h</td><td>±30 s</td></tr>
+        <tr><td><code>getRefMoment()</code></td><td>Resolves the optional Sky-tab reference: date, time, location (city or lat/lon override), DST-aware tz via the reference's own IANA name</td><td>exact</td></tr>
       </table>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;line-height:1.6;">
         <strong style="color:var(--text-primary);">Sidereal vs tropical:</strong>
@@ -520,6 +546,10 @@ button.action:hover{background:var(--bg-tertiary);}
       <div class="ab-elem">
         <div class="ab-el-name">Divisional charts <span class="ab-el-sub">D-1 … D-27</span></div>
         <div class="ab-el-note">D-1 (Rashi), D-2 (Hora), D-3 (Drekkana), D-4 (Chaturthamsa), D-7 (Saptamsa), D-9 (Navamsa), D-10 (Dasamsa), D-12 (Dwadasamsa), D-16 (Shodasamsa), D-20 (Vimshamsa), D-24 (Siddhamsa), D-27 (Bhamsa). All rule-based per Parashara. D-30 (Trimshamsa, non-uniform) and D-60 are omitted.</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Reference overlay <span class="ab-el-sub">birth chart vs transit</span></div>
+        <div class="ab-el-note">Optional second moment (date / time / city or lat-lon) shown <em style="color:var(--info-text);">in blue italic</em> beneath the primary planets in every chart cell. The cell gets a blue inset border when the reference Lagna falls there. The longitudes table gains a fourth column with reference values. Each side has its own DST-aware timezone via <code>Intl.DateTimeFormat</code> with the relevant IANA name — so a 1990 Delhi birth chart vs a 2026 NJ transit each use their correct offset.</div>
       </div>
       <div class="ab-elem" style="border-bottom:none;">
         <div class="ab-el-name">Viewing guide <span class="ab-el-sub">where to actually look</span></div>
@@ -1606,6 +1636,15 @@ function buildCitySelect(){
   let h='<option value="">— select city —</option>';
   for(const c of CITIES){const n=esc(c.name);h+=`<option value="${n}">${n}</option>`;}
   document.getElementById('city-sel').innerHTML=h;
+  // Populate the Sky-tab reference city dropdown with the same list plus a
+  // "same as primary" sentinel; the option order is preserved so the user
+  // sees identical familiar names.
+  const refSel=document.getElementById('sky-ref-city');
+  if(refSel){
+    let rh='<option value="">(same as primary)</option>';
+    for(const c of CITIES){const n=esc(c.name);rh+=`<option value="${n}">${n}</option>`;}
+    refSel.innerHTML=rh;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────── */
@@ -2093,6 +2132,50 @@ function setSkyNow(){
   document.getElementById('sky-time').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   renderSky();
 }
+// Resolve the active reference moment + location. Returns null if not enabled
+// or required fields are missing. Otherwise returns {J, lat, lon, name, label}.
+function getRefMoment(){
+  const onEl=document.getElementById('sky-ref-on');
+  if(!onEl||!onEl.checked)return null;
+  const dStr=document.getElementById('sky-ref-date').value;
+  const tStr=document.getElementById('sky-ref-time').value;
+  if(!dStr||!tStr)return null;
+  const [hh,mm]=tStr.split(':').map(Number);
+  if(!Number.isFinite(hh)||!Number.isFinite(mm)||hh<0||hh>23||mm<0||mm>59)return null;
+  const dt=new Date(dStr+'T'+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':00');
+  if(isNaN(dt.getTime()))return null;
+  // Resolve location: lat/lon override > city > primary LOC.
+  const latRaw=document.getElementById('sky-ref-lat').value;
+  const lonRaw=document.getElementById('sky-ref-lon').value;
+  const cityName=document.getElementById('sky-ref-city').value;
+  let lat=null,lon=null,name=null,iana=null,tzMin=null;
+  if(latRaw!==''&&lonRaw!==''){
+    const la=parseFloat(latRaw),lo=parseFloat(lonRaw);
+    if(isFinite(la)&&isFinite(lo)&&la>=-90&&la<=90&&lo>=-180&&lo<=180){
+      lat=la;lon=lo;name=`${la.toFixed(2)}°, ${lo.toFixed(2)}°`;tzMin=tzFromLon(lo);
+    }
+  }
+  if(lat===null&&cityName){
+    const c=CITIES.find(x=>x.name===cityName);
+    if(c){lat=c.lat;lon=c.lon;name=c.name;iana=c.iana;tzMin=c.tz;}
+  }
+  if(lat===null){lat=LOC.lat;lon=LOC.lon;name=LOC.name+' (same)';iana=LOC.iana;tzMin=LOC.tz;}
+  // Compute UT offset for the ref date using its own iana/tz (DST-aware via Intl).
+  let tz=tzMin;
+  if(iana){
+    try{
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone:iana,timeZoneName:'longOffset'}).formatToParts(dt);
+      const tzn=parts.find(p=>p.type==='timeZoneName');
+      if(tzn){const m=tzn.value.match(/GMT([+-])(\d+)(?::(\d+))?/);if(m){const s=m[1]==='-'?-1:1;tz=s*(parseInt(m[2],10)*60+parseInt(m[3]||'0',10));}else if(/^GMT$/i.test(tzn.value))tz=0;}
+    }catch(e){}
+  }
+  if(typeof tz!=='number')tz=tzFromLon(lon);
+  const localMin=hh*60+mm,J0=jd(dt)-0.5;
+  const J=J0+(localMin-tz)/1440;
+  const label=`${dStr} ${tStr} · ${name}`;
+  return{J,lat,lon,name,label,tz};
+}
+
 function renderSky(){
   const dEl=document.getElementById('sky-date'),tEl=document.getElementById('sky-time');
   if(!dEl)return;  // panel not in DOM yet
@@ -2111,9 +2194,12 @@ function renderSky(){
   const J=J0+(localMin-tz)/1440;
   const pos=getSkyPositions(J,LOC.lat,LOC.lon);
   const vargaN=parseInt(document.getElementById('sky-varga').value,10)||9;
-  drawChart('sky-d1',pos,1,'Rashi (D-1)');
-  drawChart('sky-dn',pos,vargaN,document.getElementById('sky-varga').selectedOptions[0].text);
-  drawSkyTable(pos);
+  // Optional reference overlay
+  const ref=getRefMoment();
+  const refPos=ref?getSkyPositions(ref.J,ref.lat,ref.lon):null;
+  drawChart('sky-d1',pos,refPos,1,'Rashi (D-1)',ref&&ref.label);
+  drawChart('sky-dn',pos,refPos,vargaN,document.getElementById('sky-varga').selectedOptions[0].text,ref&&ref.label);
+  drawSkyTable(pos,refPos,ref&&ref.label);
   drawViewingGuide(J,LOC.lat,LOC.lon,localMin,tz);
 }
 
@@ -2208,40 +2294,67 @@ function drawViewingGuide(J,lat,lon,localMin,tzOff){
   </div>`;
   document.getElementById('sky-view').innerHTML=h;
 }
-function drawChart(elId,pos,vargaN,label){
-  // Group grahas by rashi for the chosen divisional chart.
-  const cells={};
-  for(const g of GRAHAS){
-    const r=vargaRashi(pos[g.key].lon,vargaN);
-    if(!cells[r])cells[r]=[];
-    cells[r].push(g);
+function drawChart(elId,pos,refPos,vargaN,label,refLabel){
+  // Group grahas by rashi for primary and (optional) reference.
+  function bucket(positions){
+    const cells={};
+    for(const g of GRAHAS){
+      const r=vargaRashi(positions[g.key].lon,vargaN);
+      (cells[r]=cells[r]||[]).push(g);
+    }
+    return cells;
   }
-  let h='';
-  for(const[idx,col,row]of SKY_CELLS){
-    const list=cells[idx]||[],hasLagna=list.some(g=>g.key==='asc');
-    const bodies=list.map(g=>{
-      const retro=pos[g.key].retro&&g.key!=='asc';
+  const cells=bucket(pos);
+  const refCells=refPos?bucket(refPos):null;
+  function row(positions,list){
+    return list.map(g=>{
+      const retro=positions[g.key].retro&&g.key!=='asc';
       const cls=g.key==='asc'?'lagna':retro?'retro':'';
       return `<span class="${cls}">${g.abbr}${retro?'<sup>R</sup>':''}</span>`;
     }).join(' ');
-    h+=`<div class="csign${hasLagna?' has-lagna':''}" style="grid-column:${col};grid-row:${row};">
+  }
+  let h='';
+  for(const[idx,col,row_]of SKY_CELLS){
+    const list=cells[idx]||[],hasLagna=list.some(g=>g.key==='asc');
+    const refList=refCells?(refCells[idx]||[]):[];
+    const hasRefLagna=refList.some(g=>g.key==='asc');
+    const bodies=row(pos,list);
+    const refBodies=refList.length?`<div class="csign-ref">${row(refPos,refList)}</div>`:'';
+    h+=`<div class="csign${hasLagna?' has-lagna':''}${hasRefLagna?' has-ref-lagna':''}" style="grid-column:${col};grid-row:${row_};">
       <div class="csign-name">${RASHI[idx]}</div>
       <div class="csign-bodies">${bodies||'&nbsp;'}</div>
+      ${refBodies}
     </div>`;
   }
-  h+=`<div class="cmid"><div class="cmid-title">${label}</div><div style="margin-top:3px;">${LOC.name}</div></div>`;
+  const refLine=refLabel?`<div style="margin-top:4px;font-size:9px;color:var(--info-text);font-style:italic;">ref: ${esc(refLabel)}</div>`:'';
+  h+=`<div class="cmid"><div class="cmid-title">${label}</div><div style="margin-top:3px;">${esc(LOC.name)}</div>${refLine}</div>`;
   document.getElementById(elId).innerHTML=h;
 }
-function drawSkyTable(pos){
-  let h='<table style="width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;"><tr><th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Graha</th><th style="text-align:right;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Sidereal</th><th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 0;">Rashi · deg</th></tr>';
+function drawSkyTable(pos,refPos,refLabel){
+  const refHdr=refPos?`<th style="text-align:left;color:var(--info-text);font-weight:500;padding:3px 0;font-style:italic;">Ref ° rashi</th>`:'';
+  let h=`<table style="width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;">
+    <tr>
+      <th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Graha</th>
+      <th style="text-align:right;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Sidereal</th>
+      <th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Rashi · deg</th>
+      ${refHdr}
+    </tr>`;
   for(const g of GRAHAS){
     const p=pos[g.key],r=Math.floor(p.lon/30)%12,d=p.lon-30*r;
     const retro=p.retro&&g.key!=='asc';
+    let refCell='';
+    if(refPos){
+      const rp=refPos[g.key],rr=Math.floor(rp.lon/30)%12,rd=rp.lon-30*rr;
+      const rRetro=rp.retro&&g.key!=='asc';
+      refCell=`<td style="padding:2px 0;color:var(--info-text);font-style:italic;">${rp.lon.toFixed(2)}° · ${RASHI[rr]} ${rd.toFixed(2)}°${rRetro?' R':''}</td>`;
+    }
     h+=`<tr><td style="padding:2px 8px 2px 0;">${esc(g.abbr)} ${esc(g.name)}${retro?' <span style="color:var(--danger-text);">R</span>':''}</td>
         <td style="text-align:right;padding:2px 8px 2px 0;">${p.lon.toFixed(2)}°</td>
-        <td style="padding:2px 0;color:var(--text-secondary);">${RASHI[r]} ${d.toFixed(2)}°</td></tr>`;
+        <td style="padding:2px 8px 2px 0;color:var(--text-secondary);">${RASHI[r]} ${d.toFixed(2)}°</td>
+        ${refCell}</tr>`;
   }
   h+='</table>';
+  if(refLabel)h+=`<div style="font-size:10px;color:var(--info-text);font-style:italic;margin-top:6px;">Reference: ${esc(refLabel)}</div>`;
   document.getElementById('sky-lon-table').innerHTML=h;
 }
 
