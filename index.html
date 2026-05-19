@@ -304,7 +304,8 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><td><code>slong()</code></td><td>VSOP87 simplified — apparent tropical Sun longitude (incl. nutation + aberration)</td><td>±0.003°</td></tr>
         <tr><td><code>mlong()</code></td><td>ELP2000 — full Meeus Table 47.A, 59 longitude terms with automatic E/E² eccentricity factors</td><td>±0.01°</td></tr>
         <tr><td><code>ayan()</code></td><td>Lahiri — 23.85° + 1.39644°/century from J2000 (canonical 50.2719″/yr)</td><td>±0.005°</td></tr>
-        <tr><td><code>getSunTimes()</code></td><td>NOAA solar algorithm — uses <code>LOC.tz</code> so a remote location shows its own clock, not the browser's</td><td>±1 min</td></tr>
+        <tr><td><code>getSunTimes()</code></td><td>NOAA solar algorithm — calls <code>resolveTz(date)</code> per call so DST is honoured automatically (e.g. NJ shows EST/EDT correctly)</td><td>±1 min</td></tr>
+        <tr><td><code>resolveTz()</code></td><td><code>Intl.DateTimeFormat</code> against <code>LOC.iana</code> (IANA timezone name); falls back to static <code>LOC.tz</code> or a longitude estimate</td><td>exact (per IANA db)</td></tr>
         <tr><td><code>moonLat()</code></td><td>ELP2000 latitude, 15 terms — used for eclipse geometry</td><td>±0.1°</td></tr>
         <tr><td><code>moonAlt()</code></td><td>Meeus GMST (cubic), normalised HA, topocentric altitude</td><td>±0.02°</td></tr>
         <tr><td><code>getPlanetElongation()</code></td><td>Meeus Ch. 31 heliocentric → geocentric (Kepler, 5 iterations)</td><td>±3°</td></tr>
@@ -407,6 +408,7 @@ button.action:hover{background:var(--bg-tertiary);}
       <table class="ab-tbl">
         <tr><th>Period</th><th>Definition</th></tr>
         <tr><td><strong>Rahu Kalam</strong></td><td>Day (sunrise→sunset) ÷ 8 equal parts; the Rahu-ruled part: Sun=8, Mon=2, Tue=7, Wed=5, Thu=6, Fri=4, Sat=3</td></tr>
+        <tr><td><strong>Yamaganda Kalam</strong></td><td>Same 8-part division; Yama-ruled part: Sun=5, Mon=4, Tue=3, Wed=2, Thu=1, Fri=7, Sat=6</td></tr>
         <tr><td><strong>Gulika Kalam</strong></td><td>Same 8-part division; Saturn/Gulika part: Sun=7, Mon=6, Tue=5, Wed=4, Thu=3, Fri=2, Sat=1</td></tr>
         <tr><td><strong>Abhijit Muhurtha</strong></td><td>The 8th of 15 day-muhurthas, centred on solar noon (width = dayLen/15, scales seasonally). The strongest muhurtha of the day; overrides negative influences.</td></tr>
         <tr><td><strong>Brahma Muhurtha</strong></td><td>The 14th of 15 night-muhurthas, ending one night-muhurtha before sunrise (width = nightLen/15). Ideal for meditation and study.</td></tr>
@@ -442,7 +444,7 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><td>Moon ±0.01° (59-term Meeus ELP2000)</td><td>Nakshatra / yoga transition times ±1–2 min</td></tr>
         <tr><td>Sun ±0.003° (VSOP87 simplified)</td><td>Minimal — adequate for all panchanga purposes</td></tr>
         <tr><td>Lahiri ayanamsha excludes nutation term</td><td>±10–15″ residual vs Swiss Ephemeris; well below nakshatra-boundary tolerance</td></tr>
-        <tr><td>Timezone offset is standard-time only (no DST)</td><td>Times may be off by 1 h during DST in DST-observing regions</td></tr>
+        <tr><td>DST resolved via IANA timezone per CITIES entry</td><td>Cities in <code>CITIES</code> show correct DST/standard times; custom coordinates without an IANA name use a static offset and may be 1 h off during DST</td></tr>
         <tr><td>Sunrise zenith fixed at 90.833° (sea-level)</td><td>At elevated cities (Bengaluru, Kathmandu) sunrise may be 1–3 min early</td></tr>
         <tr><td>Moudhyam elongation ±3°</td><td>Combustion period start/end off by ±3–5 days</td></tr>
         <tr><td>Eclipse classification is geocentric only</td><td>Solar eclipses near the central/partial limit may differ from path-of-totality maps; cross-check with NASA for high-stakes uses</td></tr>
@@ -510,30 +512,48 @@ button.action:hover{background:var(--bg-tertiary);}
 /* ─────────────────────────────────────────────────────────── */
 const D2R=Math.PI/180,R2D=180/Math.PI;
 const nm=d=>((d%360)+360)%360;
-let LOC={lat:42.360,lon:-71.059,name:"Boston",tz:-300};
+let LOC={lat:42.360,lon:-71.059,name:"Boston",tz:-300,iana:"America/New_York"};
 // HTML-escape helper for any string that ends up in innerHTML.
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 // Approximate civil tz from longitude (no DST awareness; rounds toward nearest 15-min).
 // 1° lon = 4 min mean solar time; we round to the nearest 15-min step so India (+5:30),
 // Nepal (+5:45), Newfoundland (-3:30) etc. land in reasonable zones.
 const tzFromLon=lon=>Math.round(lon*4/15)*15;
+// resolveTz(date): returns UTC offset in minutes for LOC at `date`, including DST.
+// Uses Intl.DateTimeFormat against LOC.iana when available; falls back to LOC.tz.
+function resolveTz(date){
+  if(LOC.iana){
+    try{
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone:LOC.iana,timeZoneName:'longOffset'}).formatToParts(date);
+      const tzn=parts.find(p=>p.type==='timeZoneName');
+      if(tzn){
+        const m=tzn.value.match(/GMT([+-])(\d+)(?::(\d+))?/);
+        if(m){const sign=m[1]==='-'?-1:1;return sign*(parseInt(m[2],10)*60+parseInt(m[3]||'0',10));}
+        if(/^GMT$/i.test(tzn.value))return 0;
+      }
+    }catch(e){/* IANA not recognised — fall through */}
+  }
+  return(typeof LOC.tz==='number')?LOC.tz:tzFromLon(LOC.lon);
+}
 
 const SAMVATSARA=["Prabhava","Vibhava","Shukla","Pramoda","Prajapati","Angirasa","Shrimukha","Bhava","Yuva","Dhata","Ishvara","Bahudhanya","Pramathi","Vikrama","Vrisha","Chitrabhanu","Subhanu","Tarana","Parthiva","Vyaya","Sarvajit","Sarvadharin","Virodhi","Vikrita","Khara","Nandana","Vijaya","Jaya","Manmatha","Durmukhi","Hevilambi","Vilambi","Vikari","Sharvari","Plava","Shubhakrit","Shobhakrit","Krodhi","Vishvavasu","Parabhava","Plavanga","Keelaka","Saumya","Sadharana","Virodhikrit","Paridhavi","Pramadi","Ananda","Rakshasa","Nala","Pingala","Kalayukti","Siddharthi","Raudra","Durmati","Dundubhi","Rudhirodgari","Raktakshi","Krodhana","Akshaya"];
 const RITU=[{name:"Vasanta",en:"Spring",rng:"Mesha–Vrishabha"},{name:"Grishma",en:"Summer",rng:"Mithuna–Karka"},{name:"Varsha",en:"Monsoon",rng:"Simha–Kanya"},{name:"Sharad",en:"Autumn",rng:"Tula–Vrischika"},{name:"Hemanta",en:"Pre-winter",rng:"Dhanu–Makara"},{name:"Shishira",en:"Winter",rng:"Kumbha–Meena"}];
-// tz = standard-time UTC offset in minutes (no DST applied; users in DST regions
-// will see times off by 60 min during the active DST period).
+// `tz` = standard-time UTC offset in minutes (used as fallback for cities without `iana`).
+// `iana` = IANA timezone name (e.g. "America/New_York") — when present, Intl.DateTimeFormat
+//          resolves the actual offset for any given date, INCLUDING daylight saving time.
 const CITIES=[
-  {name:"Boston",lat:42.360,lon:-71.059,tz:-300},
-  {name:"Delhi",lat:28.614,lon:77.209,tz:330},{name:"Mumbai",lat:19.076,lon:72.878,tz:330},{name:"Chennai",lat:13.083,lon:80.270,tz:330},
-  {name:"Kolkata",lat:22.573,lon:88.363,tz:330},{name:"Bengaluru",lat:12.972,lon:77.594,tz:330},{name:"Hyderabad",lat:17.387,lon:78.491,tz:330},
-  {name:"Ahmedabad",lat:23.023,lon:72.571,tz:330},{name:"Pune",lat:18.520,lon:73.856,tz:330},{name:"Jaipur",lat:26.912,lon:75.788,tz:330},
-  {name:"Varanasi",lat:25.318,lon:82.975,tz:330},{name:"Prayagraj",lat:25.436,lon:81.844,tz:330},{name:"Haridwar",lat:29.945,lon:78.164,tz:330},
-  {name:"Tirupati",lat:13.628,lon:79.420,tz:330},{name:"Mathura",lat:27.496,lon:77.674,tz:330},{name:"Ujjain",lat:23.183,lon:75.779,tz:330},
-  {name:"Kochi",lat:9.931,lon:76.267,tz:330},{name:"Kathmandu",lat:27.700,lon:85.318,tz:345},{name:"Colombo",lat:6.927,lon:79.862,tz:330},
-  {name:"New York",lat:40.713,lon:-74.006,tz:-300},{name:"London",lat:51.507,lon:-0.128,tz:0},{name:"Dubai",lat:25.204,lon:55.270,tz:240},
-  {name:"Singapore",lat:1.352,lon:103.820,tz:480},{name:"Sydney",lat:-33.869,lon:151.209,tz:600},{name:"Toronto",lat:43.651,lon:-79.347,tz:-300},
-  {name:"San Francisco",lat:37.779,lon:-122.418,tz:-480},{name:"Chicago",lat:41.878,lon:-87.630,tz:-360},{name:"Houston",lat:29.760,lon:-95.370,tz:-360},
-  {name:"Auckland",lat:-36.848,lon:174.763,tz:720},{name:"Nairobi",lat:-1.292,lon:36.822,tz:180},{name:"Johannesburg",lat:-26.204,lon:28.047,tz:120},
+  {name:"Boston",lat:42.360,lon:-71.059,tz:-300,iana:"America/New_York"},
+  {name:"Delhi",lat:28.614,lon:77.209,tz:330,iana:"Asia/Kolkata"},{name:"Mumbai",lat:19.076,lon:72.878,tz:330,iana:"Asia/Kolkata"},{name:"Chennai",lat:13.083,lon:80.270,tz:330,iana:"Asia/Kolkata"},
+  {name:"Kolkata",lat:22.573,lon:88.363,tz:330,iana:"Asia/Kolkata"},{name:"Bengaluru",lat:12.972,lon:77.594,tz:330,iana:"Asia/Kolkata"},{name:"Hyderabad",lat:17.387,lon:78.491,tz:330,iana:"Asia/Kolkata"},
+  {name:"Ahmedabad",lat:23.023,lon:72.571,tz:330,iana:"Asia/Kolkata"},{name:"Pune",lat:18.520,lon:73.856,tz:330,iana:"Asia/Kolkata"},{name:"Jaipur",lat:26.912,lon:75.788,tz:330,iana:"Asia/Kolkata"},
+  {name:"Varanasi",lat:25.318,lon:82.975,tz:330,iana:"Asia/Kolkata"},{name:"Prayagraj",lat:25.436,lon:81.844,tz:330,iana:"Asia/Kolkata"},{name:"Haridwar",lat:29.945,lon:78.164,tz:330,iana:"Asia/Kolkata"},
+  {name:"Tirupati",lat:13.628,lon:79.420,tz:330,iana:"Asia/Kolkata"},{name:"Mathura",lat:27.496,lon:77.674,tz:330,iana:"Asia/Kolkata"},{name:"Ujjain",lat:23.183,lon:75.779,tz:330,iana:"Asia/Kolkata"},
+  {name:"Kochi",lat:9.931,lon:76.267,tz:330,iana:"Asia/Kolkata"},{name:"Kathmandu",lat:27.700,lon:85.318,tz:345,iana:"Asia/Kathmandu"},{name:"Colombo",lat:6.927,lon:79.862,tz:330,iana:"Asia/Colombo"},
+  {name:"New Jersey",lat:40.598,lon:-74.611,tz:-300,iana:"America/New_York"},
+  {name:"New York",lat:40.713,lon:-74.006,tz:-300,iana:"America/New_York"},{name:"London",lat:51.507,lon:-0.128,tz:0,iana:"Europe/London"},{name:"Dubai",lat:25.204,lon:55.270,tz:240,iana:"Asia/Dubai"},
+  {name:"Singapore",lat:1.352,lon:103.820,tz:480,iana:"Asia/Singapore"},{name:"Sydney",lat:-33.869,lon:151.209,tz:600,iana:"Australia/Sydney"},{name:"Toronto",lat:43.651,lon:-79.347,tz:-300,iana:"America/Toronto"},
+  {name:"San Francisco",lat:37.779,lon:-122.418,tz:-480,iana:"America/Los_Angeles"},{name:"Chicago",lat:41.878,lon:-87.630,tz:-360,iana:"America/Chicago"},{name:"Houston",lat:29.760,lon:-95.370,tz:-360,iana:"America/Chicago"},
+  {name:"Auckland",lat:-36.848,lon:174.763,tz:720,iana:"Pacific/Auckland"},{name:"Nairobi",lat:-1.292,lon:36.822,tz:180,iana:"Africa/Nairobi"},{name:"Johannesburg",lat:-26.204,lon:28.047,tz:120,iana:"Africa/Johannesburg"},
 ];
 const TI=[
   {n:1,name:"Pratipada",pak:"Shukla",q:"good"},{n:2,name:"Dwitiya",pak:"Shukla",q:"good"},{n:3,name:"Tritiya",pak:"Shukla",q:"good"},
@@ -571,6 +591,9 @@ const RASHI=["Mesha","Vrishabha","Mithuna","Karka","Simha","Kanya","Tula","Vrisc
 const RASHI_EN=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 const MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const GULIKA=[7,6,5,4,3,2,1];
+// Yamaganda Kalam: 1-based part number (of 8 day-divisions) for each vara.
+// Sun→5, Mon→4, Tue→3, Wed→2, Thu→1, Fri→7, Sat→6  (canonical Indian almanac order).
+const YAMAGANDA=[5,4,3,2,1,7,6];
 // Amrita Siddhi Yoga: traditional vara × nakshatra pairings (Brihat Samhita / common almanacs).
 // Key = date.getDay() (0=Sun … 6=Sat).  Value = 0-based nakshatra index into NK[].
 // Canonical: Sun→Hasta(12), Mon→Mrigashira(4), Tue→Ashwini(0), Wed→Anuradha(16),
@@ -888,9 +911,10 @@ function getSunTimes(date,lat,lon){
   const cosH=(Math.cos(90.833*D2R)-Math.sin(lat*D2R)*sinDec)/(Math.cos(lat*D2R)*Math.cos(dec));
   if(Math.abs(cosH)>1)return{sunrise:6*60,sunset:18*60,solarNoon:12*60};
   const H=Math.acos(cosH)*R2D,nu=720-4*lon-eot;
-  // Use the location's tz (from CITIES or estimated from lon) so a Boston user
-  // viewing Delhi sees Delhi-local sunrise, not Boston-local sunrise.
-  const tzOff=(typeof LOC.tz==='number')?LOC.tz:-date.getTimezoneOffset();
+  // DST-aware: resolveTz(date) consults LOC.iana via Intl.DateTimeFormat so March-
+  // November summer dates in US/EU locations show EDT/BST etc.; only when no iana
+  // is set does it fall back to the static LOC.tz or the longitude estimator.
+  const tzOff=resolveTz(date);
   return{sunrise:((nu-H*4)+tzOff+1440)%1440,sunset:((nu+H*4)+tzOff+1440)%1440,solarNoon:(nu+tzOff+1440)%1440,tz:tzOff};
 }
 
@@ -1052,17 +1076,19 @@ const getTiIdx=J=>Math.floor(nm(mlong(J)-slong(J))/12);
 const getNkIdx=J=>Math.floor(nm(mlong(J)-ayan(J))/(360/27));
 const getYgIdx=J=>Math.floor(nm(slong(J)+mlong(J)-2*ayan(J))/(360/27))%27;
 const getKrIdx=J=>{const k=Math.floor(nm(mlong(J)-slong(J))/6);return k===0?10:k>=57?7+Math.min(k-57,2):(k-1)%7;};
-/* findEnd: find when the panchanga element active at NOON ends.
-   MUST search forward from Jn (noon), NOT from midnight.
-   Bug if searching from midnight: when an element transitions before noon
-   (e.g. Dwadashi ending at 1:50 AM, Trayodashi at noon), the search stops at step 1
-   and bisects to find the START of the noon element — returning 1:50 AM instead of
-   the correct 11:02 PM end of Trayodashi. Searching from noon avoids this entirely. */
-function findEnd(date,getFn){
+/* findEnd: find when the panchanga element active AT the reference instant ends.
+   The reference defaults to local noon (used by the calendar grid). The Panchanga
+   tab passes the sunrise JD so the returned transition is the end of the element
+   currently displayed at sunrise — otherwise the named tithi and its end time would
+   refer to different tithis whenever a transition happens between sunrise and noon.
+   Searching FORWARD from the reference is critical: searching from midnight can
+   bracket an earlier transition (e.g. Dwadashi → Trayodashi at 01:50 AM) and the
+   bisection then converges to that earlier boundary instead of the desired one. */
+function findEnd(date,getFn,startJD){
   const midnight=new Date(date.getFullYear(),date.getMonth(),date.getDate(),0,0,0);
-  const Jn=jdFull(new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0));
+  const Jn=(typeof startJD==='number')?startJD:jdFull(new Date(date.getFullYear(),date.getMonth(),date.getDate(),12,0,0));
   const cur=getFn(Jn),step=20/(24*60);let Jlo=null,Jhi=null;
-  // Search forward from noon (not midnight) — up to 72 hours covers all elements
+  // Search forward from the reference instant — up to 72 hours covers all elements
   for(let i=1;i<=216;i++){const Jc=Jn+i*step;if(getFn(Jc)!==cur){Jlo=Jc-step;Jhi=Jc;break;}}
   if(Jlo===null)return{fmted:"next day",isToday:false};
   for(let i=0;i<24;i++){const m=(Jlo+Jhi)/2;if(getFn(m)===cur)Jlo=m;else Jhi=m;}
@@ -1071,8 +1097,8 @@ function findEnd(date,getFn){
   const dayDelta=Math.floor((ed-midnight)/86400000);
   return{fmted:fmtT(ed),isToday:dayDelta===0,dayDelta};
 }
-function calcTr(date){
-  return{tithi:findEnd(date,getTiIdx),naksh:findEnd(date,getNkIdx),yoga:findEnd(date,getYgIdx),karana:findEnd(date,getKrIdx)};
+function calcTr(date,startJD){
+  return{tithi:findEnd(date,getTiIdx,startJD),naksh:findEnd(date,getNkIdx,startJD),yoga:findEnd(date,getYgIdx,startJD),karana:findEnd(date,getKrIdx,startJD)};
 }
 
 /* ─────────────────────────────────────────────────────────── */
@@ -1093,7 +1119,9 @@ function calcP(date,Joverride){
   const vara=VA[date.getDay()];
   const st=getSunTimes(date,LOC.lat,LOC.lon),dayLen=st.sunset-st.sunrise,pt=dayLen/8;
   const rS=st.sunrise+(vara.rahu-1)*pt,gS=st.sunrise+(GULIKA[date.getDay()]-1)*pt;
+  const yS=st.sunrise+(YAMAGANDA[date.getDay()]-1)*pt;
   const rahuK={s:fmtMin(rS),e:fmtMin(rS+pt)},guliK={s:fmtMin(gS),e:fmtMin(gS+pt)};
+  const yamaK={s:fmtMin(yS),e:fmtMin(yS+pt)};
   // Abhijit = 8th of the 15 day-muhurthas (centred on solar noon).
   // Brahma  = 14th of the 15 night-muhurthas, ending one night-muhurtha before sunrise.
   const dMu=dayLen/15,nightLen=1440-dayLen,nMu=nightLen/15;
@@ -1116,7 +1144,7 @@ function calcP(date,Joverride){
   const moudhyam=getMoudhyam(J);
   if(moudhyam.venus.active)score=Math.max(5,score-5);
   if(moudhyam.jupiter.active)score=Math.max(5,score-5);
-  return{date,sl,ml,sid,tIdx,tithi,naksh,yoga,karana,vara,rahuK,guliK,abhijit,brahma,
+  return{date,sl,ml,sid,tIdx,tithi,naksh,yoga,karana,vara,rahuK,guliK,yamaK,abhijit,brahma,
     sunrise:fmtMin(st.sunrise),sunset:fmtMin(st.sunset),solarNoon:fmtMin(st.solarNoon),
     hm,masaInfo,special,score,moudhyam,nextTithi:TI[(tIdx+1)%30],nextNaksh:NK[(nIdx+1)%27],nextYoga:YG[(Math.floor(nm(sl+ml-2*ay)/(360/27))%27+1)%27]};
 }
@@ -1209,7 +1237,8 @@ function applyCustomLoc(){
   const matchedCity=sel?CITIES.find(c=>c.name===sel):null;
   // tz: prefer matched city's tz, else estimate from longitude.
   const tz=matchedCity&&typeof matchedCity.tz==='number'?matchedCity.tz:tzFromLon(lo);
-  LOC={lat:la,lon:lo,name:sel||`${la.toFixed(2)}°, ${lo.toFixed(2)}°`,tz};
+  const iana=matchedCity&&matchedCity.iana;
+  LOC={lat:la,lon:lo,name:sel||`${la.toFixed(2)}°, ${lo.toFixed(2)}°`,tz,iana};
   clearPCache();document.getElementById('loc-picker').style.display='none';document.getElementById('loc-status').textContent='';
   renderAll();
 }
@@ -1221,7 +1250,8 @@ function detectLoc(){
     let nm2=`${la.toFixed(2)}°, ${lo.toFixed(2)}°`,matched=null,minD=Infinity;
     for(const c of CITIES){const d=Math.abs(c.lat-la)+Math.abs(c.lon-lo);if(d<minD){minD=d;if(d<3){nm2=c.name;matched=c;}}}
     const tz=matched&&typeof matched.tz==='number'?matched.tz:tzFromLon(lo);
-    LOC={lat:la,lon:lo,name:nm2,tz};clearPCache();
+    const iana=matched&&matched.iana;
+    LOC={lat:la,lon:lo,name:nm2,tz,iana};clearPCache();
     document.getElementById('loc-picker').style.display='none';document.getElementById('loc-status').textContent='';
     document.getElementById('lat-in').value=la.toFixed(4);document.getElementById('lon-in').value=lo.toFixed(4);
     renderAll();
@@ -1332,7 +1362,10 @@ function renderPanch(){
   const st=getSunTimes(dt,LOC.lat,LOC.lon);
   const J0=jd(dt)-0.5;                              // JD at UT-midnight of the date
   const Jsr=J0+(st.sunrise-st.tz)/1440;             // (local-min − tz) = UT-min from UT-midnight
-  const p=calcP(dt,Jsr),tr=gt(dt),hy=getHY(dt),ecl=getDayEclipse(dt);
+  // Transitions must use the SAME reference instant as the displayed panchanga,
+  // otherwise the named element and its end time refer to different elements when
+  // a transition falls between sunrise and noon. Bypass the noon-anchored gt() cache.
+  const p=calcP(dt,Jsr),tr=calcTr(dt,Jsr),hy=getHY(dt),ecl=getDayEclipse(dt);
   const fests=FEST.filter(r=>r.check(p,null));
   document.getElementById('p-hdate').textContent=`☀ ${RASHI[mi(p)]} · ${p.hm} masa · ${p.tithi.pak} Paksha`;
   renderYearStrip(dt);
@@ -1426,6 +1459,7 @@ function renderPanch(){
         <div class="card">
           <div class="sec-title">Inauspicious periods</div>
           <div class="anga-row"><div class="anga-lbl">Rahu Kalam</div><div class="anga-main"><div class="anga-val" style="color:var(--danger-text);font-size:12px;">${p.rahuK.s}–${p.rahuK.e}</div><div class="anga-sub">Avoid new starts</div></div></div>
+          <div class="anga-row"><div class="anga-lbl">Yamaganda</div><div class="anga-main"><div class="anga-val" style="color:var(--danger-text);font-size:12px;">${p.yamaK.s}–${p.yamaK.e}</div><div class="anga-sub">Yama's sub-period · avoid</div></div></div>
           <div class="anga-row"><div class="anga-lbl">Gulika</div><div class="anga-main"><div class="anga-val" style="color:var(--warn-text);font-size:12px;">${p.guliK.s}–${p.guliK.e}</div><div class="anga-sub">Saturn's sub-period</div></div></div>
         </div>
         <div class="card">

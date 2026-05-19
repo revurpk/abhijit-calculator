@@ -96,8 +96,9 @@ html_panchanga_calendar.html
     │   slong(J)     — tropical sun longitude
     │   mlong(J)     — tropical moon longitude (59-term Meeus Table 47.A)
     │   ayan(J)      — Lahiri ayanamsha (23.85° + 1.39644°/century)
-    │   getSunTimes(date, lat, lon) — NOAA sunrise/sunset; uses LOC.tz
+    │   getSunTimes(date, lat, lon) — NOAA sunrise/sunset; uses resolveTz(date)
     │   getHY()      — Hindu year metadata
+    │   resolveTz(date) — Intl-based DST-aware UTC offset for LOC.iana
     │   tzFromLon(lon) — approximate civil tz from longitude (custom-coords fallback)
     │
     ├── Eclipse module
@@ -111,7 +112,8 @@ html_panchanga_calendar.html
     ├── Core panchanga
     │   calcP(date, Joverride?)  — full panchanga; optional JD overrides noon default
     │   gp()      — cached wrapper for calcP() at noon (used by calendar grid)
-    │   gt()      — cached wrapper for calcTr()
+    │   calcTr(date, startJD?)   — transitions starting from startJD (default: noon)
+    │   gt()      — cached wrapper for calcTr() at noon (used by calendar grid)
     │
     ├── Festival engine
     │   getFestivalsForYear() — scans 365 days, applies FEST rules
@@ -252,13 +254,19 @@ All panchanga elements (tithi, nakshatra, yoga, masa, ritu) use sidereal longitu
 ### 4.5 Sunrise & Sunset
 
 **Function:** `getSunTimes(date, lat, lon)`  
-**Returns:** `{ sunrise, sunset, solarNoon, tz }` in minutes from midnight in the **location's** clock (not the browser's clock). `tz` is the UTC offset in minutes that was applied.
+**Returns:** `{ sunrise, sunset, solarNoon, tz }` in minutes from midnight in the **location's** clock (not the browser's clock). `tz` is the UTC offset in minutes that was applied for `date`.
 
-**Timezone handling:**
+**Timezone handling (DST-aware):**
 
-The app stores a `tz` field (UTC offset in minutes, no DST) on each entry in `CITIES`. When a user picks a city, `LOC.tz` is copied from the city record. For custom coordinates the offset is approximated from longitude via `tzFromLon(lon) = Math.round(lon × 4 / 15) × 15`, rounding to the nearest 15 min so half-hour zones (India +5:30, Nepal +5:45) and 15-min outliers (some Pacific islands) are reasonable.
+Each `CITIES` entry has two timezone fields:
+- `iana` — IANA timezone name (e.g. `"America/New_York"`, `"Asia/Kolkata"`)
+- `tz` — standard-time UTC offset in minutes (fallback when `iana` is missing or unresolved)
 
-`getSunTimes` consults `LOC.tz` directly. This means a Boston-based user viewing **Delhi** sees Delhi-local sunrise (≈ 05:30 IST), not the Boston wall-clock equivalent. The previous implementation incorrectly used `-date.getTimezoneOffset()` (the browser's offset) for every location.
+When a user picks a city, both are copied to `LOC`. For custom coordinates only `tz` is set via `tzFromLon(lon) = Math.round(lon × 4 / 15) × 15` (rounds to the nearest 15 min so half-hour zones land sensibly), and `iana` is left blank.
+
+**`resolveTz(date)`** consults `Intl.DateTimeFormat` with `LOC.iana` (`timeZoneName: 'longOffset'`) to obtain the **actual** offset for that date — including DST. So a New Jersey user sees `EST -05:00` from November to March and `EDT -04:00` from March to November, automatically matching printed almanacs. If `iana` is missing or the browser doesn't recognise it, `resolveTz` falls back to the static `LOC.tz` or the longitude estimator.
+
+`getSunTimes` calls `resolveTz(date)` per call. This also means a Boston-based user viewing **Delhi** sees Delhi-local sunrise, not Boston-local sunrise, regardless of what timezone the browser is in.
 
 **Algorithm:** NOAA solar algorithm (based on Meeus). Steps:
 
@@ -561,18 +569,20 @@ Fields: `L0` = mean longitude at J2000 (°), `dL` = rate (°/century), `a` = sem
 
 ### 5.8 Transition End Times
 
-**Function:** `findEnd(date, getFn)` — binary search for when an anga changes value.
+**Function:** `findEnd(date, getFn, startJD?)` — binary search for when an anga changes value, starting from `startJD` (default: local noon).
 
 ```
-1. Sample every 20 minutes from midnight to find the bracket [Jlo, Jhi]
+1. Sample every 20 minutes FORWARD from startJD to find the bracket [Jlo, Jhi]
    where getFn(Jlo) == current value and getFn(Jhi) != current value
 2. Bisect 24 times (to ~4-second precision)
 3. Convert result JDE to local time
 ```
 
-The 20-minute step covers 216 samples (72 hours × 60 / 20). If no transition is found, the anga continues to the next day.
+The 20-minute step covers 216 samples (72 hours × 60 / 20). If no transition is found, the anga continues beyond the search range.
 
-**Accuracy:** ±30 seconds (limited by the moon longitude precision of ~0.3°).
+**Why the reference time matters:** the returned transition is the end of the anga active *at startJD*. The calendar grid passes no `startJD` (defaults to noon, matching `gp()` which also uses noon). The Panchanga tab passes the sunrise JD (`Jsr`), so the returned transition is the end of the anga *at sunrise* — matching the displayed sunrise-anchored panchanga. Without this, when a tithi transitions between sunrise and noon, the displayed name (sunrise tithi) and the displayed end time (noon tithi's end) refer to different tithis, producing nonsensical labels like "Trayodashi ends 08:25" when in fact Chaturdashi ends at 08:25 the next day.
+
+**Accuracy:** ±30 seconds (limited by the moon longitude precision of ~0.01°).
 
 ---
 
@@ -598,6 +608,26 @@ The day (sunrise to sunset) is divided into **8 equal parts**. Rahu Kalam is the
 const partDuration = (sunset − sunrise) / 8;
 const rahuStart    = sunrise + (rahuPart − 1) × partDuration;
 ```
+
+### Yamaganda Kalam
+
+Same 8-part division; the Yama-ruled part. Standard Indian almanac order (Brihat Hora Shastra):
+
+| Day | Part# |
+|-----|-------|
+| Sunday | 5 |
+| Monday | 4 |
+| Tuesday | 3 |
+| Wednesday | 2 |
+| Thursday | 1 |
+| Friday | 7 |
+| Saturday | 6 |
+
+```js
+const YAMAGANDA = [5,4,3,2,1,7,6];  // indexed by date.getDay()
+```
+
+Yamaganda is computed in `calcP()` as `yamaK` and displayed alongside Rahu Kalam / Gulika in the inauspicious-periods card.
 
 ### Gulika Kalam
 
@@ -830,14 +860,14 @@ const EK_KR = ["Papamochini","Varuthini","Apara","Yogini","Kamika",
 
 Location is stored in the global `LOC` object:
 ```js
-let LOC = { lat: 28.614, lon: 77.209, name: "Delhi" };
+let LOC = { lat: 28.614, lon: 77.209, name: "Delhi", tz: 330, iana: "Asia/Kolkata" };
 ```
 
 After changing location, call `clearPCache()` to invalidate cached panchanga (solar times are embedded in the cache).
 
-**Auto-detect** uses the browser's `navigator.geolocation` API. The closest city within 3° is automatically selected as the display name.
+**Auto-detect** uses the browser's `navigator.geolocation` API. The closest city within 3° is automatically selected as the display name; the matched city's `iana` and `tz` are copied into `LOC`.
 
-Solar times are in **local wall-clock minutes from midnight**. The formula uses `date.getTimezoneOffset()` to convert from UTC. This works correctly across DST transitions.
+Solar times are returned in **the location's local wall-clock minutes from midnight** (not the browser's). `resolveTz(date)` provides DST-aware offsets via `Intl.DateTimeFormat` with `LOC.iana`, so US/EU summer dates show DST times automatically.
 
 ---
 
@@ -1370,7 +1400,7 @@ This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 da
 | Eclipse type threshold is β-only (geocentric) | Solar eclipses near the central/partial boundary may be classified slightly differently than path-of-totality maps would show, because lunar parallax is not applied | Cross-check with NASA / timeanddate.com for high-stakes uses |
 | Eclipse visibility uses daytime-at-location for solar, Moon-above-horizon for lunar | A daytime solar eclipse is reported "visible" anywhere the Sun is up; this overstates: only points on the path of totality see totality. Lunar visibility is exact for the midpoint instant | Use authoritative eclipse maps for path-of-totality |
 | Vara (weekday) derived from `date.getDay()` | Correct on the Panchanga tab (sunrise reference) and all daytime hours; may be off by one only in the narrow pre-sunrise window on the calendar grid | Acceptable for practical use |
-| Timezone offset stored per CITIES entry; custom coords use longitude estimate | Most cities correct; civil-time-aware DST is NOT applied (off by 1 h during DST) and the longitude estimate may miss by up to 30 min in regions with eccentric zones (Western China, parts of Russia) | Add the city to CITIES with the correct `tz` |
+| DST resolved via `Intl.DateTimeFormat(LOC.iana)`; custom coords without `iana` use static `tz` or longitude estimate | Cities in `CITIES` carry their IANA name and are DST-correct; custom-coordinate locations may be off by 1 h during DST and the longitude estimate may miss by up to 30 min in regions with eccentric zones (Western China, parts of Russia) | Add the location to `CITIES` with the correct `iana` |
 | No ayanamsha interpolation for sub-day calculations | Eclipse midpoint ayanamsha is slightly off | Sub-arcsecond correction; negligible |
 | Nakshatra / yoga ±0.01° (sidereal Moon + Sun, 59-term ELP2000 + apparent Sun) | Transition timing ±1–2 min for nakshatra, ±3 min for yoga | Use Swiss Ephemeris (§11.12) for sub-arcminute accuracy |
 | `findMoudhyamEnd` assumes monotonic elongation between daily samples | Around inferior conjunction (Venus), the U-shaped elongation curve can be sampled wrong, mis-estimating end date by 1–2 weeks at worst | Use hourly samples or a planetary ephemeris service |
@@ -1417,7 +1447,7 @@ Replace the two CDN `<link>` tags with locally-hosted copies of the CSS/font fil
 
 | Variable | Location | What it controls |
 |----------|----------|-----------------|
-| `LOC` | Global | `{ lat, lon, name, tz }` — current location with UTC offset in minutes |
+| `LOC` | Global | `{ lat, lon, name, tz, iana }` — current location with standard tz offset and IANA timezone for DST resolution |
 | `TI[30]` | Static array | Tithi names and quality ratings |
 | `NK[27]` | Static array | Nakshatra names, rulers, qualities, gana, nature |
 | `YG[27]` | Static array | Yoga names and quality ratings |
