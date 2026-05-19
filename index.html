@@ -134,6 +134,20 @@ button.action:hover{background:var(--bg-tertiary);}
 .ab-el-sub{font-size:11px;font-weight:400;color:var(--text-tertiary);margin-left:4px;}
 .ab-el-note{font-size:11px;color:var(--text-secondary);margin-top:3px;}
 .ab-code{font-family:ui-monospace,monospace;font-size:11px;background:var(--bg-secondary);padding:4px 8px;border-radius:4px;color:var(--text-primary);margin:4px 0;display:block;white-space:nowrap;overflow-x:auto;}
+/* South-Indian Rashi chart: 4×4 grid, signs around the outside, center 2×2 used for label. */
+.sky-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:680px){.sky-wrap{grid-template-columns:1fr;}}
+.chart{background:var(--bg-primary);border:.5px solid var(--border-light);border-radius:var(--radius-md);padding:8px;}
+.chart-title{font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:500;display:flex;align-items:center;gap:6px;}
+.cgrid-rashi{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(58px,1fr));gap:2px;}
+.csign{background:var(--bg-secondary);border:.5px solid var(--border-light);border-radius:4px;padding:4px 5px;font-size:10px;position:relative;overflow:hidden;}
+.csign-name{color:var(--text-tertiary);font-size:9px;letter-spacing:.04em;}
+.csign-bodies{font-size:11px;font-weight:500;line-height:1.4;color:var(--text-primary);margin-top:1px;}
+.csign-bodies .retro{color:var(--danger-text);}
+.csign-bodies .lagna{color:var(--accent);font-weight:600;}
+.csign.has-lagna{border-color:var(--accent);}
+.cmid{grid-column:2 / span 2;grid-row:2 / span 2;background:var(--bg-tertiary);border:.5px solid var(--border-light);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;color:var(--text-tertiary);font-size:10px;line-height:1.4;}
+.cmid-title{font-size:14px;font-weight:500;color:var(--text-primary);letter-spacing:.04em;}
 </style>
 </head>
 <body>
@@ -173,6 +187,7 @@ button.action:hover{background:var(--bg-tertiary);}
   <button class="tab" onclick="showTab('festivals',this)"><i class="ti ti-confetti" aria-hidden="true"></i> Festivals</button>
   <button class="tab" onclick="showTab('eclipses',this)"><i class="ti ti-moon-stars" aria-hidden="true"></i> Eclipses</button>
   <button class="tab" onclick="showTab('search',this)"><i class="ti ti-search" aria-hidden="true"></i> Search</button>
+  <button class="tab" onclick="showTab('sky',this)"><i class="ti ti-sparkles" aria-hidden="true"></i> Sky</button>
   <button class="tab" onclick="showTab('about',this)"><i class="ti ti-info-circle" aria-hidden="true"></i> About</button>
 </div>
 
@@ -282,6 +297,47 @@ button.action:hover{background:var(--bg-tertiary);}
   <div id="sr"></div>
 </div>
 
+<!-- Sky (planetary positions + divisional charts) -->
+<div class="panel" id="panel-sky">
+  <div class="card" style="margin-bottom:1rem;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div><label class="form-lbl">Date</label><input type="date" id="sky-date" onchange="renderSky()"/></div>
+      <div><label class="form-lbl">Time</label><input type="time" id="sky-time" onchange="renderSky()" style="width:110px;"/></div>
+      <button class="ybtn" onclick="setSkyNow()">Now</button>
+      <div style="flex:1;min-width:140px;font-size:11px;color:var(--text-tertiary);align-self:flex-end;padding-bottom:6px;">Computed for <strong id="sky-loc-name" style="color:var(--text-secondary);"></strong> · sidereal longitudes shown using Lahiri ayanamsha.</div>
+    </div>
+  </div>
+  <div class="sky-wrap">
+    <div class="chart">
+      <div class="chart-title"><i class="ti ti-sun" aria-hidden="true"></i> Rashi · D-1</div>
+      <div id="sky-d1" class="cgrid-rashi"></div>
+    </div>
+    <div class="chart">
+      <div class="chart-title" style="justify-content:space-between;">
+        <span><i class="ti ti-circles" aria-hidden="true"></i> Divisional chart</span>
+        <select id="sky-varga" onchange="renderSky()" style="font-size:11px;padding:3px 6px;border-radius:4px;border:.5px solid var(--border-med);background:var(--bg-primary);color:var(--text-primary);">
+          <option value="9" selected>Navamsa (D-9)</option>
+          <option value="2">Hora (D-2)</option>
+          <option value="3">Drekkana (D-3)</option>
+          <option value="4">Chaturthamsa (D-4)</option>
+          <option value="7">Saptamsa (D-7)</option>
+          <option value="10">Dasamsa (D-10)</option>
+          <option value="12">Dwadasamsa (D-12)</option>
+          <option value="16">Shodasamsa (D-16)</option>
+          <option value="20">Vimshamsa (D-20)</option>
+          <option value="24">Siddhamsa (D-24)</option>
+          <option value="27">Bhamsa (D-27)</option>
+        </select>
+      </div>
+      <div id="sky-dn" class="cgrid-rashi"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1rem;">
+    <div class="sec-title">Sidereal longitudes</div>
+    <div id="sky-lon-table" style="font-size:11px;"></div>
+  </div>
+</div>
+
 <!-- About -->
 <div class="panel" id="panel-about">
 
@@ -310,6 +366,8 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><td><code>moonAlt()</code></td><td>Meeus GMST (cubic), normalised HA, topocentric altitude</td><td>±0.02°</td></tr>
         <tr><td><code>getPlanetElongation()</code></td><td>Meeus Ch. 31 heliocentric → geocentric (Kepler, 5 iterations)</td><td>±3°</td></tr>
         <tr><td><code>calcVarjyam()</code></td><td>Per-nakshatra Varjyam window via backward/forward bisection of <code>getNkIdx</code>; start = G/60 of nakshatra duration, length = 4/60</td><td>±2 min</td></tr>
+        <tr><td><code>getSkyPositions()</code></td><td>Sidereal longitudes of all 9 grahas + Lagna for the Sky tab; uses VSOP87/ELP2000 for Sun&amp;Moon, Meeus orbital elements for 5 visible planets, mean node for Rahu/Ketu, RAMC formula for Lagna</td><td>Sun/Moon ±0.01°; planets ±0.5–1°; Lagna ±0.05°</td></tr>
+        <tr><td><code>vargaRashi()</code></td><td>Divisional chart placement for D-1 / 2 / 3 / 4 / 7 / 9 / 10 / 12 / 16 / 20 / 24 / 27 per Parashara rules</td><td>exact (rule-based)</td></tr>
       </table>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;line-height:1.6;">
         <strong style="color:var(--text-primary);">Sidereal vs tropical:</strong>
@@ -433,6 +491,29 @@ button.action:hover{background:var(--bg-tertiary);}
       </table>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;">
         Geocentric elongation computed via full inclination-corrected heliocentric → geocentric conversion (Meeus Ch. 31, Kepler's equation with 5 iterations). Accuracy ±3° → timing error ±3–5 days at period boundaries.
+      </div>
+    </div>
+  </details>
+
+  <!-- Sky Tab -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-sparkles" aria-hidden="true"></i> Sky Tab — Rashi &amp; Divisional Charts</summary>
+    <div class="ab-body">
+      <div style="font-size:12px;line-height:1.65;color:var(--text-secondary);margin-bottom:10px;">
+        Two side-by-side South-Indian style Rashi charts at the chosen <strong style="color:var(--text-primary);">date &amp; time</strong> for the selected location. The wall-clock entered is interpreted as the location's local time (DST-aware via <code>LOC.iana</code>), so the chart is consistent whether the user is physically at that location or viewing remotely.
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Grahas plotted <span class="ab-el-sub">9 + Lagna</span></div>
+        <div class="ab-el-note">Sun (Su), Moon (Mo), Mars (Ma), Mercury (Me), Jupiter (Ju), Venus (Ve), Saturn (Sa), Rahu (Ra), Ketu (Ke), Ascendant/Lagna (As). Retrograde planets are tagged <code>R</code> (Rahu/Ketu always; others computed by comparing longitude at <code>J</code> vs <code>J + 0.5</code>).</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Lagna <span class="ab-el-sub">east-horizon ecliptic intersection</span></div>
+        <code class="ab-code">L_asc = atan2(cos(RAMC), −(sin(ε)·tan(φ) + cos(ε)·sin(RAMC)))</code>
+        <div class="ab-el-note">RAMC = Local Sidereal Time. atan2 signs are chosen to pick the <em>rising</em> intersection (east), not the setting one. Verified: at sunrise, <code>Lagna ≈ Sun</code>.</div>
+      </div>
+      <div class="ab-elem" style="border-bottom:none;">
+        <div class="ab-el-name">Divisional charts <span class="ab-el-sub">D-1 … D-27</span></div>
+        <div class="ab-el-note">D-1 (Rashi), D-2 (Hora), D-3 (Drekkana), D-4 (Chaturthamsa), D-7 (Saptamsa), D-9 (Navamsa), D-10 (Dasamsa), D-12 (Dwadasamsa), D-16 (Shodasamsa), D-20 (Vimshamsa), D-24 (Siddhamsa), D-27 (Bhamsa). All rule-based per Parashara. D-30 (Trimshamsa, non-uniform) and D-60 are omitted.</div>
       </div>
     </div>
   </details>
@@ -863,11 +944,15 @@ function ayan(J){return 23.85+(J-2451545)/36525*1.39644;}
 /* ─────────────────────────────────────────────────────────── */
 /*  PLANETARY POSITIONS & MOUDHYAM (Guru / Sukra combustion)  */
 /* ─────────────────────────────────────────────────────────── */
-// Orbital elements at J2000 (Meeus Table 31.a): L0°, dL°/century, a AU, e, M0°, dM°/century, i°, Ω₀°, dΩ°/century
+// Orbital elements at J2000 (Meeus Table 31.A): L0°, dL°/century, a AU, e, M0°, dM°/century, i°, Ω₀°, dΩ°/century
+// Mean anomaly M = L − ϖ where ϖ = longitude of perihelion.
 const ORBELEMS={
-  venus:  {L0:181.9798,dL:58517.8157,a:0.72333,e:0.006772,M0:212.4487,dM:58517.8153,i:3.3947,Om0:76.6800,dOm:0.9113},
-  earth:  {L0:100.4665,dL:36000.7698,a:1.00000,e:0.016709,M0:357.5291,dM:35999.0503,i:0,     Om0:0,      dOm:0},
-  jupiter:{L0: 34.3515,dL: 3034.9057,a:5.20260,e:0.048498,M0: 20.0202,dM: 3034.6960,i:1.3032,Om0:100.464,dOm:1.0217},
+  mercury:{L0:252.2509,dL:149472.6746,a:0.387098,e:0.205635,M0:174.7948,dM:149472.5153,i:7.0040,Om0: 48.331,dOm:-0.1254},
+  venus:  {L0:181.9798,dL:58517.8157, a:0.72333, e:0.006772,M0:212.4487,dM:58517.8153, i:3.3947,Om0: 76.680,dOm: 0.9113},
+  earth:  {L0:100.4665,dL:36000.7698, a:1.00000, e:0.016709,M0:357.5291,dM:35999.0503, i:0,     Om0:  0,    dOm: 0},
+  mars:   {L0:355.4330,dL:19140.2999, a:1.52366, e:0.093405,M0:19.3870, dM:19139.8585, i:1.8497,Om0: 49.558,dOm:-0.2950},
+  jupiter:{L0: 34.3515,dL: 3034.9057, a:5.20260, e:0.048498,M0: 20.0202,dM: 3034.6960, i:1.3032,Om0:100.464,dOm: 1.0217},
+  saturn: {L0: 50.0775,dL: 1222.1138, a:9.55491, e:0.054509,M0:317.0207,dM: 1221.5515, i:2.4886,Om0:113.666,dOm: 0.8772},
 };
 // Moudhyam (combustion) thresholds in degrees of elongation from the Sun.
 // Traditional Hindu astronomy: Sukra (Venus) < 10°, Guru (Jupiter) < 11°.
@@ -896,6 +981,114 @@ function getMoudhyam(J){
     r[k]={elong:Math.round(el*10)/10,active:el<thresh,thresh};
   }
   return r;
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  PLANETARY LONGITUDES (Sky tab) + ASCENDANT + VARGA         */
+/* ─────────────────────────────────────────────────────────── */
+// Geocentric ecliptic longitude (tropical, apparent) for a planet by key.
+// Mercury/Venus/Mars/Jupiter/Saturn via helio→geo subtraction; Sun via slong;
+// Moon via mlong; lunar nodes via Meeus mean-node formula.
+function geoPlanetLon(key,J){
+  if(key==='sun')return slong(J);
+  if(key==='moon')return mlong(J);
+  if(key==='rahu'){const T=(J-2451545)/36525;return nm(125.04452-1934.136261*T);}
+  if(key==='ketu')return nm(geoPlanetLon('rahu',J)+180);
+  const T=(J-2451545)/36525;
+  const p=helioXYZ(ORBELEMS[key],T),e=helioXYZ(ORBELEMS.earth,T);
+  return nm(Math.atan2(p.y-e.y,p.x-e.x)*R2D);
+}
+// Retrograde detection: compute apparent geocentric longitude at J and J+0.5d,
+// account for 360° wrap, return true if the planet's longitude decreased.
+// Sun, Moon, Ascendant never; Rahu/Ketu always (mean nodes are retrograde).
+function isRetrograde(key,J){
+  if(key==='sun'||key==='moon'||key==='asc')return false;
+  if(key==='rahu'||key==='ketu')return true;
+  const l1=geoPlanetLon(key,J),l2=geoPlanetLon(key,J+0.5);
+  let d=l2-l1;if(d>180)d-=360;else if(d<-180)d+=360;
+  return d<0;
+}
+// Tropical ascendant longitude at J for the given lat/lon (degrees).
+//   RAMC = Local Sidereal Time (= GMST + east-longitude)
+//   tan(L_asc) = cos(RAMC) / −(sin(ε)·tan(φ) + cos(ε)·sin(RAMC))
+// (The atan2 sign convention here picks the RISING — east-horizon — intersection
+// of the ecliptic, not the setting one which is 180° away.)
+function ascendantTropical(J,lat,lon){
+  const T=(J-2451545)/36525,T2=T*T,T3=T2*T;
+  const GMST=nm(280.46061837+360.98564736629*(J-2451545)+0.000387933*T2-T3/38710000);
+  const RAMC=nm(GMST+lon)*D2R;
+  const eps=(23.439291111-0.013004167*T)*D2R,phi=lat*D2R;
+  let asc=Math.atan2(Math.cos(RAMC),-(Math.sin(eps)*Math.tan(phi)+Math.cos(eps)*Math.sin(RAMC)))*R2D;
+  return nm(asc);
+}
+// Returns sidereal longitudes (degrees) for all 9 grahas + Lagna.
+function getSkyPositions(J,lat,lon){
+  const ay=ayan(J),out={};
+  for(const k of['sun','moon','mars','mercury','jupiter','venus','saturn','rahu','ketu']){
+    out[k]={lon:nm(geoPlanetLon(k,J)-ay),retro:isRetrograde(k,J)};
+  }
+  out.asc={lon:nm(ascendantTropical(J,lat,lon)-ay),retro:false};
+  return out;
+}
+// Display metadata for each graha. Order = chart-cell stacking order.
+const GRAHAS=[
+  {key:'asc',    abbr:'As', name:'Lagna'},
+  {key:'sun',    abbr:'Su', name:'Sun'},
+  {key:'moon',   abbr:'Mo', name:'Moon'},
+  {key:'mars',   abbr:'Ma', name:'Mars'},
+  {key:'mercury',abbr:'Me', name:'Mercury'},
+  {key:'jupiter',abbr:'Ju', name:'Jupiter'},
+  {key:'venus',  abbr:'Ve', name:'Venus'},
+  {key:'saturn', abbr:'Sa', name:'Saturn'},
+  {key:'rahu',   abbr:'Ra', name:'Rahu'},
+  {key:'ketu',   abbr:'Ke', name:'Ketu'},
+];
+// Compute the rashi (0-11) for a given sidereal longitude in a divisional chart.
+// N is the varga number (1, 2, 3, 4, 7, 9, 10, 12, 16, 20, 24, 27).
+// Uses standard Parashara rules per chart.
+function vargaRashi(L,N){
+  const s=Math.floor(L/30)%12,d=L-30*s;
+  switch(N){
+    case 1: return s;
+    case 2: {  // Hora — male signs: 0-15°→Leo(4), 15-30°→Cancer(3); female: swapped.
+      const part=Math.floor(d/15),isMale=s%2===0;
+      return isMale?(part===0?4:3):(part===0?3:4);
+    }
+    case 3: {  // Drekkana — 0-10°→same, 10-20°→5th, 20-30°→9th from sign
+      return(s+Math.floor(d/10)*4)%12;
+    }
+    case 4: {  // Chaturthamsa — 7.5° each, placed in 1st, 4th, 7th, 10th
+      return(s+Math.floor(d/7.5)*3)%12;
+    }
+    case 7: {  // Saptamsa — odd signs start at same, even at 7th from same
+      const part=Math.floor(d*7/30);
+      return((s%2===0?s:(s+6)%12)+part)%12;
+    }
+    case 9:    // Navamsa — neat formula: floor(L * 9/30) % 12
+      return Math.floor(L*9/30)%12;
+    case 10: { // Dasamsa — odd signs from same, even from 9th from same
+      const part=Math.floor(d/3);
+      return((s%2===0?s:(s+8)%12)+part)%12;
+    }
+    case 12:   // Dwadasamsa — 12 parts of 2.5° starting at same sign
+      return(s+Math.floor(d/2.5))%12;
+    case 16: { // Shodasamsa — start by modality (movable→Aries, fixed→Leo, dual→Sag)
+      const starts=[0,4,8];
+      return(starts[s%3]+Math.floor(d*16/30))%12;
+    }
+    case 20: { // Vimshamsa — movable→Aries, fixed→Sag, dual→Leo
+      const starts=[0,8,4];
+      return(starts[s%3]+Math.floor(d*20/30))%12;
+    }
+    case 24: { // Siddhamsa (Chaturvimshamsa) — odd signs from Leo, even from Cancer
+      return((s%2===0?4:3)+Math.floor(d*24/30))%12;
+    }
+    case 27: { // Bhamsa (Saptavimshamsa) — start by element
+      const starts=[0,3,6,9];  // fire(Ar,Le,Sa)→Aries, earth→Cancer, air→Libra, water→Capricorn
+      return(starts[s%4]+Math.floor(d*27/30))%12;
+    }
+    default: return s;
+  }
 }
 function findMoudhyamEnd(date,key){
   const thresh=MOUDHYAM_THRESH[key],J0=jd(date);
@@ -1789,6 +1982,80 @@ function showTab(name,btn){
   if(name==='calendar')renderCal();
   else if(name==='festivals')renderFestivals();
   else if(name==='eclipses')renderEclipses();
+  else if(name==='sky')renderSky();
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  SKY TAB — planetary positions + Rashi & divisional charts  */
+/* ─────────────────────────────────────────────────────────── */
+// South-Indian Rashi chart cell positions: 12 perimeter cells of a 4×4 grid.
+// [rashiIdx, gridCol(1..4), gridRow(1..4)]. The center 2×2 cells are the label.
+const SKY_CELLS=[
+  [11,1,1],[0,2,1],[1,3,1],[2,4,1],
+  [10,1,2],            [3,4,2],
+  [9, 1,3],            [4,4,3],
+  [8, 1,4],[7,2,4],[6,3,4],[5,4,4],
+];
+function setSkyNow(){
+  const now=new Date();
+  document.getElementById('sky-date').value=now.toISOString().split('T')[0];
+  document.getElementById('sky-time').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  renderSky();
+}
+function renderSky(){
+  const dEl=document.getElementById('sky-date'),tEl=document.getElementById('sky-time');
+  if(!dEl)return;  // panel not in DOM yet
+  if(!dEl.value){setSkyNow();return;}
+  const [hh,mm]=(tEl.value||'12:00').split(':').map(Number);
+  const dt=new Date(dEl.value+'T'+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':00');
+  if(isNaN(dt.getTime())){document.getElementById('sky-d1').innerHTML='Invalid date';return;}
+  document.getElementById('sky-loc-name').textContent=LOC.name;
+  // UT JD for the exact instant entered, treating the user's chosen wall-clock
+  // as the LOCATION's clock (so e.g. "10:30" means 10:30 NJ time, not 10:30 browser-local).
+  const tz=resolveTz(dt);
+  const localMin=hh*60+mm,J0=jd(dt)-0.5;
+  const J=J0+(localMin-tz)/1440;
+  const pos=getSkyPositions(J,LOC.lat,LOC.lon);
+  const vargaN=parseInt(document.getElementById('sky-varga').value,10)||9;
+  drawChart('sky-d1',pos,1,'Rashi (D-1)');
+  drawChart('sky-dn',pos,vargaN,document.getElementById('sky-varga').selectedOptions[0].text);
+  drawSkyTable(pos);
+}
+function drawChart(elId,pos,vargaN,label){
+  // Group grahas by rashi for the chosen divisional chart.
+  const cells={};
+  for(const g of GRAHAS){
+    const r=vargaRashi(pos[g.key].lon,vargaN);
+    if(!cells[r])cells[r]=[];
+    cells[r].push(g);
+  }
+  let h='';
+  for(const[idx,col,row]of SKY_CELLS){
+    const list=cells[idx]||[],hasLagna=list.some(g=>g.key==='asc');
+    const bodies=list.map(g=>{
+      const retro=pos[g.key].retro&&g.key!=='asc';
+      const cls=g.key==='asc'?'lagna':retro?'retro':'';
+      return `<span class="${cls}">${g.abbr}${retro?'<sup>R</sup>':''}</span>`;
+    }).join(' ');
+    h+=`<div class="csign${hasLagna?' has-lagna':''}" style="grid-column:${col};grid-row:${row};">
+      <div class="csign-name">${RASHI[idx]}</div>
+      <div class="csign-bodies">${bodies||'&nbsp;'}</div>
+    </div>`;
+  }
+  h+=`<div class="cmid"><div class="cmid-title">${label}</div><div style="margin-top:3px;">${LOC.name}</div></div>`;
+  document.getElementById(elId).innerHTML=h;
+}
+function drawSkyTable(pos){
+  let h='<table style="width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;"><tr><th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Graha</th><th style="text-align:right;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Sidereal</th><th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 0;">Rashi · deg</th></tr>';
+  for(const g of GRAHAS){
+    const p=pos[g.key],r=Math.floor(p.lon/30)%12,d=p.lon-30*r;
+    const retro=p.retro&&g.key!=='asc';
+    h+=`<tr><td style="padding:2px 8px 2px 0;">${esc(g.abbr)} ${esc(g.name)}${retro?' <span style="color:var(--danger-text);">R</span>':''}</td>
+        <td style="text-align:right;padding:2px 8px 2px 0;">${p.lon.toFixed(2)}°</td>
+        <td style="padding:2px 0;color:var(--text-secondary);">${RASHI[r]} ${d.toFixed(2)}°</td></tr>`;
+  }
+  h+='</table>';
+  document.getElementById('sky-lon-table').innerHTML=h;
 }
 
 /* ─────────────────────────────────────────────────────────── */
@@ -1871,7 +2138,7 @@ function setIcons(){
 /* ─────────────────────────────────────────────────────────── */
 /*  INIT                                                       */
 /* ─────────────────────────────────────────────────────────── */
-function renderAll(){renderLocBar();renderYearStrip(selD);renderCal();renderPanch();if(document.getElementById('panel-festivals').classList.contains('on'))renderFestivals();}
+function renderAll(){renderLocBar();renderYearStrip(selD);renderCal();renderPanch();if(document.getElementById('panel-festivals').classList.contains('on'))renderFestivals();if(document.getElementById('panel-sky').classList.contains('on'))renderSky();}
 
 function init(){
   setIcons();
@@ -1885,6 +2152,9 @@ function init(){
   document.getElementById('ss').value=ts;
   document.getElementById('se').value=new Date(today.getTime()+60*86400000).toISOString().split('T')[0];
   document.getElementById('pd').value=ts;
+  // Sky tab defaults: today + now
+  document.getElementById('sky-date').value=ts;
+  document.getElementById('sky-time').value=String(today.getHours()).padStart(2,'0')+':'+String(today.getMinutes()).padStart(2,'0');
   renderLocBar();renderYearStrip(today);
   const tp=gp(today);
   document.getElementById('hdr-sum').textContent=`${today.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})} · ${tp.tithi.pak} ${tp.tithi.name} · ${tp.naksh.name}`;

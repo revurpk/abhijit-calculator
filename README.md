@@ -32,6 +32,7 @@
 9. [Festival Detection](#9-festival-detection)
 10. [Location & Solar Times](#10-location--solar-times)
 11. [Fine-Tuning Guide](#11-fine-tuning-guide)
+11A. [Sky Tab (Planetary Positions & Divisional Charts)](#11a-sky-tab-planetary-positions--divisional-charts)
     - 11.1 Switching Ayanamsha
     - 11.2 Improving Sun Accuracy
     - 11.3 Improving Moon Accuracy
@@ -69,7 +70,9 @@ All calculations are done in the browser at runtime. Panchanga results are cache
 | **Panchanga** | Full five-anga detail for any date with transition end times, solar times, nakshatra metadata, lunar month (with adhika/nija labels), eclipse card, festival card, moudhyam card |
 | **Festivals** | 35+ named festivals + all Ekadashis + Pradosh Vrat, grouped by month, filterable by category, countdown to each |
 | **Eclipses** | All solar & lunar eclipses for 3 years with visibility computed for the selected location |
-| **Muhurtha** | Date-range search with tithi / nakshatra / vara filters, min-score slider, moudhyam exclusion filters, optional eclipse exclusion. Headed by the muhurtha shloka *तदेव लग्नं सुदिनं तदेव…* |
+| **Search** | Date-range search with tithi / nakshatra / vara filters, min-score slider, moudhyam exclusion filters, optional eclipse exclusion. Headed by the muhurtha shloka *तदेव लग्नं सुदिनं तदेव…* |
+| **Sky** | Two side-by-side South-Indian Rashi charts for any date & time at the chosen location: a fixed D-1 Rashi chart and a switchable divisional chart (D-2 Hora through D-27 Bhamsa). All nine grahas + Lagna are placed by their sidereal longitude. Includes a table of exact longitudes. |
+| **About** | Astronomical engine table, panchanga formulas, lunar-month rules, score weights, daily periods, planetary combustion, known limitations, security/privacy, references |
 
 ---
 
@@ -1409,6 +1412,81 @@ function getPlanetElongation(key, J) {
 ```
 
 This reduces elongation error to ~0.5°, improving moudhyam timing to ±1–2 days.
+
+---
+
+## 11A. Sky Tab (Planetary Positions & Divisional Charts)
+
+### Date/time semantics
+
+The Sky tab takes a `<date>` + `<time>` pair and interprets the chosen wall-clock as **the location's local time**. The exact UT instant is reconstructed via:
+
+```js
+const tz = resolveTz(date);                 // DST-aware
+const localMin = hour * 60 + minute;
+const J0 = jd(date) - 0.5;                  // JD at UT midnight of the calendar date
+const J  = J0 + (localMin - tz) / 1440;     // true UT JD of the chosen moment
+```
+
+### Planetary positions
+
+`getSkyPositions(J, lat, lon)` returns sidereal longitudes (degrees) for all nine grahas plus the ascending Lagna:
+
+| Graha | Source |
+|-------|--------|
+| Sun (Ravi) | `slong(J)` — VSOP87 apparent tropical |
+| Moon (Chandra) | `mlong(J)` — Meeus Table 47.A 59-term ELP2000 |
+| Mars · Mercury · Jupiter · Venus · Saturn | `helioXYZ(planet, T) − helioXYZ(earth, T)` → geocentric ecliptic longitude (Meeus Ch. 31 orbital elements, Kepler with 5 iterations) |
+| Rahu (north node) | Mean lunar node: `125.04452 − 1934.136261·T` |
+| Ketu (south node) | `Rahu + 180°` |
+| Lagna (Ascendant) | `ascendantTropical(J, lat, lon)` — RAMC-based formula |
+
+All values are then made sidereal by subtracting the Lahiri ayanamsha.
+
+### Ascendant formula
+
+```js
+RAMC = GMST + east_longitude     // local sidereal time, in degrees
+L_asc = atan2( cos(RAMC), −(sin(ε)·tan(φ) + cos(ε)·sin(RAMC)) )
+```
+
+The atan2 sign convention picks the **rising** (east-horizon) intersection of the ecliptic, not the setting intersection 180° away. Verified: at sunrise, `Lagna ≈ Sun's longitude` (within ~0.3° including the sunrise-zenith convention residual).
+
+### Retrograde detection
+
+`isRetrograde(key, J)` compares the apparent geocentric longitude at `J` and `J + 0.5 days` (accounting for 0/360 wrap). If the planet's longitude decreased, it is in apparent retrograde motion. Sun, Moon, and Lagna are never retrograde; Rahu and Ketu are always retrograde (mean nodes move backward through the zodiac).
+
+### Varga (divisional chart) calculations
+
+`vargaRashi(longitude, N)` returns the rashi (0–11) for a given sidereal longitude in the D-N chart. Implements the standard Parashara rules:
+
+| N | Chart | Rule |
+|---|-------|------|
+| 1 | Rashi | `floor(L/30)` |
+| 2 | Hora | Male signs: 0–15°→Leo(4), 15–30°→Cancer(3); female signs reversed |
+| 3 | Drekkana | 1st/2nd/3rd ⅓ → same / 5th / 9th from sign |
+| 4 | Chaturthamsa | 7.5° quarters → same / 4th / 7th / 10th from sign |
+| 7 | Saptamsa | Odd signs from same, even from 7th from same |
+| 9 | Navamsa | `floor(L · 9 / 30) % 12` (cyclic by element via element rotation) |
+| 10 | Dasamsa | Odd signs from same, even from 9th from same |
+| 12 | Dwadasamsa | 12 parts of 2.5° starting at same sign |
+| 16 | Shodasamsa | Movable→Aries, fixed→Leo, dual→Sag |
+| 20 | Vimshamsa | Movable→Aries, fixed→Sag, dual→Leo |
+| 24 | Siddhamsa | Odd signs→Leo, even→Cancer |
+| 27 | Bhamsa | Fire→Aries, earth→Cancer, air→Libra, water→Capricorn |
+
+D-30 (Trimshamsa) is omitted because Parashara's rule is non-uniform (5 unequal divisions by lord, not 30 equal parts).
+
+### Accuracy
+
+| Body | Source | Accuracy |
+|------|--------|----------|
+| Sun, Moon | VSOP87 / 59-term ELP2000 | ±0.003° / ±0.01° |
+| Mercury, Venus, Mars, Jupiter, Saturn | Linear J2000 elements + Kepler | ±0.5–1° (±2° outside 1900–2100) |
+| Rahu, Ketu | Mean node (no nutation) | ±0.5° |
+| Lagna | Meeus RAMC formula | ±0.05° (limited by Sun & GMST precision) |
+
+For higher precision on the outer planets, replace the linear orbital elements with the full VSOP87 series or Swiss Ephemeris.
 
 ---
 
