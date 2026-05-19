@@ -71,7 +71,7 @@ All calculations are done in the browser at runtime. Panchanga results are cache
 | **Festivals** | 35+ named festivals + all Ekadashis + Pradosh Vrat, grouped by month, filterable by category, countdown to each |
 | **Eclipses** | All solar & lunar eclipses for 3 years with visibility computed for the selected location |
 | **Search** | Date-range search with tithi / nakshatra / vara filters, min-score slider, moudhyam exclusion filters, optional eclipse exclusion. Headed by the muhurtha shloka *तदेव लग्नं सुदिनं तदेव…* |
-| **Sky** | Two side-by-side South-Indian Rashi charts for any date & time at the chosen location: a fixed D-1 Rashi chart and a switchable divisional chart (D-2 Hora through D-27 Bhamsa). All nine grahas + Lagna are placed by their sidereal longitude. Includes a table of exact longitudes. |
+| **Sky** | Two side-by-side South-Indian Rashi charts for any date & time at the chosen location: a fixed D-1 Rashi chart and a switchable divisional chart (D-2 Hora through D-27 Bhamsa). All nine grahas + Lagna are placed by their sidereal longitude. Includes a table of exact longitudes and a **viewing guide** with each body's altitude/azimuth, twilight phase, rise times for bodies below the horizon, and the Moon's current nakshatra with its principal stars. |
 | **About** | Astronomical engine table, panchanga formulas, lunar-month rules, score weights, daily periods, planetary combustion, known limitations, security/privacy, references |
 
 ---
@@ -1487,6 +1487,39 @@ D-30 (Trimshamsa) is omitted because Parashara's rule is non-uniform (5 unequal 
 | Lagna | Meeus RAMC formula | ±0.05° (limited by Sun & GMST precision) |
 
 For higher precision on the outer planets, replace the linear orbital elements with the full VSOP87 series or Swiss Ephemeris.
+
+### Viewing guide (where to look)
+
+Below the charts the Sky tab renders a **"weather permitting"** observation panel for the same instant. It tells the user where each body actually sits in the local sky and whether it can be seen.
+
+**Coordinate conversion:** `eclToHor(λ, β, J, lat, lon)` converts a body's ecliptic longitude and latitude to horizontal coordinates (altitude in degrees above the horizon, azimuth as a compass bearing 0–360° from north, clockwise):
+
+```js
+RA  = atan2(sin(λ)·cos(ε) − tan(β)·sin(ε), cos(λ))
+dec = asin(sin(β)·cos(ε) + cos(β)·sin(ε)·sin(λ))
+H   = LST − RA                                            // hour angle
+alt = asin(sin(φ)·sin(dec) + cos(φ)·cos(dec)·cos(H))
+A   = atan2(sin(H), cos(H)·sin(φ) − tan(dec)·cos(φ))      // Meeus from south
+az  = (A·180/π + 180) mod 360                             // → compass
+```
+
+Planet ecliptic latitudes are treated as β=0 (acceptable to ±5° in azimuth for the bright planets); the Moon uses its full `moonLat()` value.
+
+**Twilight phase** is classified from the Sun's altitude:
+
+| Sun altitude | Phase | What's visible |
+|---|---|---|
+| > 0° | Daytime | No stars; only Sun and bright Moon |
+| 0° to −6° | Civil twilight | Moon and brightest planets (Venus, Jupiter) |
+| −6° to −12° | Nautical twilight | Most planets and bright stars |
+| −12° to −18° | Astronomical twilight | Faintest stars becoming visible |
+| < −18° | Full night | Sky at its darkest |
+
+**Rise-time fallback:** for any body currently below the horizon, `findRiseTime(altFn, J, hoursAhead)` steps forward in 15-min increments and bisects the first 0°-crossing. The reported rise time is converted to the location's wall-clock via `LOC.iana`.
+
+**Glare check:** Mercury and Venus closer than 10° to the Sun are flagged "lost in glare" — even if technically above the horizon they cannot be seen.
+
+**Nakshatra star table:** `NAKSHATRA_STARS[27]` maps each nakshatra to its principal stars and a finder hint (e.g. *Rohini → Aldebaran (α Tauri), bright orange star — the eye of Taurus*). The Moon's current nakshatra at the chosen instant is displayed with its star information plus a "look toward the Moon (currently SW, 30° above horizon)" pointer. This gives an observable visual anchor for what the panchanga's abstract nakshatra index actually corresponds to in the sky.
 
 ---
 
