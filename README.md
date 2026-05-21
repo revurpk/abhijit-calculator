@@ -100,7 +100,7 @@ html_panchanga_calendar.html
     │   mlong(J)     — tropical moon longitude (59-term Meeus Table 47.A)
     │   ayan(J)      — Lahiri ayanamsha (23.85° + 1.39644°/century)
     │   getSunTimes(date, lat, lon) — NOAA sunrise/sunset; uses resolveTz(date)
-    │   getHY()      — Hindu year metadata
+    │   getHY()      — Hindu year metadata (Samvatsara, Shaka, Vikram, Souramana + Chandramana ritus, Ayana)
     │   resolveTz(date) — Intl-based DST-aware UTC offset for LOC.iana
     │   tzFromLon(lon) — approximate civil tz from longitude (custom-coords fallback)
     │
@@ -385,6 +385,32 @@ The weekday is taken directly from `date.getDay()` (0=Sunday … 6=Saturday).
 The Hindu vara starts at **sunrise** (not midnight), so strictly speaking, the vara for an early morning hour before sunrise belongs to the previous day. The app uses the calendar date's weekday — a simplification that is off by ~6 hours at most.
 
 ---
+
+---
+
+### 5.5A Ritu — solar (Souramana) and lunar (Chandramana)
+
+Two parallel notions of "season" coexist in the Indian calendar:
+
+| Ritu | English | Souramana (solar) — Sun's rashi | Chandramana (lunar) — masa pair |
+|------|---------|-------------------------------|---------------------------------|
+| Vasanta  | Spring     | Mesha + Vrishabha   | Chaitra + Vaishakha    |
+| Grishma  | Summer     | Mithuna + Karka     | Jyeshtha + Ashadha     |
+| Varsha   | Monsoon    | Simha + Kanya       | Shravana + Bhadrapada  |
+| Sharad   | Autumn     | Tula + Vrischika    | Ashweeyuja + Kartika   |
+| Hemanta  | Pre-winter | Dhanu + Makara      | Margashirsha + Pushya  |
+| Shishira | Winter     | Kumbha + Meena      | Magha + Phalguna       |
+
+```js
+function getHY(date){
+  // ...
+  const souraIdx   = Math.floor(sid / 60);                       // 2 rashis / ritu
+  const chandraIdx = Math.floor(masaInfo.masaIdx / 2);            // 2 masas / ritu
+  return { ..., souraRitu: RITU[souraIdx], chandraRitu: RITU[chandraIdx], ... };
+}
+```
+
+Souramana ritu and Chandramana ritu can disagree by up to a month around Sankranti, when the Sun has just changed rashi but the lunar month is still the previous one. The year-strip displays both; the panchanga subtitle mentions Souramana first and Chandramana in parentheses.
 
 ---
 
@@ -892,6 +918,8 @@ let LOC = { lat: 28.614, lon: 77.209, name: "Delhi", tz: 330, iana: "Asia/Kolkat
 After changing location, call `clearPCache()` to invalidate cached panchanga (solar times are embedded in the cache).
 
 **Auto-detect** uses the browser's `navigator.geolocation` API. The closest city within 3° is automatically selected as the display name; the matched city's `iana` and `tz` are copied into `LOC`. When no city matches, the **browser's resolved timezone** (`Intl.DateTimeFormat().resolvedOptions().timeZone`) is used as the IANA name — because for auto-detect, the user is physically at that location, so the browser's timezone is authoritative. **No DST prompt is ever shown.**
+
+**URL parameter** `?loc=CityName` (case-insensitive) sets the default location at load time. `parseLocFromURL()` strictly matches against the static `CITIES` list and never accepts raw lat/lon from the URL — bad or unknown values are silently ignored and the default (Boston) is used. The URL string itself is never interpolated into HTML or any other sensitive sink; only the matched `CITIES` entry's pre-validated fields (lat, lon, name, tz, iana) are used. Example: `index.html?loc=Delhi` or `index.html?loc=mumbai`.
 
 Solar times are returned in **the location's local wall-clock minutes from midnight** (not the browser's). `resolveTz(date)` provides DST-aware offsets via `Intl.DateTimeFormat` with `LOC.iana`, so US/EU summer dates show DST times automatically.
 

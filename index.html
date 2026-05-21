@@ -466,6 +466,26 @@ button.action:hover{background:var(--bg-tertiary);}
     </div>
   </details>
 
+  <!-- Ritu -->
+  <details class="ab-sec">
+    <summary><i class="ti ti-flower" aria-hidden="true"></i> Ritu — solar &amp; lunar seasons</summary>
+    <div class="ab-body">
+      <div style="font-size:12px;line-height:1.65;color:var(--text-secondary);margin-bottom:10px;">
+        Two parallel notions of "season" coexist. <strong style="color:var(--text-primary);">Souramana</strong> ritu is solar — based on the Sun's sidereal rashi, 2 rashis per ritu. <strong style="color:var(--text-primary);">Chandramana</strong> ritu is lunar — based on the lunar masa, 2 masas per ritu. They can disagree by up to a month near Sankranti.
+      </div>
+      <table class="ab-tbl">
+        <tr><th>Ritu</th><th>English</th><th>Souramana (Sun's rashi)</th><th>Chandramana (lunar masa)</th></tr>
+        <tr><td>Vasanta</td><td>Spring</td><td>Mesha + Vrishabha</td><td>Chaitra + Vaishakha</td></tr>
+        <tr><td>Grishma</td><td>Summer</td><td>Mithuna + Karka</td><td>Jyeshtha + Ashadha</td></tr>
+        <tr><td>Varsha</td><td>Monsoon</td><td>Simha + Kanya</td><td>Shravana + Bhadrapada</td></tr>
+        <tr><td>Sharad</td><td>Autumn</td><td>Tula + Vrischika</td><td>Ashweeyuja + Kartika</td></tr>
+        <tr><td>Hemanta</td><td>Pre-winter</td><td>Dhanu + Makara</td><td>Margashirsha + Pushya</td></tr>
+        <tr><td>Shishira</td><td>Winter</td><td>Kumbha + Meena</td><td>Magha + Phalguna</td></tr>
+      </table>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;">Both ritus are shown in the year-strip and on the Panchanga tab; <code>getHY()</code> returns <code>souraRitu</code> and <code>chandraRitu</code>.</div>
+    </div>
+  </details>
+
   <!-- Auspiciousness Score -->
   <details class="ab-sec">
     <summary><i class="ti ti-star" aria-hidden="true"></i> Auspiciousness Score</summary>
@@ -592,6 +612,7 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><td><strong>Referrer policy</strong></td><td><code>no-referrer</code> globally, so font/icon requests do not leak the page URL.</td></tr>
         <tr><td><strong>HTML escaping</strong></td><td>An <code>esc()</code> helper wraps every interpolation of <code>LOC.name</code> into HTML so a future code path that brings in untrusted location strings can't inject markup.</td></tr>
         <tr><td><strong>Input validation</strong></td><td>Lat/lon range-checked; <code>NaN</code>/<code>Infinity</code> rejected. Date inputs verified before use. <code>parseInt</code> always with radix and finite-number guard.</td></tr>
+        <tr><td><strong>URL parameters</strong></td><td><code>?loc=Name</code> is the only accepted URL parameter; matched strictly (case-insensitive) against the static <code>CITIES</code> list. Unknown names are ignored; raw lat/lon from the URL are <em>never</em> accepted; the URL string is never interpolated into HTML.</td></tr>
         <tr><td><strong>Geolocation</strong></td><td>Not auto-requested on load (cold prompt is poor UX and often auto-denied). User clicks "Auto-detect" explicitly; 10 s timeout; error codes translated to readable messages. Coordinates never leave the browser.</td></tr>
         <tr><td><strong>Cache bounding</strong></td><td>All caches soft-capped at 5000 entries; oldest 1000 dropped when exceeded.</td></tr>
       </table>
@@ -677,6 +698,80 @@ const CITIES=[
   {name:"Singapore",lat:1.352,lon:103.820,tz:480,iana:"Asia/Singapore"},{name:"Sydney",lat:-33.869,lon:151.209,tz:600,iana:"Australia/Sydney"},{name:"Toronto",lat:43.651,lon:-79.347,tz:-300,iana:"America/Toronto"},
   {name:"San Francisco",lat:37.779,lon:-122.418,tz:-480,iana:"America/Los_Angeles"},{name:"Chicago",lat:41.878,lon:-87.630,tz:-360,iana:"America/Chicago"},{name:"Houston",lat:29.760,lon:-95.370,tz:-360,iana:"America/Chicago"},
   {name:"Auckland",lat:-36.848,lon:174.763,tz:720,iana:"Pacific/Auckland"},{name:"Nairobi",lat:-1.292,lon:36.822,tz:180,iana:"Africa/Nairobi"},{name:"Johannesburg",lat:-26.204,lon:28.047,tz:120,iana:"Africa/Johannesburg"},
+  // Additional Indian cities
+  {name:"Lucknow",lat:26.847,lon:80.947,tz:330,iana:"Asia/Kolkata"},
+  {name:"Patna",lat:25.594,lon:85.137,tz:330,iana:"Asia/Kolkata"},
+  {name:"Bhubaneswar",lat:20.296,lon:85.824,tz:330,iana:"Asia/Kolkata"},
+  {name:"Bhopal",lat:23.260,lon:77.413,tz:330,iana:"Asia/Kolkata"},
+  {name:"Indore",lat:22.720,lon:75.857,tz:330,iana:"Asia/Kolkata"},
+  {name:"Nagpur",lat:21.146,lon:79.088,tz:330,iana:"Asia/Kolkata"},
+  {name:"Coimbatore",lat:11.017,lon:76.956,tz:330,iana:"Asia/Kolkata"},
+  {name:"Madurai",lat:9.925,lon:78.119,tz:330,iana:"Asia/Kolkata"},
+  {name:"Thiruvananthapuram",lat:8.524,lon:76.937,tz:330,iana:"Asia/Kolkata"},
+  {name:"Nellore",lat:14.443,lon:79.987,tz:330,iana:"Asia/Kolkata"},
+  {name:"Vijayawada",lat:16.506,lon:80.648,tz:330,iana:"Asia/Kolkata"},
+  {name:"Visakhapatnam",lat:17.687,lon:83.219,tz:330,iana:"Asia/Kolkata"},
+  {name:"Guwahati",lat:26.144,lon:91.736,tz:330,iana:"Asia/Kolkata"},
+  {name:"Amritsar",lat:31.634,lon:74.872,tz:330,iana:"Asia/Kolkata"},
+  {name:"Chandigarh",lat:30.733,lon:76.779,tz:330,iana:"Asia/Kolkata"},
+  {name:"Surat",lat:21.170,lon:72.831,tz:330,iana:"Asia/Kolkata"},
+  // Other Asia
+  {name:"Tokyo",lat:35.682,lon:139.759,tz:540,iana:"Asia/Tokyo"},
+  {name:"Beijing",lat:39.904,lon:116.407,tz:480,iana:"Asia/Shanghai"},
+  {name:"Shanghai",lat:31.230,lon:121.474,tz:480,iana:"Asia/Shanghai"},
+  {name:"Hong Kong",lat:22.302,lon:114.177,tz:480,iana:"Asia/Hong_Kong"},
+  {name:"Seoul",lat:37.566,lon:126.978,tz:540,iana:"Asia/Seoul"},
+  {name:"Bangkok",lat:13.756,lon:100.502,tz:420,iana:"Asia/Bangkok"},
+  {name:"Manila",lat:14.599,lon:120.984,tz:480,iana:"Asia/Manila"},
+  {name:"Jakarta",lat:-6.208,lon:106.846,tz:420,iana:"Asia/Jakarta"},
+  {name:"Kuala Lumpur",lat:3.139,lon:101.687,tz:480,iana:"Asia/Kuala_Lumpur"},
+  {name:"Karachi",lat:24.861,lon:67.010,tz:300,iana:"Asia/Karachi"},
+  {name:"Lahore",lat:31.582,lon:74.329,tz:300,iana:"Asia/Karachi"},
+  {name:"Dhaka",lat:23.811,lon:90.413,tz:360,iana:"Asia/Dhaka"},
+  {name:"Tehran",lat:35.690,lon:51.389,tz:210,iana:"Asia/Tehran"},
+  {name:"Riyadh",lat:24.713,lon:46.675,tz:180,iana:"Asia/Riyadh"},
+  {name:"Doha",lat:25.286,lon:51.534,tz:180,iana:"Asia/Qatar"},
+  // Europe
+  {name:"Paris",lat:48.857,lon:2.352,tz:60,iana:"Europe/Paris"},
+  {name:"Berlin",lat:52.520,lon:13.405,tz:60,iana:"Europe/Berlin"},
+  {name:"Rome",lat:41.903,lon:12.496,tz:60,iana:"Europe/Rome"},
+  {name:"Madrid",lat:40.417,lon:-3.704,tz:60,iana:"Europe/Madrid"},
+  {name:"Amsterdam",lat:52.370,lon:4.895,tz:60,iana:"Europe/Amsterdam"},
+  {name:"Zurich",lat:47.377,lon:8.541,tz:60,iana:"Europe/Zurich"},
+  {name:"Stockholm",lat:59.329,lon:18.069,tz:60,iana:"Europe/Stockholm"},
+  {name:"Moscow",lat:55.756,lon:37.617,tz:180,iana:"Europe/Moscow"},
+  {name:"Istanbul",lat:41.008,lon:28.978,tz:180,iana:"Europe/Istanbul"},
+  {name:"Athens",lat:37.984,lon:23.728,tz:120,iana:"Europe/Athens"},
+  {name:"Dublin",lat:53.350,lon:-6.260,tz:0,iana:"Europe/Dublin"},
+  // Africa
+  {name:"Cairo",lat:30.044,lon:31.236,tz:120,iana:"Africa/Cairo"},
+  {name:"Lagos",lat:6.524,lon:3.379,tz:60,iana:"Africa/Lagos"},
+  {name:"Cape Town",lat:-33.925,lon:18.424,tz:120,iana:"Africa/Johannesburg"},
+  {name:"Casablanca",lat:33.573,lon:-7.590,tz:60,iana:"Africa/Casablanca"},
+  {name:"Addis Ababa",lat:9.010,lon:38.761,tz:180,iana:"Africa/Addis_Ababa"},
+  // Americas
+  {name:"Los Angeles",lat:34.052,lon:-118.244,tz:-480,iana:"America/Los_Angeles"},
+  {name:"Vancouver",lat:49.283,lon:-123.121,tz:-480,iana:"America/Vancouver"},
+  {name:"Denver",lat:39.739,lon:-104.990,tz:-420,iana:"America/Denver"},
+  {name:"Phoenix",lat:33.448,lon:-112.074,tz:-420,iana:"America/Phoenix"},
+  {name:"Miami",lat:25.761,lon:-80.192,tz:-300,iana:"America/New_York"},
+  {name:"Atlanta",lat:33.749,lon:-84.388,tz:-300,iana:"America/New_York"},
+  {name:"Washington DC",lat:38.907,lon:-77.037,tz:-300,iana:"America/New_York"},
+  {name:"Seattle",lat:47.606,lon:-122.332,tz:-480,iana:"America/Los_Angeles"},
+  {name:"Dallas",lat:32.776,lon:-96.797,tz:-360,iana:"America/Chicago"},
+  {name:"Mexico City",lat:19.433,lon:-99.133,tz:-360,iana:"America/Mexico_City"},
+  {name:"São Paulo",lat:-23.551,lon:-46.633,tz:-180,iana:"America/Sao_Paulo"},
+  {name:"Rio de Janeiro",lat:-22.907,lon:-43.173,tz:-180,iana:"America/Sao_Paulo"},
+  {name:"Buenos Aires",lat:-34.604,lon:-58.382,tz:-180,iana:"America/Argentina/Buenos_Aires"},
+  {name:"Lima",lat:-12.046,lon:-77.043,tz:-300,iana:"America/Lima"},
+  {name:"Bogotá",lat:4.711,lon:-74.072,tz:-300,iana:"America/Bogota"},
+  // Oceania
+  {name:"Melbourne",lat:-37.814,lon:144.963,tz:600,iana:"Australia/Melbourne"},
+  {name:"Brisbane",lat:-27.469,lon:153.025,tz:600,iana:"Australia/Brisbane"},
+  {name:"Perth",lat:-31.953,lon:115.857,tz:480,iana:"Australia/Perth"},
+  {name:"Wellington",lat:-41.286,lon:174.776,tz:720,iana:"Pacific/Auckland"},
+  {name:"Suva",lat:-18.124,lon:178.450,tz:720,iana:"Pacific/Fiji"},
+  {name:"Honolulu",lat:21.307,lon:-157.858,tz:-600,iana:"Pacific/Honolulu"},
 ];
 const TI=[
   {n:1,name:"Pratipada",pak:"Shukla",q:"good"},{n:2,name:"Dwitiya",pak:"Shukla",q:"good"},{n:3,name:"Tritiya",pak:"Shukla",q:"good"},
@@ -1243,8 +1338,20 @@ function getSunTimes(date,lat,lon){
 
 function getHY(date){
   const J=jd(date),sl=slong(J),ay=ayan(J),sid=nm(sl-ay),y=date.getFullYear();
-  const shaka=sid<180?y-78:y-79,idx=(shaka+11+600)%60,rituIdx=Math.floor(sid/60);
-  return{shaka,vikram:shaka+135,samvatsara:SAMVATSARA[idx],ritu:RITU[rituIdx],ayana:(sid>=270||sid<90)?"Uttarayana":"Dakshinayana",sid};
+  const shaka=sid<180?y-78:y-79,idx=(shaka+11+600)%60;
+  // Souramana ritu — based on Sun's sidereal rashi (2 rashis per ritu).
+  const souraIdx=Math.floor(sid/60);
+  // Chandramana ritu — based on lunar masa (2 masas per ritu, Chaitra→Vasanta…).
+  const masaInfo=getLunarMasaInfo(J);
+  const chandraIdx=Math.floor(masaInfo.masaIdx/2);
+  return{
+    shaka,vikram:shaka+135,samvatsara:SAMVATSARA[idx],
+    ritu:RITU[souraIdx],                                  // legacy alias (= souraRitu)
+    souraRitu:RITU[souraIdx],souraRituIdx:souraIdx,
+    chandraRitu:RITU[chandraIdx],chandraRituIdx:chandraIdx,
+    masaInfo,
+    ayana:(sid>=270||sid<90)?"Uttarayana":"Dakshinayana",sid
+  };
 }
 
 /* ─────────────────────────────────────────────────────────── */
@@ -1573,7 +1680,9 @@ function renderYearStrip(date){
     <span class="ysep">|</span>
     <span style="font-size:10px;color:var(--text-tertiary);">Vikram</span><span style="font-size:13px;font-weight:500;">${hy.vikram}</span>
     <span class="ysep">|</span>
-    <span style="font-size:10px;color:var(--text-tertiary);">Ritu</span><span style="font-size:13px;font-weight:500;">${hy.ritu.name}</span><span style="font-size:11px;color:var(--text-tertiary);">(${hy.ritu.en})</span>
+    <span style="font-size:10px;color:var(--text-tertiary);">Ritu (Soura)</span><span style="font-size:13px;font-weight:500;" title="Solar ritu — based on Sun's rashi">${hy.souraRitu.name}</span><span style="font-size:11px;color:var(--text-tertiary);">(${hy.souraRitu.en})</span>
+    <span class="ysep">|</span>
+    <span style="font-size:10px;color:var(--text-tertiary);">Ritu (Chandra)</span><span style="font-size:13px;font-weight:500;" title="Lunar ritu — based on the lunar masa">${hy.chandraRitu.name}</span><span style="font-size:11px;color:var(--text-tertiary);">(${hy.chandraRitu.en})</span>
     <span class="ysep">|</span>
     <span style="font-size:10px;color:var(--text-tertiary);">Ayana</span><span style="font-size:13px;font-weight:500;">${hy.ayana}</span>
     ${mdB}
@@ -1793,7 +1902,7 @@ function renderPanch(){
       <div style="flex:1;min-width:180px;">
         ${p.special.length?`<div style="margin-bottom:5px;">${p.special.map(s=>`<span class="spbdg">${s.name}</span>`).join('')}</div>`:''}
         <div style="font-size:12px;color:var(--text-secondary);">Sun ${p.sl.toFixed(1)}° (sid ${p.sid.toFixed(1)}°) · Moon ${p.ml.toFixed(1)}°</div>
-        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${hy.ritu.name} Ritu (${hy.ritu.en}) · ${hy.ritu.rng} · ${hy.ayana}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Soura ${hy.souraRitu.name} · Chandra ${hy.chandraRitu.name} (${hy.chandraRitu.en}) · ${hy.ayana}</div>
       </div>
     </div>
     ${masaHtml}${festHtml}${eclHtml}
@@ -2440,9 +2549,31 @@ function setIcons(){
 /* ─────────────────────────────────────────────────────────── */
 function renderAll(){renderLocBar();renderYearStrip(selD);renderCal();renderPanch();if(document.getElementById('panel-festivals').classList.contains('on'))renderFestivals();if(document.getElementById('panel-sky').classList.contains('on'))renderSky();}
 
+// Parse ?loc=CityName from the URL and resolve it (case-insensitive) against
+// the static CITIES list. SAFE: never accepts raw lat/lon, never interpolates
+// the URL string anywhere — only the matched CITY object's fields are used.
+// Returns the matched CITIES entry or null.
+function parseLocFromURL(){
+  try{
+    const params=new URLSearchParams(window.location.search);
+    const wanted=params.get('loc');
+    if(!wanted)return null;
+    return CITIES.find(c=>c.name.toLowerCase()===wanted.toLowerCase())||null;
+  }catch(e){return null;}
+}
+
 function init(){
   setIcons();
   buildCitySelect();buildChecks();
+  // Apply ?loc=… URL param BEFORE any panchanga compute so caches key on the
+  // right location. Strictly matched against CITIES — bad/unknown names ignored.
+  const urlCity=parseLocFromURL();
+  if(urlCity){
+    LOC={lat:urlCity.lat,lon:urlCity.lon,name:urlCity.name,tz:urlCity.tz,iana:urlCity.iana};
+    const sel=document.getElementById('city-sel');if(sel)sel.value=urlCity.name;
+    const latIn=document.getElementById('lat-in');if(latIn)latIn.value=urlCity.lat;
+    const lonIn=document.getElementById('lon-in');if(lonIn)lonIn.value=urlCity.lon;
+  }
   // Year selector for festivals
   const y=today.getFullYear();
   let yh='';for(let i=0;i<=2;i++)yh+=`<option value="${y+i}" ${i===0?'selected':''}>${y+i}</option>`;
