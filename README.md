@@ -49,6 +49,7 @@
 12. [Known Limitations](#12-known-limitations)
 13. [Security & Privacy](#13-security--privacy)
 14. [Quick-Reference: Key Variables](#14-quick-reference-key-variables)
+15. [References](#references)
 
 ---
 
@@ -1394,7 +1395,7 @@ Some traditional sources use different values. To adjust:
 | Standard (default) | 10° | 11° |
 | Stricter view | 8° | 10° |
 | Some South Indian sources | 12° | 11° |
-| BV Raman's system | 10° | 11° |
+| Shri B.V. Raman's system | 10° | 11° |
 
 **To add more planets** (Mars, Mercury, Saturn — also have traditional combustion thresholds):
 
@@ -1515,6 +1516,69 @@ D-30 (Trimshamsa) is omitted because Parashara's rule is non-uniform (5 unequal 
 | Lagna | Meeus RAMC formula | ±0.05° (limited by Sun & GMST precision) |
 
 For higher precision on the outer planets, replace the linear orbital elements with the full VSOP87 series or Swiss Ephemeris.
+
+### Reference nakshatra, 9-Tara, and marriage compatibility
+
+When the reference overlay is enabled, four additional cards appear on the Sky tab:
+
+**1. Reference Moon · nakshatra & pada** — `nakAndPada(siderealMoonLon)` computes:
+
+```
+nRaw = nm(siderealMoonLon) / 13.333°       // 0–27
+nIdx = floor(nRaw)                          // 0–26  → NK[nIdx]
+pada = floor((nRaw − nIdx) × 4) + 1         // 1–4
+degInNak = (nRaw − nIdx) × 13.333°
+```
+
+Plus the nakshatra's principal stars (from `NAKSHATRA_STARS[]`).
+
+**2. Mitra & Parama-Mitra stars (9-Tara)** — for the reference nakshatra `B`:
+
+```
+For a target nakshatra N (also 0-indexed):
+  count       = ((N − B + 27) mod 27) + 1     ← 1-based count from B
+  categoryIdx = (count − 1) mod 9              ← 0..8
+  cycle       = ⌈count / 9⌉                    ← 1, 2, or 3
+```
+
+The nine tara categories indexed by `categoryIdx`:
+
+| idx | Name | Quality |
+|---|---|---|
+| 0 | Janma | Danger to body |
+| 1 | Sampat | Wealth & prosperity ✓ |
+| 2 | Vipat | Losses, accidents ✗ |
+| 3 | Kshema | Prosperity ✓ |
+| 4 | Pratyak | Obstacles ✗ |
+| 5 | Sadhana | Ambitions realised ✓ |
+| 6 | Naidhana | Dangers ✗ |
+| 7 | **Mitra** | Good ✓ |
+| 8 | **Parama-Mitra** | Very favourable ✓ |
+
+Cycle (Paryaya) softening per Shri B.V. Raman Ch. III: full evil only in cycle 1 (counts 1–9), half in cycle 2 (10–18), almost negligible in cycle 3 (19–27).
+
+So the Mitra nakshatras for birth-star B are at offsets **B+7, B+16, B+25** (mod 27), and Parama-Mitra at **B+8, B+17, B+26**. For Ashwini (B=0) that's Pushya, Anuradha, U.Bhadrapada (Mitra) and Ashlesha, Jyeshtha, Revati (Parama-Mitra).
+
+The card also shows today's actual Moon nakshatra and where it falls in the 9-Tara cycle relative to the reference — so e.g. "the day's Sravana is the 22nd star → Kshema, cycle 3 (almost negligible evil)".
+
+**3. Marriage compatibility — Ashtakuta (Shri B.V. Raman)** — `ashtakuta(boyNak, girlNak)`. Eight kutas totalling 36 points:
+
+| # | Kuta | Max | What it measures |
+|---|---|---|---|
+| 1 | Varna | 1 | Boy's varna ≥ girl's |
+| 2 | Vasya | 2 | Rashi-to-rashi amenability |
+| 3 | Tara (Dina) | 3 | Bidirectional 9-Tara check (1.5 pts per favourable direction) |
+| 4 | Yoni | 4 | 14-animal pairing matrix |
+| 5 | Graha Maitri | 5 | Friendship between rashi lords |
+| 6 | Gana | 6 | Deva/Manushya/Rakshasa temperament |
+| 7 | Bhakuta | 7 | 0 if rashi offset is 1/11 (2-12 axis) or 5/7 (6-8 sashtashtaka); else 7 |
+| 8 | Nadi | 8 | Same Nadi → 0 (same-nakshatra exempt); different → 8 |
+
+Verdict cutoffs: ≥28 excellent · ≥18 acceptable · ≥14 marginal · <14 poor. Shri B.V. Raman cautions repeatedly (Ch. IX) that longevity and the 7th-house strength of each chart take precedence over the kuta total.
+
+The card has two nakshatra dropdowns plus "Use reference for boy/girl" buttons that copy the reference Moon's nakshatra into the chosen slot.
+
+**4. Guidance card** — a condensed adaptation of Shri B.V. Raman's *Muhurtha* covering Tarabala, Chandrabala, the Cycle softening rule, marriage caveats, and stars/days to avoid for important events. Cited inline; the user is directed to consult an experienced astrologer for decisions of real consequence.
 
 ### Reference / overlay chart
 
@@ -1661,4 +1725,25 @@ Replace the two CDN `<link>` tags with locally-hosted copies of the CSS/font fil
 
 ---
 
-*Documentation for `index.html` (Hindu Panchanga Calendar). For bug reports or improvements, refer to the inline comments in the source file. Calculations are AI-generated approximations — verify critical muhurthas with a printed panchanga.*
+## References
+
+### Classical sources — Hindu astrology, Muhurtha, Jyotisha
+
+- **Shri B.V. Raman**, *Muhurtha (Electional Astrology)*, UBSPD — primary source for the Sky-tab's 9-Tara cycle, Ashtakuta marriage compatibility (Varna / Vasya / Tara / Yoni / Graha Maitri / Gana / Bhakuta / Nadi), Tarabala & Chandrabala, Panchaka, and the rules around Janma Star / Janma Rasi (Chapters III, IV, IX). The Yoni 14×14 matrix, Gana matrix, Nadi assignments and planetary-friendship table in `index.html` are transcribed directly from this work.
+- **Shri B.V. Raman**, *Hindu Predictive Astrology* — foundational treatment of Janma Rasi, Janma Nakshatra, planetary friendships, and rashi lords.
+- **Shri B.V. Raman**, *Ashtakavarga System of Prediction* — referenced in *Muhurtha* Ch. IX for the 7th-house assessment that should precede any kuta scoring.
+- **Shri B.V. Raman**, *Planetary Influences on Human Affairs* and *A Manual of Hindu Astrology* — broader context for the cosmic-determinism reading of muhurtha cited in the guidance card.
+- **Prof. B. Suryanarain Rao**, *An Introduction to the Study of Astrology* and *Astrological Mirror* — cited within Shri B.V. Raman's *Muhurtha* for the rationale of Panchaka and electional theory.
+- **Varahamihira**, *Brihat Samhita* — original source of the Varjyam ghati-per-nakshatra table and the Nadi classification.
+
+### Astronomical algorithms & data
+
+- **Jean Meeus**, *Astronomical Algorithms*, 2nd ed., Willmann-Bell, 1998 — JD, VSOP87, ELP2000 (Ch. 47), eclipse, sunrise, planetary elements (Ch. 31).
+- **N. C. Lahiri**, *Indian Ephemeris and Nautical Almanac* — Chitrapaksha (Lahiri) ayanamsha, the official standard of the Government of India.
+- **NOAA Solar Calculator** — sunrise/sunset zenith angle 90.833° (refraction + semi-diameter) and equation of time.
+- **PyMeeus** (architest/pymeeus on GitHub) — used to verify the ELP2000 Table 47.A term coefficients.
+- **Tabler Icons** v2.44 (CDN) and **Google Fonts** (Baloo Tammudu 2) — UI assets.
+
+---
+
+*Documentation for `index.html` (Hindu Panchanga Calendar). For bug reports or improvements, refer to the inline comments in the source file. Calculations are AI-generated approximations — verify critical muhurthas with a printed panchanga or a qualified astrologer.*

@@ -252,24 +252,8 @@ button.action:hover{background:var(--bg-tertiary);}
 
 <!-- Muhurtha search -->
 <div class="panel" id="panel-search">
-  <!-- Sanskrit shloka for Muhurtha -->
-  <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:1rem;border-left:3px solid var(--accent);text-align:center;">
-    <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:8px;">
-      <button id="shl-dev" class="ybtn" onclick="setShlokaScript('dev')" style="font-size:10px;padding:2px 8px;font-family:serif;font-weight:600;color:var(--text-primary);border-color:var(--border-med);">देव</button>
-      <button id="shl-tel" class="ybtn" onclick="setShlokaScript('tel')" style="font-size:10px;padding:2px 8px;">తె</button>
-      <button id="shl-iast" class="ybtn" onclick="setShlokaScript('iast')" style="font-size:10px;padding:2px 8px;font-style:italic;">IAST</button>
-    </div>
-    <div id="shloka-text" style="font-size:clamp(11px,3.5vw,15px);line-height:1.9;color:var(--text-primary);font-family:serif;letter-spacing:.02em;">
-      तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>
-      विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥
-    </div>
-    <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px;font-style:italic;">
-      "That alone is the auspicious ascendant, that alone the auspicious day; that alone the strength of stars, that alone the strength of the Moon.
-      That alone the strength of knowledge, that alone divine grace — that very moment when I meditate on your divine feet, O Lord Lakshmi-pati."
-    </div>
-  </div>
   <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:11px 15px;margin-bottom:1rem;font-size:12px;color:var(--info-text);line-height:1.65;">
-    In the ordinary flow of life there is no need to consult an almanac before every action; doing what must be done, with good intent, is itself the highest auspice. Read these results as gentle suggestions rather than predictions — fortune cookie wisdom, not fate. No app can account for personal planetary periods, birth-chart conditions, or the nuanced judgement a trained astrologer brings. <strong style="color:var(--text-primary);">For significant occasions — a wedding, griha pravesha, naming ceremony, or upanayana — always consult a qualified astrologer</strong> who can weigh all the relevant factors; do not rely on any app for such decisions.
+    In the ordinary flow of life there is no need to consult an almanac before every action; doing what must be done, with sincere intent and clear purpose, is itself the highest auspice. Read these results as gentle suggestions for alignment — pointers, not pronouncements. Even moments the rules label "challenging" can be transformed by devotion, preparation, and the spirit of the shloka on the Sky tab. No app can account for personal planetary periods, birth-chart conditions, or the nuanced judgement of a trained astrologer. <strong style="color:var(--text-primary);">For significant occasions — a wedding, griha pravesha, naming ceremony, or upanayana — always consult a qualified astrologer</strong> who can weigh all the relevant factors holistically.
   </div>
   <div class="card" style="margin-bottom:1rem;">
     <div style="font-size:14px;font-weight:500;margin-bottom:1rem;">Search criteria</div>
@@ -360,6 +344,81 @@ button.action:hover{background:var(--bg-tertiary);}
   <div class="card" style="margin-top:1rem;">
     <div class="sec-title">Sidereal longitudes</div>
     <div id="sky-lon-table" style="font-size:11px;"></div>
+  </div>
+  <!-- Reference nakshatra & 9-Tara — only populated when reference overlay is active -->
+  <div class="card" id="sky-ref-nak-card" style="margin-top:1rem;display:none;border-left:3px solid var(--info-text);">
+    <div class="sec-title" style="color:var(--info-text);">Reference Moon · nakshatra &amp; pada</div>
+    <div id="sky-ref-nak" style="font-size:12px;line-height:1.65;color:var(--text-secondary);"></div>
+  </div>
+  <!-- Independent of the reference moment — pick any birth star directly. -->
+  <details class="ab-sec" id="sky-tara-card" style="margin-top:1rem;">
+    <summary><i class="ti ti-stars" aria-hidden="true"></i> Tarabala — Mitra &amp; Parama-Mitra (9-Tara compatibility)</summary>
+    <div class="ab-body">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
+        <div>
+          <label class="form-lbl">Birth (Janma) nakshatra</label>
+          <select id="sky-tara-birth" onchange="drawTaraPanel()" style="font-size:12px;padding:5px 8px;width:200px;"></select>
+        </div>
+      </div>
+      <div id="sky-tara" style="font-size:12px;line-height:1.65;color:var(--text-secondary);"></div>
+    </div>
+  </details>
+  <!-- Independent of the reference moment — pick any two nakshatras directly. -->
+  <details class="ab-sec" id="sky-compat-card" style="margin-top:1rem;">
+    <summary><i class="ti ti-heart" aria-hidden="true"></i> Marriage compatibility (Ashtakuta · Shri B.V. Raman)</summary>
+    <div class="ab-body">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
+        <div>
+          <label class="form-lbl">Boy's nakshatra</label>
+          <select id="sky-kuta-boy" onchange="drawKutaPanel()" style="font-size:12px;padding:5px 8px;width:170px;"></select>
+        </div>
+        <div>
+          <label class="form-lbl">Girl's nakshatra</label>
+          <select id="sky-kuta-girl" onchange="drawKutaPanel()" style="font-size:12px;padding:5px 8px;width:170px;"></select>
+        </div>
+        <button class="ybtn" onclick="clearKuta()">Clear</button>
+      </div>
+      <div id="sky-kuta" style="font-size:12px;line-height:1.6;color:var(--text-secondary);"></div>
+    </div>
+  </details>
+  <div class="card" style="margin-top:1rem;background:var(--info-bg);">
+    <div class="sec-title" style="color:var(--info-text);">Guidance · adapted from Shri B.V. Raman's <em>Muhurtha (Electional Astrology)</em></div>
+    <!-- Muhurtha shloka — invocation at the head of the guidance, with script toggle. -->
+    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:8px 12px;margin-bottom:12px;border-left:2px solid var(--accent);text-align:center;">
+      <div style="display:flex;justify-content:flex-end;gap:3px;margin-bottom:4px;">
+        <button id="shl-dev" class="ybtn" onclick="setShlokaScript('dev')" style="font-size:9px;padding:1px 6px;font-family:serif;font-weight:600;color:var(--text-primary);border-color:var(--border-med);">देव</button>
+        <button id="shl-tel" class="ybtn" onclick="setShlokaScript('tel')" style="font-size:9px;padding:1px 6px;">తె</button>
+        <button id="shl-iast" class="ybtn" onclick="setShlokaScript('iast')" style="font-size:9px;padding:1px 6px;font-style:italic;">IAST</button>
+      </div>
+      <div id="shloka-text" style="font-size:clamp(10px,2.8vw,13px);line-height:1.65;color:var(--text-primary);font-family:serif;letter-spacing:.02em;">
+        तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>
+        विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥
+      </div>
+      <div style="font-size:9px;color:var(--text-tertiary);margin-top:4px;font-style:italic;line-height:1.45;">
+        "That alone is the auspicious ascendant, that alone the auspicious day; that alone the strength of stars, that alone the strength of the Moon. That alone the strength of knowledge, that alone divine grace — that very moment when I meditate on your divine feet, O Lord Lakshmi-pati."
+      </div>
+    </div>
+    <div style="font-size:12px;line-height:1.7;color:var(--text-secondary);margin-bottom:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:var(--radius-md);">
+      <strong style="color:var(--text-primary);">In this spirit.</strong> The verse teaches that the truest <em>bala</em> — strength of moment, star, Moon, knowledge — arises from sincere intention and remembrance of the Divine. No timing chart can confer success on action lacking integrity; equally, an action undertaken with devotion, clear purpose, and ethical care draws auspiciousness to itself even when the classical indicators are mixed. The rules below are aids to alignment, not verdicts. Where they signal challenges, treat them as invitations to greater care, prayer, and preparation — not as closed doors.
+    </div>
+    <div style="font-size:12px;line-height:1.7;color:var(--text-secondary);">
+      <ul style="margin:0;padding-left:18px;">
+        <li><strong style="color:var(--text-primary);">Tarabala (strength of star).</strong> Counting the day's star from the Janma star, days landing on Sampat (2), Kshema (4), Sadhana (6), Mitra (8), and Parama-Mitra (9/0) carry favourable currents. Vipat (3), Pratyak (5), and Naidhana (7) ask for greater care during major undertakings — long journeys, marriage, business launches — and can be balanced by attention to Lagna, devotional preparation, and (if needed) postponement to a smoother window. Janma (count 1) ordinarily warrants caution; on one's own birth star the first 7 ghatis (~3 h) of the day are traditionally set aside.</li>
+        <li><strong style="color:var(--text-primary);">Janma Nakshatra — when it <em>is</em> acceptable.</strong> Shri B.V. Raman (Ch. III, end) lists important events for which the Janma star itself is <strong style="color:var(--success-text);">favourable without exception</strong>: <em>nuptials, sacrifices (yajna), first feeding (annaprasana), agriculture, upanayanam (sacred-thread ceremony), coronation, buying land, and learning the alphabet (vidyarambha)</em>. For other categories — war, shaving, medical treatment, travel, and marriage — the Janma star is less suited; with thoughtful preparation it can still be navigated. For a woman, the Janma Nakshatra is fully favourable for marriage.</li>
+        <li><strong style="color:var(--text-primary);">Cycle (Paryaya) softening.</strong> The classical adverse indications apply in full only in cycle 1 (counts 1–9). In cycle 2 (10–18) they soften to about half; in cycle 3 (19–27) they are almost negligible. Most "unfavourable" stars a person will encounter in life sit in cycle 2 or 3, where intention and care easily outweigh the residual indication.</li>
+        <li><strong style="color:var(--text-primary);">Chandrabala.</strong> The Moon at the chosen time should not occupy the 6th, 8th, or 12th rashi from the person's Janma Rasi. When this isn't possible, prayer and devotion help draw the lunar mind into harmony with the moment.</li>
+        <li><strong style="color:var(--text-primary);">Marriage compatibility.</strong> The eight kutas read together describe the texture of a union — no single score determines its fate. The traditional 18 / 36 threshold is a useful waypoint; Shri B.V. Raman cautions in Ch. IX that <em>longevity and the 7th-house strength of each chart matter more than the kuta count</em>. Where Nadi or 6/8 Bhakuta show challenges, classical tradition prescribes <em>parihara</em> (remedies): pre-marital rituals, gemstone or mantra adjustments, charitable acts. Many marriages with low kuta totals flourish because the couple cultivates shared intention.</li>
+        <li><strong style="color:var(--text-primary);">A liberal note from the sages.</strong> Shri B.V. Raman closes his <em>Muhurtha</em> with a striking concession: <em>"The sages appear to have taken a very liberal view of things especially in regard to marriage. For instance they say that if the boy and the girl like each other in their first meeting, that should also receive first consideration."</em> Mutual recognition and willing affection are themselves an auspicious indication that no chart can outrank.</li>
+        <li><strong style="color:var(--text-primary);">Days/stars usually set aside.</strong> The 4th, 8th, 9th, 12th and 14th tithis (both pakshas); Bharani and Krittika for marriage; Tuesday and Saturday for new ventures (unless the Lagna is strong); the nakshatra's own <em>tyajya</em> (varjyam) window. These are tendencies, not absolutes — see the Varjyam window for the precise sub-hour slice rather than skipping the whole day.</li>
+        <li><strong style="color:var(--text-primary);">When the indications are mixed.</strong> Three classical neutralisers carry weight beyond the daily panchanga: <em>(i)</em> a strong, well-placed Lagna at the moment of action, <em>(ii)</em> Abhijit muhurta around solar noon (which overrides most negative influences), and <em>(iii)</em> the spirit of the shloka above — work begun with sincere remembrance, clarity of intent, and surrender of fruit to the Divine attracts its own auspiciousness, often quietly transcending what the chart appeared to forbid.</li>
+        <li><strong style="color:var(--text-primary);">Caveats.</strong> Muhurta is preventive and supportive, not a guarantee — and it is not a verdict against any soul. Its task is to <em>not add</em> to existing afflictions and to gently amplify what is already good. For weighty decisions, consult an experienced astrologer who can weigh the full birth chart, dashas, and family context alongside these indications.</li>
+      </ul>
+      <div style="text-align:center;margin-top:14px;padding-top:10px;border-top:.5px solid var(--border-light);font-family:serif;font-size:13px;color:var(--info-text);letter-spacing:.05em;line-height:1.8;">
+        ॐ तत् सत्<br/>
+        ఓం తత్ సత్<br/>
+        Om Tat Sat
+      </div>
+    </div>
   </div>
   <div class="card" style="margin-top:1rem;">
     <div class="sec-title">Viewing guide · weather permitting</div>
@@ -571,6 +630,22 @@ button.action:hover{background:var(--bg-tertiary);}
         <div class="ab-el-name">Reference overlay <span class="ab-el-sub">birth chart vs transit</span></div>
         <div class="ab-el-note">Optional second moment (date / time / city or lat-lon) shown <em style="color:var(--info-text);">in blue italic</em> beneath the primary planets in every chart cell. The cell gets a blue inset border when the reference Lagna falls there. The longitudes table gains a fourth column with reference values. Each side has its own DST-aware timezone via <code>Intl.DateTimeFormat</code> with the relevant IANA name — so a 1990 Delhi birth chart vs a 2026 NJ transit each use their correct offset.</div>
       </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Reference nakshatra &amp; pada <span class="ab-el-sub">when overlay is on</span></div>
+        <div class="ab-el-note">A card shows the reference Moon's nakshatra, pada (1–4), exact degree within nakshatra, and the nakshatra's principal stars. Computed by <code>nakAndPada(siderealMoonLon)</code> using the 13°20' / 4 = 3°20' pada span.</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">9-Tara · Mitra &amp; Parama-Mitra <span class="ab-el-sub">Shri B.V. Raman Ch. III</span></div>
+        <div class="ab-el-note">For the reference nakshatra <code>B</code>, the 9-Tara cycle classifies every other nakshatra <code>N</code> by <code>(count − 1) mod 9</code> where <code>count = ((N − B + 27) mod 27) + 1</code>. Mitra stars sit at offsets <strong>B+7, B+16, B+25</strong>; Parama-Mitra at <strong>B+8, B+17, B+26</strong>. Today's Moon nakshatra is also classified against the reference to show the current Tarabala (Sampat/Vipat/Kshema/Pratyak/Sadhana/Naidhana/Mitra/Parama-Mitra) and which cycle (Paryaya) softens it.</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Ashtakuta marriage compatibility <span class="ab-el-sub">8 kutas, 36 points</span></div>
+        <div class="ab-el-note">Standalone widget — pick two nakshatras (or click "Use reference for boy/girl" to copy the reference Moon's nakshatra) and the eight kutas are scored: <strong>Varna 1, Vasya 2, Tara 3, Yoni 4, Graha Maitri 5, Gana 6, Bhakuta 7, Nadi 8</strong>. Verdict at 28+ excellent / 18+ acceptable / 14+ marginal. <code>ashtakuta()</code> uses the YONI_MATRIX, GANA_MATRIX, FRIEND_MATRIX, NADI_OF_NAK, GANA_OF_NAK and VASYA_AMENABLE tables transcribed from Shri B.V. Raman's <em>Muhurtha</em>.</div>
+      </div>
+      <div class="ab-elem" style="border-bottom:none;">
+        <div class="ab-el-name">Guidance card <span class="ab-el-sub">adapted from Shri B.V. Raman</span></div>
+        <div class="ab-el-note">Brief, sourced bullet points on Tarabala, Chandrabala, Paryaya softening, marriage caveats (longevity &amp; 7th-house strength precede kuta count; Nadi dosha and 6/8 Bhakuta axis are the most serious to avoid), and stars/days to avoid for important events.</div>
+      </div>
       <div class="ab-elem" style="border-bottom:none;">
         <div class="ab-el-name">Viewing guide <span class="ab-el-sub">where to actually look</span></div>
         <div class="ab-el-note">A "weather permitting" panel converts each body's ecliptic position to <strong style="color:var(--text-primary);">altitude</strong> (above horizon) and <strong style="color:var(--text-primary);">azimuth</strong> (compass bearing N/NE/E/…/NW). Bodies below the horizon show their next rise time (within 24 h). Mercury/Venus within 10° of the Sun are flagged "lost in glare". The Sun's altitude is classified into day / civil / nautical / astronomical twilight / night. The Moon's current nakshatra is shown with its <em>principal stars</em> (e.g. Rohini → Aldebaran) and a pointer to where the Moon is in the sky — so the abstract nakshatra index becomes a visible target you can find.</div>
@@ -626,7 +701,17 @@ button.action:hover{background:var(--bg-tertiary);}
   <details class="ab-sec" style="margin-bottom:0;">
     <summary><i class="ti ti-book" aria-hidden="true"></i> References</summary>
     <div class="ab-body">
-      <ul style="font-size:12px;line-height:2;color:var(--text-secondary);padding-left:18px;margin:0;">
+      <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:500;">Classical sources — Hindu astrology / Muhurtha / Jyotisha</div>
+      <ul style="font-size:12px;line-height:1.9;color:var(--text-secondary);padding-left:18px;margin:0 0 12px;">
+        <li>Shri B.V. Raman, <em>Muhurtha (Electional Astrology)</em>, UBSPD — 9-Tara cycle, Ashtakuta marriage compatibility (Varna/Vasya/Tara/Yoni/Graha Maitri/Gana/Bhakuta/Nadi), Tarabala &amp; Chandrabala, Panchaka, the Janma star and Janma Rasi (Chapters III, IV, IX). The Yoni matrix, Gana matrix, Nadi table and planetary-friendship table in this app are transcribed directly from this work.</li>
+        <li>Shri B.V. Raman, <em>Hindu Predictive Astrology</em> — foundational treatment of Janma Rasi, Janma Nakshatra, planetary friendships and rashi lords.</li>
+        <li>Shri B.V. Raman, <em>Ashtakavarga System of Prediction</em> — referenced in <em>Muhurtha</em> Ch. IX for the 7th-house assessment that should precede any kuta scoring.</li>
+        <li>Shri B.V. Raman, <em>Planetary Influences on Human Affairs</em> and <em>A Manual of Hindu Astrology</em> — broader context for the &quot;cosmic determinism&quot; reading of muhurtha cited in the guidance card.</li>
+        <li>Prof. B. Suryanarain Rao, <em>An Introduction to the Study of Astrology</em> &amp; <em>Astrological Mirror</em> — cited within Shri B.V. Raman's <em>Muhurtha</em> for the rationale of Panchaka and electional theory.</li>
+        <li>Varahamihira, <em>Brihat Samhita</em> — original source of the Varjyam ghati-per-nakshatra table and the Nadi classification.</li>
+      </ul>
+      <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:500;">Astronomical algorithms &amp; data</div>
+      <ul style="font-size:12px;line-height:1.9;color:var(--text-secondary);padding-left:18px;margin:0;">
         <li>Jean Meeus, <em>Astronomical Algorithms</em>, 2nd ed., Willmann-Bell, 1998 — JD, VSOP87, ELP2000 (Ch. 47), eclipse, sunrise, planetary elements (Ch. 31)</li>
         <li>N. C. Lahiri, <em>Indian Ephemeris and Nautical Almanac</em> — Chitrapaksha ayanamsha, official standard of the Government of India</li>
         <li>NOAA Solar Calculator algorithm — sunrise/sunset zenith angle 90.833° (refraction + semi-diameter) and equation of time</li>
@@ -1259,6 +1344,194 @@ const NAKSHATRA_STARS=[
   {stars:"γ Pegasi & α Andromedae",               hint:"the other two corners of the Pegasus Square"},
   {stars:"ζ Piscium and the Pisces chain",        hint:"the southern fish of Pisces"},
 ];
+
+/* ─────────────────────────────────────────────────────────── */
+/*  MARRIAGE COMPATIBILITY (Ashtakuta, after Shri B.V. Raman)      */
+/* ─────────────────────────────────────────────────────────── */
+// 9-Tara categories (count-from-birth mod 9, 1-indexed):
+// 1 Janma · 2 Sampat · 3 Vipat · 4 Kshema · 5 Pratyak · 6 Sadhana · 7 Naidhana · 8 Mitra · 9/0 Parama-Mitra
+const TARA_NAMES=["Janma","Sampat","Vipat","Kshema","Pratyak","Sadhana","Naidhana","Mitra","Parama-Mitra"];
+const TARA_GOOD=[false,true,false,true,false,true,false,true,true]; // index = (count-1) % 9
+// 14 yoni animals; pair index by nakshatra (0..26)
+const YONI_NAMES=["Horse","Elephant","Sheep","Serpent","Dog","Cat","Rat","Cow","Buffalo","Tiger","Hare","Monkey","Mongoose","Lion"];
+// Ashwini..Revati → yoni index. Per Shri B.V. Raman p.72.
+const YONI_OF_NAK=[0,1,2,3,3,4,5,2,5,6,6,7,8,9,8,9,10,10,4,11,12,11,13,0,13,7,1];
+// Yoni compatibility matrix (max 4). Symmetric per Shri B.V. Raman p.72.
+const YONI_MATRIX=[
+  // Ho El Sh Se Do Ca Ra Co Bu Ti Ha Mo Mg Li
+  [   4, 2, 2, 3, 2, 2, 2, 1, 0, 1, 3, 3, 2, 1], // Horse
+  [   2, 4, 3, 3, 2, 2, 2, 2, 3, 1, 2, 3, 2, 0], // Elephant
+  [   2, 3, 4, 2, 1, 2, 1, 3, 3, 1, 2, 0, 3, 1], // Sheep
+  [   3, 3, 2, 4, 2, 1, 1, 1, 1, 2, 2, 2, 0, 2], // Serpent
+  [   2, 2, 1, 2, 4, 2, 1, 2, 2, 1, 0, 2, 1, 1], // Dog
+  [   2, 2, 2, 1, 2, 4, 0, 2, 2, 1, 3, 3, 2, 1], // Cat
+  [   2, 2, 1, 1, 1, 0, 4, 2, 2, 2, 2, 2, 1, 2], // Rat
+  [   1, 2, 3, 1, 2, 2, 2, 4, 3, 0, 3, 2, 2, 1], // Cow
+  [   0, 3, 3, 1, 2, 2, 2, 3, 4, 1, 2, 2, 2, 1], // Buffalo
+  [   1, 1, 1, 2, 1, 1, 2, 0, 1, 4, 1, 1, 2, 1], // Tiger
+  [   1, 2, 2, 2, 0, 3, 2, 3, 2, 1, 4, 2, 2, 1], // Hare
+  [   3, 3, 0, 2, 2, 3, 2, 2, 2, 1, 2, 4, 3, 2], // Monkey
+  [   2, 2, 3, 0, 1, 2, 1, 2, 2, 2, 2, 3, 4, 2], // Mongoose
+  [   1, 0, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 2, 4], // Lion
+];
+// Gana — temperament (0=Deva, 1=Manushya, 2=Rakshasa). Shri B.V. Raman p.68.
+const GANA_OF_NAK=[0,1,2,1,0,1,0,0,2,2,1,1,0,2,0,2,0,2,2,1,1,0,2,2,1,1,0];
+const GANA_NAMES=["Deva","Manushya","Rakshasa"];
+// Gana matrix [boy][girl] → score out of 6.
+// Shri B.V. Raman: "Manusha or a Deva man should not marry a Rakshasa girl" → 0.
+// "But marriage between a Rakshasa man and a Deva or Manusha girl is passable" → 1.
+const GANA_MATRIX=[
+  // boy Deva | girl: Deva, Manushya, Rakshasa
+  [6,5,0],
+  [6,6,0],
+  [1,1,6],
+];
+// Nadi — humour (0=Vata, 1=Pitta, 2=Sleshma).  Shri B.V. Raman p.74.
+const NADI_OF_NAK=[0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2];
+const NADI_NAMES=["Vata","Pitta","Kapha"];
+// Varna by rashi (0..11). 4=Brahmin(highest), 3=Kshatriya, 2=Vaishya, 1=Shudra.
+// Per Shri B.V. Raman p.75: Pisces/Scorpio/Cancer=Brahmin; Leo/Sag/Libra=Kshatriya;
+// Aries/Gemini/Aquarius=Vaisya; Taurus/Virgo/Capricorn=Sudra.
+const VARNA_BY_RASHI=[2,1,2,4,3,1,3,4,3,1,2,4];
+const VARNA_NAMES=["—","Shudra","Vaishya","Kshatriya","Brahmin"];
+// Vasya — amenable rashis for each rashi (boy's rashi controls girl). Shri B.V. Raman p.73.
+const VASYA_AMENABLE=[
+  /*Aries*/    [4,7],  /*Taurus*/   [3,6],  /*Gemini*/    [5],
+  /*Cancer*/   [7,8],  /*Leo*/      [6],    /*Virgo*/     [11,2],
+  /*Libra*/    [9,5],  /*Scorpio*/  [3],    /*Sagittarius*/[11],
+  /*Capricorn*/[0,10], /*Aquarius*/ [0],    /*Pisces*/    [9],
+];
+// Rashi lord (planet index used by FRIEND_MATRIX below). 0..11 → planet.
+// 0 Sun, 1 Moon, 2 Mars, 3 Mercury, 4 Jupiter, 5 Venus, 6 Saturn
+const RASHI_LORD=[2,5,3,1,0,3,5,2,4,6,6,4];
+const PLANET_NAMES=["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn"];
+// Planetary friendship matrix [from][to]: 1=friend, 0=neutral, -1=enemy. Shri B.V. Raman p.74.
+const FRIEND_MATRIX=[
+  // to:Su Mo Ma Me Ju Ve Sa
+  /*Su*/[ 0, 1, 1, 0, 1,-1,-1],
+  /*Mo*/[ 1, 0, 0, 1, 0, 0, 0],
+  /*Ma*/[ 1, 1, 0,-1, 1, 0, 0],
+  /*Me*/[ 1,-1, 0, 0, 0, 1, 0],
+  /*Ju*/[ 1, 1, 1,-1, 0,-1, 0],
+  /*Ve*/[-1,-1, 0, 1, 0, 0, 1],
+  /*Sa*/[-1,-1,-1, 1, 0, 1, 0],
+];
+// Number of nakshatras: 27. Each nakshatra spans 13°20' = 800'. Pada = ¼ nakshatra = 3°20'.
+const NAK_SPAN=360/27;
+
+// 9-Tara result for boy's nakshatra B and the "current" nakshatra N
+//   count = ((N - B + 27) mod 27) + 1     ← 1-based
+//   categoryIdx = (count - 1) mod 9       ← 0..8 selecting TARA_NAMES[]
+//   paryaya / cycle = ceil(count / 9)     ← 1, 2, or 3
+function taraInfo(B,N){
+  const count=((N-B+27)%27)+1;
+  const cat=(count-1)%9;
+  const cycle=Math.floor((count-1)/9)+1;
+  return{count,cycle,name:TARA_NAMES[cat],good:TARA_GOOD[cat],idx:cat};
+}
+// Indices of the Mitra and Parama-Mitra nakshatras for birth-nakshatra B.
+// Mitra has tara-category index 7 → count 8, 17, 26. Parama-Mitra has index 8 → count 9, 18, 27.
+function mitraStars(B){
+  return{
+    mitra:[7,16,25].map(o=>(B+o)%27),
+    paramMitra:[8,17,26].map(o=>(B+o)%27),
+  };
+}
+
+// Ashtakuta marriage compatibility. Returns the eight individual scores + total + verdict.
+// Arguments: 0-indexed nakshatras (0=Ashwini..26=Revati) for boy and girl.
+// Each nakshatra spans 13°20' so the rashi is floor(N * 13.333 / 30) = floor(N*4/9).
+function ashtakuta(boyNak,girlNak){
+  const boyRashi=Math.floor(boyNak*NAK_SPAN/30)%12;
+  const girlRashi=Math.floor(girlNak*NAK_SPAN/30)%12;
+
+  // 1. Varna (max 1) — boy's varna should be ≥ girl's
+  const bVarna=VARNA_BY_RASHI[boyRashi],gVarna=VARNA_BY_RASHI[girlRashi];
+  const varnaScore=bVarna>=gVarna?1:0;
+
+  // 2. Vasya (max 2)
+  const amenableBoy=VASYA_AMENABLE[boyRashi]||[];
+  const amenableGirl=VASYA_AMENABLE[girlRashi]||[];
+  let vasyaScore=0;
+  if(boyRashi===girlRashi)vasyaScore=2;
+  else if(amenableBoy.includes(girlRashi))vasyaScore=2;
+  else if(amenableGirl.includes(boyRashi))vasyaScore=1;
+
+  // 3. Tara/Dina (max 3) — bidirectional 9-tara check; 1.5 pts per favourable direction
+  const tBoyFromGirl=taraInfo(girlNak,boyNak);
+  const tGirlFromBoy=taraInfo(boyNak,girlNak);
+  const taraScore=(tBoyFromGirl.good?1.5:0)+(tGirlFromBoy.good?1.5:0);
+
+  // 4. Yoni (max 4) — animal-pairing matrix
+  const bY=YONI_OF_NAK[boyNak],gY=YONI_OF_NAK[girlNak];
+  const yoniScore=YONI_MATRIX[bY][gY];
+
+  // 5. Graha Maitri (max 5) — friendship between rashi lords
+  const bL=RASHI_LORD[boyRashi],gL=RASHI_LORD[girlRashi];
+  let grahaScore;
+  if(bL===gL)grahaScore=5;
+  else{
+    const f1=FRIEND_MATRIX[bL][gL],f2=FRIEND_MATRIX[gL][bL];
+    const both=f1+f2;
+    if(both===2)grahaScore=5;             // both friends
+    else if(both===1)grahaScore=4;        // one friend, one neutral
+    else if(both===0)grahaScore=3;        // both neutral
+    else if(both===-1)grahaScore=1;       // one neutral, one enemy
+    else if(both===-2)grahaScore=0;       // both enemies
+    else grahaScore=0.5;                  // one friend, one enemy
+  }
+
+  // 6. Gana (max 6) — temperament
+  const bG=GANA_OF_NAK[boyNak],gG=GANA_OF_NAK[girlNak];
+  const ganaScore=GANA_MATRIX[bG][gG];
+
+  // 7. Bhakuta / Rasi (max 7) — rashi distance avoidance
+  // Bad: 2/12 (diff 1 or 11) and 6/8 (diff 5 or 7).
+  const dB=(boyRashi-girlRashi+12)%12;
+  const bad=dB===1||dB===5||dB===7||dB===11;
+  const bhakutaScore=bad?0:7;
+
+  // 8. Nadi (max 8) — same nadi → 0, different → 8
+  const bN=NADI_OF_NAK[boyNak],gN=NADI_OF_NAK[girlNak];
+  // Standard exception: same nakshatra → no nadi dosha
+  const nadiScore=(bN===gN&&boyNak!==girlNak)?0:8;
+
+  const total=varnaScore+vasyaScore+taraScore+yoniScore+grahaScore+ganaScore+bhakutaScore+nadiScore;
+  // Verdicts are framed in the spirit of the muhurta shloka: classical indications
+  // describe terrain, not destiny. Low totals invite greater care, not despair.
+  let verdict;
+  if(total>=28)     verdict="Excellent — the kutas align beautifully";
+  else if(total>=18)verdict="Favourable — meets the traditional 18-point threshold";
+  else if(total>=14)verdict="Mixed — areas to work on; classical remedies and an astrologer's counsel help bridge the gaps";
+  else              verdict="Challenging on classical scoring — success will rest on shared intention, sincere effort, and an astrologer's guidance; many unions thrive despite a low kuta total";
+
+  return{
+    boyRashi,girlRashi,
+    varna:{score:varnaScore,max:1,boy:VARNA_NAMES[bVarna],girl:VARNA_NAMES[gVarna]},
+    vasya:{score:vasyaScore,max:2},
+    tara:{score:taraScore,max:3,boyFromGirl:tBoyFromGirl,girlFromBoy:tGirlFromBoy},
+    yoni:{score:yoniScore,max:4,boy:YONI_NAMES[bY],girl:YONI_NAMES[gY]},
+    graha:{score:grahaScore,max:5,boyLord:PLANET_NAMES[bL],girlLord:PLANET_NAMES[gL]},
+    gana:{score:ganaScore,max:6,boy:GANA_NAMES[bG],girl:GANA_NAMES[gG]},
+    bhakuta:{score:bhakutaScore,max:7,rashiDiff:dB},
+    nadi:{score:nadiScore,max:8,boy:NADI_NAMES[bN],girl:NADI_NAMES[gN]},
+    total,maxTotal:36,verdict,
+  };
+}
+
+// Compute the (sidereal) nakshatra index and pada (1..4) for a given sidereal Moon longitude.
+// Defence-in-depth: if a non-finite longitude slips through (extreme dates, polar
+// edge cases) return a safe placeholder marked invalid so callers don't dereference
+// NK[NaN].name. In practice unreachable given upstream getSkyPositions hardening.
+function nakAndPada(siderealMoonLon){
+  if(!Number.isFinite(siderealMoonLon))return{nIdx:0,pada:1,degInNak:0,invalid:true};
+  const nRaw=nm(siderealMoonLon)/NAK_SPAN;
+  const nIdx=Math.floor(nRaw)%27;
+  const pada=Math.floor((nRaw-Math.floor(nRaw))*4)+1;
+  const degInNak=(nRaw-nIdx)*NAK_SPAN;
+  return{nIdx,pada,degInNak};
+}
+
 // Compute the rashi (0-11) for a given sidereal longitude in a divisional chart.
 // N is the varga number (1, 2, 3, 4, 7, 9, 10, 12, 16, 20, 24, 27).
 // Uses standard Parashara rules per chart.
@@ -1874,7 +2147,7 @@ function renderPanch(){
     const mi=p.masaInfo;
     if(mi.isAdhika)return`<div style="background:var(--warn-bg);border-left:3px solid var(--warn-text);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:9px 13px;margin-bottom:12px;">
       <div style="font-size:12px;font-weight:500;color:var(--warn-text);">Adhika Masa (Mala Masa / Purushottama Masa)</div>
-      <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.5;">This is an intercalary (leap) month — no solar Sankranti falls within it. Traditional almanacs consider Adhika masa inauspicious for new ventures, marriages, and Upanayana. Religious observances, fasting, and charity are especially meritorious. Nija ${HM[mi.masaIdx]} follows next.</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.5;">This is an intercalary (leap) month — no solar Sankranti falls within it. Traditional almanacs set aside Adhika masa for major new ventures, marriages, and Upanayana, and turn it instead toward inner work: religious observances, fasting, scripture reading, and charity, all of which carry special merit during this month. Nija ${HM[mi.masaIdx]} follows next and resumes ordinary muhurta rules.</div>
     </div>`;
     if(mi.isNija)return`<div style="background:var(--info-bg);border-left:3px solid var(--info-text);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:9px 13px;margin-bottom:12px;">
       <div style="font-size:12px;font-weight:500;color:var(--info-text);">Nija ${HM[mi.masaIdx]} (regular month)</div>
@@ -2310,6 +2583,180 @@ function renderSky(){
   drawChart('sky-dn',pos,refPos,vargaN,document.getElementById('sky-varga').selectedOptions[0].text,ref&&ref.label);
   drawSkyTable(pos,refPos,ref&&ref.label);
   drawViewingGuide(J,LOC.lat,LOC.lon,localMin,tz);
+  drawReferenceNak(ref,refPos);
+  drawTaraPanel();
+  drawKutaPanel();
+}
+
+// "Reference Moon · nakshatra & pada" card — populated only when overlay is on.
+// Independent of the 9-Tara panel below (which has its own birth-star input).
+function drawReferenceNak(ref,refPos){
+  const card=document.getElementById('sky-ref-nak-card');
+  if(!ref||!refPos){card.style.display='none';return;}
+  card.style.display='';
+  const np=nakAndPada(refPos.moon.lon);
+  if(np.invalid){
+    card.querySelector('#sky-ref-nak').innerHTML='<div style="color:var(--text-tertiary);font-style:italic;">Reference Moon longitude is undefined — likely an extreme date or pathological coordinates.</div>';
+    return;
+  }
+  const nakName=NK[np.nIdx].name;
+  const rashi=Math.floor(refPos.moon.lon/30)%12;
+  const degInRashi=refPos.moon.lon-30*rashi;
+  const sub=NAKSHATRA_STARS[np.nIdx];
+  card.querySelector('#sky-ref-nak').innerHTML=`
+    <div style="margin-bottom:6px;"><strong style="color:var(--text-primary);font-size:14px;">${esc(nakName)} · Pada ${np.pada}</strong></div>
+    <div>Sidereal Moon: <code style="font-family:ui-monospace,monospace;">${refPos.moon.lon.toFixed(2)}°</code> · ${esc(RASHI[rashi])} ${degInRashi.toFixed(2)}° · within-nakshatra ${np.degInNak.toFixed(2)}° of 13.33°</div>
+    <div style="margin-top:5px;font-size:11px;color:var(--text-tertiary);">Principal stars: <strong style="color:var(--text-secondary);">${esc(sub.stars)}</strong> · ${esc(sub.hint)}</div>
+    <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px;">Reference: ${esc(ref.label)}</div>
+  `;
+}
+
+// Independent 9-Tara panel — user picks any birth nakshatra and sees all nine
+// category groups with their stars, plus today's tara reckoned from that birth.
+function _populateTaraSelect(){
+  const sel=document.getElementById('sky-tara-birth');
+  if(sel&&!sel.options.length){
+    let h='<option value="">— select birth nakshatra —</option>';
+    for(let i=0;i<27;i++)h+=`<option value="${i}">${i+1}. ${esc(NK[i].name)}</option>`;
+    sel.innerHTML=h;
+  }
+}
+function drawTaraPanel(){
+  _populateTaraSelect();
+  const out=document.getElementById('sky-tara');
+  const bV=document.getElementById('sky-tara-birth').value;
+  if(bV===''){
+    out.innerHTML=`<div style="color:var(--text-tertiary);font-style:italic;">Pick your Janma (birth) nakshatra above. The nine 9-Tara groups will be listed with Mitra and Parama-Mitra highlighted.</div>`;
+    return;
+  }
+  const B=parseInt(bV,10);
+  if(!Number.isFinite(B)||B<0||B>26){out.innerHTML='<div style="color:var(--danger-text);">Invalid selection</div>';return;}
+  const birthName=NK[B].name;
+  // Build the nine groups: for each category 0..8, list the nakshatras whose count from B falls there.
+  // Group k contains nakshatras at counts (k+1), (k+10), (k+19), i.e. offsets k, k+9, k+18 (0-based).
+  const groups=[];
+  for(let k=0;k<9;k++){
+    const stars=[(B+k)%27,(B+k+9)%27,(B+k+18)%27];
+    groups.push({idx:k,name:TARA_NAMES[k],good:TARA_GOOD[k],stars});
+  }
+  // Today's tara reckoned from this birth.
+  const today=new Date();
+  const Jnow=jd(today)-0.5+(today.getHours()*60+today.getMinutes()-resolveTz(today))/1440;
+  const moonNow=nm(mlong(Jnow)-ayan(Jnow));
+  const todayNak=Math.floor(moonNow/NAK_SPAN)%27;
+  const t=taraInfo(B,todayNak);
+  const tColor=t.good?'var(--success-text)':'var(--danger-text)';
+  const ord=n=>{const m=n%100;if(m>=11&&m<=13)return n+'th';switch(n%10){case 1:return n+'st';case 2:return n+'nd';case 3:return n+'rd';default:return n+'th';}};
+  // Quality icons for the table
+  const goodMark='<span style="color:var(--success-text);">✓</span>';
+  const badMark='<span style="color:var(--danger-text);">✗</span>';
+  const chip=i=>`<span style="display:inline-block;background:var(--bg-secondary);padding:1px 7px;margin:1px 2px;border-radius:4px;font-size:11px;">${esc(NK[i].name)}</span>`;
+  let table='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">';
+  table+='<tr><th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 6px 3px 0;">#</th><th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 6px;">Category</th><th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 6px;">Stars (counts in this cycle)</th></tr>';
+  for(const g of groups){
+    const counts=[g.idx+1,g.idx+10,g.idx+19];
+    const isFav=g.idx===7||g.idx===8;
+    const rowBg=isFav?'background:var(--success-bg);':'';
+    const nameStyle=isFav?'color:var(--success-text);font-weight:600;':(g.good?'':'color:var(--text-secondary);');
+    const starsHtml=g.stars.map((s,i)=>`<span style="display:inline-block;margin:1px 2px;">
+        <span style="background:var(--bg-secondary);padding:1px 7px;border-radius:4px;font-size:11px;">${esc(NK[s].name)}</span>
+        <sup style="color:var(--text-tertiary);font-size:9px;">${counts[i]}</sup>
+      </span>`).join('');
+    table+=`<tr style="${rowBg}border-top:.5px solid var(--border-light);">
+      <td style="padding:4px 6px 4px 0;color:var(--text-tertiary);">${g.idx+1}</td>
+      <td style="padding:4px 6px;${nameStyle}">${esc(g.name)} ${g.good?goodMark:badMark}</td>
+      <td style="padding:4px 6px;">${starsHtml}</td>
+    </tr>`;
+  }
+  table+='</table>';
+  out.innerHTML=`
+    <div style="margin-bottom:10px;padding:8px 10px;background:var(--info-bg);border-radius:var(--radius-md);">
+      Today's Moon nakshatra is <strong style="color:var(--text-primary);">${esc(NK[todayNak].name)}</strong>; counted from <strong style="color:var(--text-primary);">${esc(birthName)}</strong> it is the
+      <strong style="color:${tColor};">${ord(t.count)} star → ${esc(t.name)}</strong>
+      (cycle ${t.cycle} of 3 — ${t.cycle===1?'indication applies in full':t.cycle===2?'softened to about half':'softened almost to nothing'}).
+    </div>
+    <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;font-weight:500;">Mitra (count 8, 17, 26 — good)</div>
+    <div style="margin:4px 0 8px;">${groups[7].stars.map(chip).join('')}</div>
+    <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;font-weight:500;">Parama-Mitra (count 9, 18, 27 — very favourable)</div>
+    <div style="margin:4px 0 12px;">${groups[8].stars.map(chip).join('')}</div>
+    <details style="margin-top:8px;">
+      <summary style="cursor:pointer;font-size:11px;color:var(--text-tertiary);">All nine groups for <strong style="color:var(--text-secondary);">${esc(birthName)}</strong> ▾</summary>
+      ${table}
+    </details>
+    <div style="font-size:10px;color:var(--text-tertiary);margin-top:10px;line-height:1.6;">
+      <strong style="color:var(--text-secondary);">The 9-Tara math.</strong> Count from the birth (Janma) nakshatra B to any target nakshatra N, <em>inclusive of B as the 1st</em>:
+      <code style="font-family:ui-monospace,monospace;">count = ((N − B + 27) mod 27) + 1</code>.
+      The category is <code>(count − 1) mod 9</code> indexing into 0 Janma · 1 Sampat · 2 Vipat · 3 Kshema · 4 Pratyak · 5 Sadhana · 6 Naidhana · 7 <strong style="color:var(--text-primary);">Mitra</strong> · 8 <strong style="color:var(--text-primary);">Parama-Mitra</strong>.
+      Equivalently the Mitra stars sit at 0-indexed offsets <code>B+7, B+16, B+25 (mod 27)</code>, and Parama-Mitra at <code>B+8, B+17, B+26 (mod 27)</code>.
+      The cycle (Paryaya) is <code>⌈count/9⌉</code> — Shri B.V. Raman notes that any adverse indication in cycle 2 is softened to about half and in cycle 3 to almost nothing, so most "unfavourable" stars one encounters carry only a light caution rather than a real prohibition.
+    </div>
+  `;
+}
+
+// Kuta UI helpers
+function _populateKutaSelects(){
+  // Idempotent: builds the two nakshatra dropdowns once
+  for(const id of['sky-kuta-boy','sky-kuta-girl']){
+    const sel=document.getElementById(id);
+    if(sel&&!sel.options.length){
+      let h='<option value="">— select —</option>';
+      for(let i=0;i<27;i++)h+=`<option value="${i}">${i+1}. ${esc(NK[i].name)}</option>`;
+      sel.innerHTML=h;
+    }
+  }
+}
+function clearKuta(){
+  document.getElementById('sky-kuta-boy').value='';
+  document.getElementById('sky-kuta-girl').value='';
+  drawKutaPanel();
+}
+function drawKutaPanel(){
+  _populateKutaSelects();
+  const bV=document.getElementById('sky-kuta-boy').value;
+  const gV=document.getElementById('sky-kuta-girl').value;
+  const out=document.getElementById('sky-kuta');
+  if(bV===''||gV===''){
+    out.innerHTML='<div style="color:var(--text-tertiary);font-style:italic;">Pick a nakshatra for each side. The eight kutas (Varna · Vasya · Tara · Yoni · Graha Maitri · Gana · Bhakuta · Nadi) will be scored out of 36. Treat the result as terrain to navigate together, not a verdict on the union.</div>';
+    return;
+  }
+  const b=parseInt(bV,10),g=parseInt(gV,10);
+  if(!Number.isFinite(b)||!Number.isFinite(g)||b<0||b>26||g<0||g>26){out.innerHTML='<div style="color:var(--danger-text);">Invalid selection</div>';return;}
+  const k=ashtakuta(b,g);
+  const totalPct=(k.total/k.maxTotal)*100;
+  const totalColor=k.total>=28?'var(--success-text)':k.total>=18?'var(--info-text)':k.total>=14?'var(--warn-text)':'var(--danger-text)';
+  const row=(label,score,max,detail)=>{
+    const pct=score/max;
+    const c=pct>=0.75?'var(--success-text)':pct>=0.5?'var(--info-text)':pct>=0.25?'var(--warn-text)':'var(--danger-text)';
+    return`<tr>
+      <td style="padding:4px 8px 4px 0;">${esc(label)}</td>
+      <td style="padding:4px 0;color:${c};font-weight:500;text-align:right;">${score}/${max}</td>
+      <td style="padding:4px 0 4px 12px;color:var(--text-tertiary);font-size:11px;">${detail}</td>
+    </tr>`;
+  };
+  out.innerHTML=`
+    <div style="margin-bottom:10px;">
+      <strong style="color:var(--text-primary);">${esc(NK[b].name)}</strong> (${esc(RASHI[k.boyRashi])}) <span style="color:var(--text-tertiary);">×</span>
+      <strong style="color:var(--text-primary);">${esc(NK[g].name)}</strong> (${esc(RASHI[k.girlRashi])})
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      ${row('1. Varna',k.varna.score,k.varna.max,`boy ${esc(k.varna.boy)} / girl ${esc(k.varna.girl)}`)}
+      ${row('2. Vasya',k.vasya.score,k.vasya.max,'rashi-to-rashi amenability')}
+      ${row('3. Tara (Dina)',k.tara.score,k.tara.max,`boy from girl: ${esc(k.tara.boyFromGirl.name)}; girl from boy: ${esc(k.tara.girlFromBoy.name)}`)}
+      ${row('4. Yoni',k.yoni.score,k.yoni.max,`${esc(k.yoni.boy)} × ${esc(k.yoni.girl)}`)}
+      ${row('5. Graha Maitri',k.graha.score,k.graha.max,`rashi lords ${esc(k.graha.boyLord)} ↔ ${esc(k.graha.girlLord)}`)}
+      ${row('6. Gana',k.gana.score,k.gana.max,`${esc(k.gana.boy)} × ${esc(k.gana.girl)}`)}
+      ${row('7. Bhakuta (Rasi)',k.bhakuta.score,k.bhakuta.max,`rashi offset = ${k.bhakuta.rashiDiff}${(k.bhakuta.rashiDiff===1||k.bhakuta.rashiDiff===11||k.bhakuta.rashiDiff===5||k.bhakuta.rashiDiff===7)?' (2/12 or 6/8 axis — bad)':''}`)}
+      ${row('8. Nadi',k.nadi.score,k.nadi.max,`${esc(k.nadi.boy)} × ${esc(k.nadi.girl)}${k.nadi.score===0?' — same Nadi (dosha)':''}`)}
+      <tr style="border-top:.5px solid var(--border-light);">
+        <td style="padding:6px 8px 4px 0;font-weight:500;">Total</td>
+        <td style="padding:6px 0 4px;text-align:right;color:${totalColor};font-weight:600;font-size:14px;">${k.total}/36</td>
+        <td style="padding:6px 0 4px 12px;color:${totalColor};">${esc(k.verdict)}</td>
+      </tr>
+    </table>
+    <div style="margin-top:6px;height:5px;background:var(--bg-secondary);border-radius:3px;overflow:hidden;">
+      <div style="height:100%;width:${totalPct}%;background:${totalColor};"></div>
+    </div>
+  `;
 }
 
 // "Viewing guide" — for the chosen instant, classify the daypart from Sun altitude,
