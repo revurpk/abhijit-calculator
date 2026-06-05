@@ -1747,3 +1747,13 @@ Replace the two CDN `<link>` tags with locally-hosted copies of the CSS/font fil
 ---
 
 *Documentation for `index.html` (Hindu Panchanga Calendar). For bug reports or improvements, refer to the inline comments in the source file. Calculations are AI-generated approximations — verify critical muhurthas with a printed panchanga or a qualified astrologer.*
+
+---
+
+## Copyright & License
+
+© 2026 Pradyumna Revur. This work is dedicated to the public domain under the [Creative Commons CC0 1.0 Universal Public Domain Dedication](LICENSE).
+
+To the extent possible under law, the author has waived all copyright and related or neighboring rights to this work. It may be freely copied, modified, distributed, and used for any purpose, including commercial, without permission, attribution, or fee. Attribution remains welcome but is not required.
+
+The cited works listed under [References](#references) — Shri B.V. Raman's books, Meeus' *Astronomical Algorithms*, the *Brihat Samhita*, the SVBF-2026 calendar used for verification, etc. — are referenced under their own respective copyrights. They are not redistributed; only specific tables, formulas, and worked examples necessary to compute the panchanga have been transcribed.
