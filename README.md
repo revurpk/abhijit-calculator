@@ -421,24 +421,75 @@ Souramana ritu and Chandramana ritu can disagree by up to a month around Sankran
 
 ---
 
-#### Why the masa can't be read from the Sun's current sign
+#### Two parallel month systems
 
-The Sun's sidereal rashi on a given day gives the *solar masa*, not the *lunar masa*. These can disagree by up to several weeks. Example: on May 13, 2026 the Sun is at ~27° Mesha sidereal (solar masa = "Chaitra"), but the lunar month is Vaishakha — because the Sankranti that defines this month is the Sun's entry into Vrishabha, which occurs *within* the current lunation.
+Indian almanacs maintain **two** month-naming systems and they can disagree by weeks:
+
+| System | Period | Named after | Example |
+|--------|--------|-------------|---------|
+| **Souramana** (solar) | Sun's stay in one rashi (~30 days) | The rashi itself | When the Sun is in Mesha, the solar month is *Mesha māsa* (Tamil: *Chittirai*) |
+| **Chāndramāna · amanta** (lunar, this app) | New moon → next new moon (~29.5 days) | The **rashi the Sun enters** during the lunation (the Sankranti within it) | The lunation containing the Sun's entry into Mesha is named **Chaitra** |
+
+The Sanskrit names you see throughout this app — Chaitra, Vaishakha, Jyeshtha, Ashadha, Shravana, Bhadrapada, Ashweeyuja, Kartika, Margashirsha, Pushya, Magha, Phalguna — are **lunar** month names. They are indexed by the Sankranti rashi: HM[0]=Chaitra corresponds to *"the lunation in which the Sun enters Mesha"*, HM[1]=Vaishakha to *"the lunation in which the Sun enters Vrishabha"*, and so on.
+
+**Why the amanta name can drift from the Sun's current rashi.** On 13 May 2026 the Sun is still at ~27° Mesha. If you read off the lunar-month name naively from the Sun's *current* rashi you'd get HM[0]=Chaitra. But the actual amanta lunar month is **Vaishakha** (HM[1]) — because the Sankranti that *defines* this lunation is the Sun's entry into Vrishabha, which lands *within* the current new-moon-to-new-moon period. The amanta rule names a lunation after the **destination** rashi of the Sankranti it contains, not the rashi the Sun is sitting in when you look up.
 
 ---
 
-#### Core rule — amanta system
+#### Where the names come from — the Purnima nakshatra
 
-A lunar month (lunation) runs from new moon to new moon. It is named for the **Sankranti** (solar rashi entry) that falls within it.
+The lunar month names *Chaitra, Vaishakha, Jyeshtha, …* aren't arbitrary labels — they are **the nakshatras in which the Purnima (full moon) of each lunation falls**. This is the older, etymologically primary rule; the Sankranti formulation used in the code is its computational restatement.
 
-**Detection:** compare the Sun's sidereal rashi at the *current* new moon (r0) with the Sun's rashi at the *next* new moon (r1):
+| Lunar month | Etymological root — Purnima falls in… |
+|---|---|
+| **Chaitra**      | **Chitra** (and sometimes Swati) |
+| **Vaishakha**    | **Vishakha** |
+| **Jyeshtha**     | **Jyeshtha** |
+| **Ashadha**      | **Purva / Uttara Ashadha** |
+| **Shravana**     | **Shravana** |
+| **Bhadrapada**   | **Purva / Uttara Bhadrapada** |
+| **Ashweeyuja** *(Ashvina)* | **Ashwini** |
+| **Kartika**      | **Krittika** |
+| **Margashirsha** | **Mrigashira** |
+| **Pushya**       | **Pushya** |
+| **Magha**        | **Magha** |
+| **Phalguna**     | **Purva / Uttara Phalguni** |
+
+**Why this is equivalent to the Sankranti rule.** The Sun and the Full Moon are always 180° apart. So if you know the Sun's rashi at full moon, you automatically know the nakshatra near which the Moon sits — exactly opposite. Walking the zodiac:
+
+| Sun in… | Full Moon (180°) in… | Nakshatra near opposition | → Lunar month |
+|---|---|---|---|
+| Mesha       | Tula       | Chitra          | Chaitra      |
+| Vrishabha   | Vrischika  | Vishakha        | Vaishakha    |
+| Mithuna     | Dhanu      | Jyeshtha        | Jyeshtha     |
+| Karka       | Makara     | U.Ashadha       | Ashadha      |
+| Simha       | Kumbha     | Shravana        | Shravana     |
+| Kanya       | Meena      | U.Bhadrapada    | Bhadrapada   |
+| Tula        | Mesha      | Ashwini         | Ashweeyuja   |
+| Vrischika   | Vrishabha  | Krittika        | Kartika      |
+| Dhanu       | Mithuna    | Mrigashira      | Margashirsha |
+| Makara      | Karka      | Pushya          | Pushya       |
+| Kumbha      | Simha      | Magha           | Magha        |
+| Meena       | Kanya      | U.Phalguni      | Phalguna     |
+
+So "the Sankranti rashi r₁" and "the nakshatra of this lunation's Purnima" point to the **same** masa, because they sit on opposite ends of the same astronomical axis. The Purnima-nakshatra rule is the older Vedic naming convention (used in poetic and ritual contexts); the Sankranti rule is the later siddhantic formalisation that handles adhika months cleanly.
+
+**Boundary subtleties.** For Ashadha, Bhadrapada, and Phalguna the Purnima can fall in either of the *Purva* / *Uttara* pair across different years — which is why each month name uses the umbrella stem covering both nakshatras. In an **adhika** lunation no Sankranti happens, but the Purnima still falls in roughly the same nakshatra group as the following nija lunation's Purnima — which is why the adhika and nija take the same masa name (with the *Adhika* prefix on the intercalary one).
+
+---
+
+#### Core rule — amanta lunar month
+
+A lunation runs from new moon to next new moon and is named for the **Sankranti** (the Sun's transit from one sidereal rashi into the next) that falls *within* it. Concretely, look at the Sun's rashi at the two end-points of the lunation:
+
+**Detection:** let r0 = Sun's sidereal rashi at the *current* new moon, r1 = at the *next* new moon.
 
 | r0 vs r1 | Meaning | Month type | Name |
 |----------|---------|------------|------|
-| r0 ≠ r1 | Sankranti occurred during this lunation | Normal (or Nija) | HM[r1] |
-| r0 = r1 | No Sankranti — Sun stayed in same rashi | Adhika (intercalary) | HM[Sun rashi at new moon k+2] |
+| r0 ≠ r1 | A Sankranti (transit r0 → r1) happened during this lunation | Normal (or Nija) | HM[r1] — "the month in which the Sun enters r1" |
+| r0 = r1 | No Sankranti — Sun stayed in the same rashi for the whole lunation | **Adhika** (intercalary) | HM[r2] where r2 = Sun's rashi at new moon k+2 (the next lunation will contain the missed Sankranti and is the *nija* of HM[r2]; the adhika takes the same name with the "Adhika" prefix) |
 
-The **Nija** label applies when the *previous* month was adhika (its r0 = r1 = current r0), distinguishing the regular month from its adhika twin.
+The **Nija** label applies to a *normal* month when the *previous* month was adhika (its r0 = r1 = current r0), distinguishing the regular month from its adhika twin.
 
 ```javascript
 function sunRashi(J) {
@@ -1574,7 +1625,38 @@ The card also shows today's actual Moon nakshatra and where it falls in the 9-Ta
 | 7 | Bhakuta | 7 | 0 if rashi offset is 1/11 (2-12 axis) or 5/7 (6-8 sashtashtaka); else 7 |
 | 8 | Nadi | 8 | Same Nadi → 0 (same-nakshatra exempt); different → 8 |
 
+**Pada exception for Nadi.** When both padas are supplied and the nakshatra-level Nadi would score zero, `ashtakuta()` consults the pada-level Nadi (Shri B.V. Raman p.74). The 108 padas are arranged in a **boustrophedon** snake across the three Nadi columns:
+
+```
+                    Vata        Pitta       Kapha
+row 0 (→):          Aswini 1    Aswini 2    Aswini 3
+row 1 (←):          Bharani 2   Bharani 1   Aswini 4
+row 2 (→):          Bharani 3   Bharani 4   Krittika 1
+row 3 (←):          Krittika 4  Krittika 3  Krittika 2
+row 4 (→):          Rohini 1    Rohini 2    Rohini 3
+…repeats every 6 padas…
+```
+
+`padaNadi(nakIdx, pada)` returns 0/1/2. If the two padas fall in different columns despite identical nakshatra-Nadi, the Nadi dosha is considered neutralised and the full 8 points awarded.
+
 Verdict cutoffs: ≥28 excellent · ≥18 acceptable · ≥14 marginal · <14 poor. Shri B.V. Raman cautions repeatedly (Ch. IX) that longevity and the 7th-house strength of each chart take precedence over the kuta total.
+
+### Panchaka — five-source vibration
+
+`panchaka(tithiN, weekdayN, nakshatraN, lagnaN)` from Shri B.V. Raman Ch. III. Sum the four 1-based numbers (tithi from Shukla Pratipada, weekday Sun=1..Sat=7, nakshatra from Ashwini, Lagna rashi from Mesha) and divide by 9. The Sky tab computes all four from the chosen moment and shows the result:
+
+| Remainder | Type | Quality |
+|---|---|---|
+| 0, 3, 5, 7 | Auspicious | no panchaka dosha |
+| 1 | Mrityu Panchaka | indicates danger |
+| 2 | Agni Panchaka | risk from fire |
+| 4 | Raja Panchaka | bad results — especially set aside for occupational elections |
+| 6 | Chora Panchaka | evil happenings, theft — especially set aside for travel |
+| 8 | Roga Panchaka | disease — especially set aside for marriage and upanayanam |
+
+Most exception rules are situational: a panchaka declared unsuitable for one election category can sometimes be used for another. For ordinary acts a favourable Tarabala alone is sufficient; panchaka is only needed for ceremonies like marriage, nuptials, entry into a new house, etc.
+
+**Verified** against the book's worked example: tithi 13 + Sunday (1) + Ashlesha (9) + Virgo (6) = sum 29 → remainder 2 → Agni Panchaka.
 
 The card has two nakshatra dropdowns plus "Use reference for boy/girl" buttons that copy the reference Moon's nakshatra into the chosen slot.
 

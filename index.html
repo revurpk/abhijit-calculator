@@ -350,6 +350,13 @@ button.action:hover{background:var(--bg-tertiary);}
     <div class="sec-title" style="color:var(--info-text);">Reference Moon · nakshatra &amp; pada</div>
     <div id="sky-ref-nak" style="font-size:12px;line-height:1.65;color:var(--text-secondary);"></div>
   </div>
+  <!-- Panchaka — five-source vibration analysis for the chosen Sky-tab moment. -->
+  <details class="ab-sec" id="sky-panchaka-card" style="margin-top:1rem;">
+    <summary><i class="ti ti-grain" aria-hidden="true"></i> Panchaka — five-source vibration · Shri B.V. Raman</summary>
+    <div class="ab-body">
+      <div id="sky-panchaka" style="font-size:12px;line-height:1.65;color:var(--text-secondary);"></div>
+    </div>
+  </details>
   <!-- Independent of the reference moment — pick any birth star directly. -->
   <details class="ab-sec" id="sky-tara-card" style="margin-top:1rem;">
     <summary><i class="ti ti-stars" aria-hidden="true"></i> Tarabala — Mitra &amp; Parama-Mitra (9-Tara compatibility)</summary>
@@ -373,10 +380,25 @@ button.action:hover{background:var(--bg-tertiary);}
           <select id="sky-kuta-boy" onchange="drawKutaPanel()" style="font-size:12px;padding:5px 8px;width:170px;"></select>
         </div>
         <div>
+          <label class="form-lbl">Pada (opt.)</label>
+          <select id="sky-kuta-boy-pada" onchange="drawKutaPanel()" style="font-size:12px;padding:5px 8px;width:75px;">
+            <option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+          </select>
+        </div>
+        <div>
           <label class="form-lbl">Girl's nakshatra</label>
           <select id="sky-kuta-girl" onchange="drawKutaPanel()" style="font-size:12px;padding:5px 8px;width:170px;"></select>
         </div>
+        <div>
+          <label class="form-lbl">Pada (opt.)</label>
+          <select id="sky-kuta-girl-pada" onchange="drawKutaPanel()" style="font-size:12px;padding:5px 8px;width:75px;">
+            <option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+          </select>
+        </div>
         <button class="ybtn" onclick="clearKuta()">Clear</button>
+      </div>
+      <div style="font-size:10px;color:var(--text-tertiary);margin-bottom:8px;line-height:1.5;">
+        Padas are optional. When both are provided <em>and</em> the nakshatra-level Nadi would otherwise score zero (same Nadi), the pada-level Nadi reckoning is consulted as a classical exception — if the padas fall in different Nadi columns, the Nadi dosha is considered neutralised.
       </div>
       <div id="sky-kuta" style="font-size:12px;line-height:1.6;color:var(--text-secondary);"></div>
     </div>
@@ -510,17 +532,46 @@ button.action:hover{background:var(--bg-tertiary);}
     <summary><i class="ti ti-moon" aria-hidden="true"></i> Lunar Month (Masa) — Amanta System</summary>
     <div class="ab-body">
       <div style="font-size:12px;line-height:1.65;color:var(--text-secondary);margin-bottom:10px;">
-        A lunar month runs new-moon to new-moon and is named for the <strong style="color:var(--text-primary);">Sankranti</strong> (solar rashi entry) that falls within it.
-        Let r₀ = Sun's sidereal rashi at the current new moon, r₁ = rashi at the next new moon.
+        Two distinct month systems coexist:
+        <strong style="color:var(--text-primary);">Souramana (solar)</strong> — the Sun's stay in one rashi, named after the rashi itself (Mesha māsa, Vrishabha māsa, …), and
+        <strong style="color:var(--text-primary);">Chāndramāna · amanta (lunar, used by this app)</strong> — new-moon-to-new-moon, named for the rashi the Sun <em>enters</em> during the lunation (the Sankranti within it).
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;line-height:1.55;background:var(--bg-secondary);padding:6px 10px;border-radius:var(--radius-md);">
+        The familiar Sanskrit names — <em>Chaitra, Vaishakha, Jyeshtha, Ashadha, Shravana, Bhadrapada, Ashweeyuja, Kartika, Margashirsha, Pushya, Magha, Phalguna</em> — are <strong style="color:var(--text-primary);">lunar</strong> month names. <code>HM[i]</code> indexes them by the Sankranti destination rashi: <code>HM[0]=Chaitra</code> ↔ "the lunation in which the Sun enters Mesha", <code>HM[1]=Vaishakha</code> ↔ "the lunation in which the Sun enters Vrishabha", and so on. The lunar masa can lag the Sun's <em>current</em> rashi by several weeks.
+      </div>
+      <div style="font-size:12px;line-height:1.65;color:var(--text-secondary);margin-bottom:10px;">
+        Let r₀ = Sun's sidereal rashi at the current new moon, r₁ = at the next new moon:
       </div>
       <table class="ab-tbl">
-        <tr><th>r₀ vs r₁</th><th>Type</th><th>Name</th><th>Significance</th></tr>
-        <tr><td>r₀ ≠ r₁</td><td>Normal (or Nija)</td><td>HM[r₁]</td><td>Standard muhurtha rules apply</td></tr>
-        <tr><td>r₀ = r₁</td><td>Adhika (intercalary)</td><td>HM[r₂]</td><td>Avoid new ventures; merit for religious acts</td></tr>
+        <tr><th>r₀ vs r₁</th><th>Type</th><th>Name (lunar masa)</th><th>Significance</th></tr>
+        <tr><td>r₀ ≠ r₁</td><td>Normal (or Nija)</td><td>HM[r₁] — Sun's entry into r₁ falls within this lunation</td><td>Standard muhurta rules apply</td></tr>
+        <tr><td>r₀ = r₁</td><td>Adhika (intercalary)</td><td>HM[r₂] with "Adhika" prefix — borrows the upcoming nija month's name</td><td>Inner work, fasting, charity carry special merit</td></tr>
       </table>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;line-height:1.6;">
-        <em>Nija</em> = the regular month immediately following an adhika month.
-        Adhika months occur ~every 2.5–3 years, when the Sun stays in one rashi across two consecutive new moons (near aphelion, ~July). 2026 has Adhika Jyeshtha (June).
+        <em>Nija</em> = the regular lunar month that immediately follows an adhika twin.
+        Adhika lunations occur ~every 2.5–3 years, when the Sun stays in one rashi across two consecutive new moons (near aphelion, ~July). 2026 has Adhika Jyeshtha (June).
+      </div>
+      <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px;font-weight:500;">Where the names come from — the Purnima nakshatra</div>
+      <div style="font-size:12px;line-height:1.65;color:var(--text-secondary);margin-bottom:10px;">
+        The names <em>Chaitra, Vaishakha, Jyeshtha, …</em> are not arbitrary labels — each is the nakshatra in which the <strong style="color:var(--text-primary);">Purnima (full moon)</strong> of that lunation falls. This is the older Vedic naming convention; the Sankranti rule above is its computational restatement and the two are equivalent because <strong>Sun and Full Moon are always 180° apart</strong>, so the nakshatra opposite the Sun's rashi <em>is</em> the Purnima nakshatra.
+      </div>
+      <table class="ab-tbl">
+        <tr><th>Lunar month</th><th>Purnima nakshatra</th><th>Sun in rashi</th></tr>
+        <tr><td>Chaitra</td>      <td>Chitra (or Swati)</td>          <td>Mesha</td></tr>
+        <tr><td>Vaishakha</td>    <td>Vishakha</td>                   <td>Vrishabha</td></tr>
+        <tr><td>Jyeshtha</td>     <td>Jyeshtha</td>                   <td>Mithuna</td></tr>
+        <tr><td>Ashadha</td>      <td>P. / U. Ashadha</td>            <td>Karka</td></tr>
+        <tr><td>Shravana</td>     <td>Shravana</td>                   <td>Simha</td></tr>
+        <tr><td>Bhadrapada</td>   <td>P. / U. Bhadrapada</td>         <td>Kanya</td></tr>
+        <tr><td>Ashweeyuja</td>   <td>Ashwini</td>                    <td>Tula</td></tr>
+        <tr><td>Kartika</td>      <td>Krittika</td>                   <td>Vrischika</td></tr>
+        <tr><td>Margashirsha</td> <td>Mrigashira</td>                 <td>Dhanu</td></tr>
+        <tr><td>Pushya</td>       <td>Pushya</td>                     <td>Makara</td></tr>
+        <tr><td>Magha</td>        <td>Magha</td>                      <td>Kumbha</td></tr>
+        <tr><td>Phalguna</td>     <td>P. / U. Phalguni</td>           <td>Meena</td></tr>
+      </table>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;line-height:1.6;">
+        For Ashadha, Bhadrapada, and Phalguna the Purnima can fall in either of a Purva / Uttara pair across different years — which is why the month name covers both. In an adhika lunation no Sankranti happens, but the Purnima still falls in roughly the same nakshatra group as the next (nija) lunation's Purnima — hence both take the same name with the adhika twin marked.
       </div>
     </div>
   </details>
@@ -640,7 +691,11 @@ button.action:hover{background:var(--bg-tertiary);}
       </div>
       <div class="ab-elem">
         <div class="ab-el-name">Ashtakuta marriage compatibility <span class="ab-el-sub">8 kutas, 36 points</span></div>
-        <div class="ab-el-note">Standalone widget — pick two nakshatras (or click "Use reference for boy/girl" to copy the reference Moon's nakshatra) and the eight kutas are scored: <strong>Varna 1, Vasya 2, Tara 3, Yoni 4, Graha Maitri 5, Gana 6, Bhakuta 7, Nadi 8</strong>. Verdict at 28+ excellent / 18+ acceptable / 14+ marginal. <code>ashtakuta()</code> uses the YONI_MATRIX, GANA_MATRIX, FRIEND_MATRIX, NADI_OF_NAK, GANA_OF_NAK and VASYA_AMENABLE tables transcribed from Shri B.V. Raman's <em>Muhurtha</em>.</div>
+        <div class="ab-el-note">Collapsible standalone widget — pick two nakshatras (and optionally their padas) and the eight kutas are scored: <strong>Varna 1, Vasya 2, Tara 3, Yoni 4, Graha Maitri 5, Gana 6, Bhakuta 7, Nadi 8</strong>. Verdict at 28+ excellent / 18+ acceptable / 14+ marginal. <code>ashtakuta()</code> uses the YONI_MATRIX, GANA_MATRIX, FRIEND_MATRIX, NADI_OF_NAK, GANA_OF_NAK and VASYA_AMENABLE tables transcribed from Shri B.V. Raman's <em>Muhurtha</em>. <strong>Pada exception:</strong> when both padas are provided and nakshatra-level Nadi would score zero, the 108-pada boustrophedon table (<code>padaNadi(nakIdx,pada)</code>, Shri B.V. Raman p.74) is consulted — if the padas fall in different Nadi columns the Nadi dosha is considered neutralised and the full 8 points awarded.</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Panchaka <span class="ab-el-sub">five-source vibration</span></div>
+        <div class="ab-el-note">Per Shri B.V. Raman Ch. III: sum the 1-based tithi, weekday, nakshatra, and Lagna-rashi numbers and divide by 9. Remainders <strong>1 Mrityu, 2 Agni, 4 Raja, 6 Chora, 8 Roga</strong> indicate bad panchaka; 0, 3, 5, 7 are auspicious. Most panchaka exceptions are situational — Raja Panchaka set aside for occupation, Chora for travel, Roga/Mrityu for marriage and upanayanam. For ordinary acts a favourable Tarabala alone suffices.</div>
       </div>
       <div class="ab-elem" style="border-bottom:none;">
         <div class="ab-el-name">Guidance card <span class="ab-el-sub">adapted from Shri B.V. Raman</span></div>
@@ -1406,8 +1461,25 @@ const GANA_MATRIX=[
   [6,6,0],
   [1,1,6],
 ];
-// Nadi — humour (0=Vata, 1=Pitta, 2=Sleshma).  Shri B.V. Raman p.74.
+// Nadi — humour (0=Vata, 1=Pitta, 2=Sleshma/Kapha).  Shri B.V. Raman p.74.
+// Nakshatra-level table (whole-nakshatra Nadi).
 const NADI_OF_NAK=[0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2];
+
+// Pada-level Nadi exception. Per Shri B.V. Raman p.74 ("If Nadi Kuta is not
+// present on the basis of the Nakshatras, then the same may be reckoned taking
+// into account the Nakshatra Padas") the 108 padas are laid out in a
+// boustrophedon snake across three Nadi columns (Vata · Pitta · Kapha):
+//   Aswini 1 → V, Aswini 2 → P, Aswini 3 → K,
+//   Aswini 4 → K, Bharani 1 → P, Bharani 2 → V,   (row 2 right-to-left)
+//   Bharani 3 → V, Bharani 4 → P, Krittika 1 → K, (row 3 left-to-right)
+//   …repeating every 6 padas.
+// Returns 0=Vata, 1=Pitta, 2=Kapha for nakIdx 0..26 and pada 1..4.
+function padaNadi(nakIdx,pada){
+  const q=nakIdx*4+(pada-1);  // 0-based cumulative pada index, 0..107
+  const row=Math.floor(q/3),posInRow=q%3;
+  // Even-numbered rows go V→P→K (cols 0,1,2); odd rows go K→P→V (cols 2,1,0).
+  return row%2===0?posInRow:(2-posInRow);
+}
 const NADI_NAMES=["Vata","Pitta","Kapha"];
 // Varna by rashi (0..11). 4=Brahmin(highest), 3=Kshatriya, 2=Vaishya, 1=Shudra.
 // Per Shri B.V. Raman p.75: Pisces/Scorpio/Cancer=Brahmin; Leo/Sag/Libra=Kshatriya;
@@ -1460,8 +1532,12 @@ function mitraStars(B){
 
 // Ashtakuta marriage compatibility. Returns the eight individual scores + total + verdict.
 // Arguments: 0-indexed nakshatras (0=Ashwini..26=Revati) for boy and girl.
+// Optional padas (1..4, or null/undefined). When both padas are provided AND the
+// nakshatra-level Nadi otherwise scores zero (same nadi), the pada-level Nadi
+// reckoning is consulted as a classical exception: if the padas fall in different
+// Nadi columns, Nadi dosha is considered neutralised and the full 8 points awarded.
 // Each nakshatra spans 13°20' so the rashi is floor(N * 13.333 / 30) = floor(N*4/9).
-function ashtakuta(boyNak,girlNak){
+function ashtakuta(boyNak,girlNak,boyPada,girlPada){
   const boyRashi=Math.floor(boyNak*NAK_SPAN/30)%12;
   const girlRashi=Math.floor(girlNak*NAK_SPAN/30)%12;
 
@@ -1513,8 +1589,17 @@ function ashtakuta(boyNak,girlNak){
 
   // 8. Nadi (max 8) — same nadi → 0, different → 8
   const bN=NADI_OF_NAK[boyNak],gN=NADI_OF_NAK[girlNak];
-  // Standard exception: same nakshatra → no nadi dosha
-  const nadiScore=(bN===gN&&boyNak!==girlNak)?0:8;
+  // Standard exceptions:
+  //   (a) same nakshatra → no nadi dosha
+  //   (b) if both padas are provided AND nakshatra-level Nadi is the same, fall
+  //       back to pada-level Nadi (BV Raman p.74).
+  let nadiScore=(bN===gN&&boyNak!==girlNak)?0:8;
+  let nadiExceptionFromPada=false;
+  if(nadiScore===0&&Number.isFinite(boyPada)&&Number.isFinite(girlPada)
+      &&boyPada>=1&&boyPada<=4&&girlPada>=1&&girlPada<=4){
+    const bP=padaNadi(boyNak,boyPada),gP=padaNadi(girlNak,girlPada);
+    if(bP!==gP){nadiScore=8;nadiExceptionFromPada=true;}
+  }
 
   const total=varnaScore+vasyaScore+taraScore+yoniScore+grahaScore+ganaScore+bhakutaScore+nadiScore;
   // Verdicts are framed in the spirit of the muhurta shloka: classical indications
@@ -1534,9 +1619,43 @@ function ashtakuta(boyNak,girlNak){
     graha:{score:grahaScore,max:5,boyLord:PLANET_NAMES[bL],girlLord:PLANET_NAMES[gL]},
     gana:{score:ganaScore,max:6,boy:GANA_NAMES[bG],girl:GANA_NAMES[gG]},
     bhakuta:{score:bhakutaScore,max:7,rashiDiff:dB},
-    nadi:{score:nadiScore,max:8,boy:NADI_NAMES[bN],girl:NADI_NAMES[gN]},
+    nadi:{score:nadiScore,max:8,boy:NADI_NAMES[bN],girl:NADI_NAMES[gN],
+          padaException:nadiExceptionFromPada,
+          boyPadaNadi:Number.isFinite(boyPada)?NADI_NAMES[padaNadi(boyNak,boyPada)]:null,
+          girlPadaNadi:Number.isFinite(girlPada)?NADI_NAMES[padaNadi(girlNak,girlPada)]:null},
     total,maxTotal:36,verdict,
   };
+}
+
+// PANCHAKA — five-source vibration test, Shri B.V. Raman p.69 (Ch. III).
+// Sum (tithiN + weekdayN + nakshatraN + lagnaN) divided by 9. Remainders:
+//   1 Mrityu  — danger
+//   2 Agni    — risk from fire
+//   4 Raja    — bad results (avoid for occupation-related elections)
+//   6 Chora   — evil happenings, theft (avoid for travel)
+//   8 Roga    — disease (avoid for marriage, upanayanam)
+//   3, 5, 7, 0 — good (no panchaka dosha)
+//
+// Inputs are all 1-based:
+//   tithiN     1..30 from Shukla Pratipada
+//   weekdayN   1..7  (Sun=1, Mon=2, …, Sat=7)
+//   nakshatraN 1..27 from Ashwini
+//   lagnaN     1..12 from Mesha/Aries
+const PANCHAKA_TYPES={
+  0:{name:'Auspicious',good:true,hint:'no panchaka dosha'},
+  1:{name:'Mrityu Panchaka',good:false,hint:'indicates danger'},
+  2:{name:'Agni Panchaka',good:false,hint:'risk from fire'},
+  3:{name:'Auspicious',good:true,hint:'no panchaka dosha'},
+  4:{name:'Raja Panchaka',good:false,hint:'unfavourable; especially avoided for occupational elections'},
+  5:{name:'Auspicious',good:true,hint:'no panchaka dosha'},
+  6:{name:'Chora Panchaka',good:false,hint:'evil happenings, theft; especially avoided for travel'},
+  7:{name:'Auspicious',good:true,hint:'no panchaka dosha'},
+  8:{name:'Roga Panchaka',good:false,hint:'disease; especially avoided for marriage and upanayanam'},
+};
+function panchaka(tithiN,weekdayN,nakshatraN,lagnaN){
+  const sum=tithiN+weekdayN+nakshatraN+lagnaN;
+  const r=((sum%9)+9)%9;
+  return{sum,remainder:r,...PANCHAKA_TYPES[r]};
 }
 
 // Compute the (sidereal) nakshatra index and pada (1..4) for a given sidereal Moon longitude.
@@ -2604,8 +2723,67 @@ function renderSky(){
   drawSkyTable(pos,refPos,ref&&ref.label);
   drawViewingGuide(J,LOC.lat,LOC.lon,localMin,tz);
   drawReferenceNak(ref,refPos);
+  drawPanchakaPanel(J,pos,dt);
   drawTaraPanel();
   drawKutaPanel();
+}
+
+// Panchaka panel — five-source vibration for the chosen Sky-tab moment.
+// Combines the day's tithi, weekday, the Moon's nakshatra, and the rising Lagna's rashi.
+function drawPanchakaPanel(J,pos,dt){
+  const out=document.getElementById('sky-panchaka');
+  if(!out)return;
+  // Tithi index 0-29 from Moon-Sun elongation
+  const sl=slong(J),ml=mlong(J);
+  const diff=nm(ml-sl),tIdx=Math.floor(diff/12);
+  const tithiN=tIdx+1;
+  // Weekday: Sun=1..Sat=7. Use the chosen-location-local weekday (not browser-local),
+  // so the panchaka of a remote-location date is read on its own clock.
+  // Approximation: getDay() of the Date object is correct as long as the date string
+  // was constructed in the browser timezone; the wall-clock day matches LOC's date
+  // for almost all moments outside the day-boundary edge case.
+  const weekdayN=dt.getDay()+1;
+  // Nakshatra at the chosen moment (sidereal Moon)
+  const moonSid=nm(ml-ayan(J));
+  const nIdx=Math.floor(moonSid/(360/27))%27;
+  const nakshatraN=nIdx+1;
+  // Lagna rashi (sidereal)
+  const lagnaIdx=Math.floor(pos.asc.lon/30)%12;
+  const lagnaN=lagnaIdx+1;
+  const p=panchaka(tithiN,weekdayN,nakshatraN,lagnaN);
+  const col=p.good?'var(--success-text)':'var(--danger-text)';
+  const tithiLabel=tIdx<15?`Shukla ${tIdx+1}`:`Krishna ${tIdx-14}`;
+  out.innerHTML=`
+    <div style="margin-bottom:8px;">
+      Sum of four sources, divided by 9, gives the panchaka type:
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">
+      <tr><td style="padding:3px 8px 3px 0;color:var(--text-tertiary);">Tithi number</td>
+          <td style="padding:3px 0;text-align:right;font-family:ui-monospace,monospace;">${tithiN}</td>
+          <td style="padding:3px 0 3px 12px;color:var(--text-tertiary);">${esc(tithiLabel)}</td></tr>
+      <tr><td style="padding:3px 8px 3px 0;color:var(--text-tertiary);">Weekday number</td>
+          <td style="padding:3px 0;text-align:right;font-family:ui-monospace,monospace;">${weekdayN}</td>
+          <td style="padding:3px 0 3px 12px;color:var(--text-tertiary);">${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dt.getDay()]}</td></tr>
+      <tr><td style="padding:3px 8px 3px 0;color:var(--text-tertiary);">Nakshatra number</td>
+          <td style="padding:3px 0;text-align:right;font-family:ui-monospace,monospace;">${nakshatraN}</td>
+          <td style="padding:3px 0 3px 12px;color:var(--text-tertiary);">${esc(NK[nIdx].name)}</td></tr>
+      <tr><td style="padding:3px 8px 3px 0;color:var(--text-tertiary);">Lagna number</td>
+          <td style="padding:3px 0;text-align:right;font-family:ui-monospace,monospace;">${lagnaN}</td>
+          <td style="padding:3px 0 3px 12px;color:var(--text-tertiary);">${esc(RASHI[lagnaIdx])}</td></tr>
+      <tr style="border-top:.5px solid var(--border-light);">
+        <td style="padding:5px 8px 3px 0;font-weight:500;">Sum</td>
+        <td style="padding:5px 0 3px;text-align:right;font-family:ui-monospace,monospace;font-weight:500;">${p.sum}</td>
+        <td style="padding:5px 0 3px 12px;color:var(--text-tertiary);">÷ 9 = ${Math.floor(p.sum/9)} rem <strong style="color:${col};">${p.remainder}</strong></td>
+      </tr>
+    </table>
+    <div style="padding:10px 12px;background:${p.good?'var(--success-bg)':'var(--danger-bg)'};border-radius:var(--radius-md);">
+      <div style="font-weight:500;color:${col};font-size:13px;">${esc(p.name)}</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">${esc(p.hint)}</div>
+    </div>
+    <div style="font-size:10px;color:var(--text-tertiary);margin-top:10px;line-height:1.6;">
+      <strong style="color:var(--text-secondary);">Exception rules (BV Raman p.69).</strong> The general rule is to avoid any of the five bad panchakas, but the strongest cautions are situational: Raja Panchaka is especially set aside for <em>occupation</em>; Chora Panchaka for <em>travel</em>; Roga and Mrityu Panchakas for <em>marriage and upanayanam</em>; Agni and Raja Panchakas for <em>house building</em>. A panchaka declared unsuitable for one category can sometimes be used for another. For non-critical activities a favourable Tarabala alone is enough — panchaka need not be examined.
+    </div>
+  `;
 }
 
 // "Reference Moon · nakshatra & pada" card — populated only when overlay is on.
@@ -2726,14 +2904,17 @@ function _populateKutaSelects(){
   }
 }
 function clearKuta(){
-  document.getElementById('sky-kuta-boy').value='';
-  document.getElementById('sky-kuta-girl').value='';
+  for(const id of['sky-kuta-boy','sky-kuta-girl','sky-kuta-boy-pada','sky-kuta-girl-pada']){
+    const el=document.getElementById(id);if(el)el.value='';
+  }
   drawKutaPanel();
 }
 function drawKutaPanel(){
   _populateKutaSelects();
   const bV=document.getElementById('sky-kuta-boy').value;
   const gV=document.getElementById('sky-kuta-girl').value;
+  const bPV=document.getElementById('sky-kuta-boy-pada').value;
+  const gPV=document.getElementById('sky-kuta-girl-pada').value;
   const out=document.getElementById('sky-kuta');
   if(bV===''||gV===''){
     out.innerHTML='<div style="color:var(--text-tertiary);font-style:italic;">Pick a nakshatra for each side. The eight kutas (Varna · Vasya · Tara · Yoni · Graha Maitri · Gana · Bhakuta · Nadi) will be scored out of 36. Treat the result as terrain to navigate together, not a verdict on the union.</div>';
@@ -2741,7 +2922,10 @@ function drawKutaPanel(){
   }
   const b=parseInt(bV,10),g=parseInt(gV,10);
   if(!Number.isFinite(b)||!Number.isFinite(g)||b<0||b>26||g<0||g>26){out.innerHTML='<div style="color:var(--danger-text);">Invalid selection</div>';return;}
-  const k=ashtakuta(b,g);
+  // Optional padas (1..4); invalid or empty → undefined.
+  const bP=bPV?parseInt(bPV,10):undefined,gP=gPV?parseInt(gPV,10):undefined;
+  const validP=v=>Number.isFinite(v)&&v>=1&&v<=4;
+  const k=ashtakuta(b,g,validP(bP)?bP:undefined,validP(gP)?gP:undefined);
   const totalPct=(k.total/k.maxTotal)*100;
   const totalColor=k.total>=28?'var(--success-text)':k.total>=18?'var(--info-text)':k.total>=14?'var(--warn-text)':'var(--danger-text)';
   const row=(label,score,max,detail)=>{
@@ -2766,7 +2950,13 @@ function drawKutaPanel(){
       ${row('5. Graha Maitri',k.graha.score,k.graha.max,`rashi lords ${esc(k.graha.boyLord)} ↔ ${esc(k.graha.girlLord)}`)}
       ${row('6. Gana',k.gana.score,k.gana.max,`${esc(k.gana.boy)} × ${esc(k.gana.girl)}`)}
       ${row('7. Bhakuta (Rasi)',k.bhakuta.score,k.bhakuta.max,`rashi offset = ${k.bhakuta.rashiDiff}${(k.bhakuta.rashiDiff===1||k.bhakuta.rashiDiff===11||k.bhakuta.rashiDiff===5||k.bhakuta.rashiDiff===7)?' (2/12 or 6/8 axis — bad)':''}`)}
-      ${row('8. Nadi',k.nadi.score,k.nadi.max,`${esc(k.nadi.boy)} × ${esc(k.nadi.girl)}${k.nadi.score===0?' — same Nadi (dosha)':''}`)}
+      ${row('8. Nadi',k.nadi.score,k.nadi.max,(() => {
+        let d=`${esc(k.nadi.boy)} × ${esc(k.nadi.girl)}`;
+        if(k.nadi.padaException) d+=` — same nadi by nakshatra, but padas fall in different nadi columns (<em>${esc(k.nadi.boyPadaNadi)}</em> × <em>${esc(k.nadi.girlPadaNadi)}</em>) → BV Raman pada-exception applied`;
+        else if(k.nadi.score===0) d+=` — same Nadi (dosha)`;
+        else if(k.nadi.boyPadaNadi&&k.nadi.girlPadaNadi) d+=` · padas: ${esc(k.nadi.boyPadaNadi)} × ${esc(k.nadi.girlPadaNadi)}`;
+        return d;
+      })())}
       <tr style="border-top:.5px solid var(--border-light);">
         <td style="padding:6px 8px 4px 0;font-weight:500;">Total</td>
         <td style="padding:6px 0 4px;text-align:right;color:${totalColor};font-weight:600;font-size:14px;">${k.total}/36</td>
