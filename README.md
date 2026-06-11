@@ -1658,7 +1658,7 @@ Most exception rules are situational: a panchaka declared unsuitable for one ele
 
 **Verified** against the book's worked example: tithi 13 + Sunday (1) + Ashlesha (9) + Virgo (6) = sum 29 → remainder 2 → Agni Panchaka.
 
-The card has two nakshatra dropdowns plus "Use reference for boy/girl" buttons that copy the reference Moon's nakshatra into the chosen slot.
+The card is a standalone collapsible widget with two nakshatra dropdowns (plus optional pada selectors) — it does not depend on the reference overlay.
 
 **4. Guidance card** — a condensed adaptation of Shri B.V. Raman's *Muhurtha* covering Tarabala, Chandrabala, the Cycle softening rule, marriage caveats, and stars/days to avoid for important events. Cited inline; the user is directed to consult an experienced astrologer for decisions of real consequence.
 
@@ -1714,6 +1714,34 @@ Planet ecliptic latitudes are treated as β=0 (acceptable to ±5° in azimuth fo
 **Glare check:** Mercury and Venus closer than 10° to the Sun are flagged "lost in glare" — even if technically above the horizon they cannot be seen.
 
 **Nakshatra star table:** `NAKSHATRA_STARS[27]` maps each nakshatra to its principal stars and a finder hint (e.g. *Rohini → Aldebaran (α Tauri), bright orange star — the eye of Taurus*). The Moon's current nakshatra at the chosen instant is displayed with its star information plus a "look toward the Moon (currently SW, 30° above horizon)" pointer. This gives an observable visual anchor for what the panchanga's abstract nakshatra index actually corresponds to in the sky.
+
+### Lagna card — strengthening the ascendant
+
+The Sky tab shows a **Lagna card** for the chosen moment: rising sign, degree, sign nature (`SIGN_NATURE[r % 3]` — movable/fixed/dual), the rashi lord and the whole-sign house it occupies, plus live strength checks per Shri B.V. Raman Ch. II & IX:
+
+- **Lagna tyajya** — `lagnaTyajya(siderealLon)` flags the rejected slices of the rising sign: *Bhujanga* (first 3° of Aries, Taurus, Sagittarius, Virgo), *Rahu* (last 3° of Pisces, Capricorn, Cancer, Scorpio), *Gridhra* (13°30′–16°30′ of Gemini, Libra, Leo, Aquarius). Even a strong sign is rejected while the ascendant degree sits in these zones — shifting the chosen time a few minutes moves past them.
+- **Dynamic checks** computed from the chart (whole-sign houses from the Lagna rashi): benefic (Jupiter/Venus/Mercury) in Lagna — *"a formidable force in rendering the Lagna strong"*; Lagna free of malefics; malefics usefully placed in 3rd/11th; no papakartari (Lagna hemmed between malefics in the 12th and 2nd); Jupiter or Venus in a kendra.
+- **Marriage-specific trio**: 7th house unoccupied, Mars not in the 8th, Venus not in the 6th.
+- **Guidance text**: match the sign nature to the purpose — fixed for permanence (house entry, foundation, coronation), movable for travel, common for education; Gemini/Virgo/Libra best for marriage; prefer the forenoon; strengthen the ascendant, its lord, and the Moon. Because the Lagna changes roughly every two hours, small time shifts usually suffice.
+
+### Category muhurtha search (Search tab)
+
+The Search tab's **Purpose** selector applies Shri B.V. Raman's per-category election rules and ranks every day in the chosen range by favourability:
+
+| Category | Source | Key rules encoded |
+|---|---|---|
+| Marriage (Vivaha) | Ch. IX | 11 sanctioned nakshatras (others unsuitable; Magha/Mula pada 1 and Revati pada 4 rejected); bright-half tithis 2/3/5/7/10/11/13; Riktha + 6/8/12 + dark-11-to-Amavasya rejected; Mon/Wed/Thu/Fri best, Tue rejected; masa Magha/Phalguna/Vaisakha/Jyeshtha good; 9 rejected yogas; Vishti invariably discarded; Roga & Mrityu Panchaka; Moudhyam; Adhika masa |
+| House entry (Griha Pravesha) | Ch. XII | Vaisakha/Jyeshtha/Magha/Phalguna; Uttarayana; fixed lagna preferred; Tue/Sat set aside |
+| Laying foundation | Ch. XII | 8 best + 7 middling nakshatras (other 12 invariably avoided); odd tithis (not 9th) + 2/6/10; masa rules; Agni & Raja Panchaka |
+| Education (Vidyarambha) | Ch. XI | Mrigasira/Ardra/Punarvasu/Pushya/Hasta/Chitta/Swati/Sravana/Dhanishta/Satabhisha; Wed morning best; common signs; 4/8/9/14 + New/Full Moon avoided |
+| Travel (Yatra) | Ch. XIV | 10 "safe return" nakshatras; Bharani & Krittika invariably rejected; 9th tithi prohibited; Chora Panchaka; Janma nakshatra avoided |
+| Business / trade | Ch. X | Thursday + 10th tithi + Pushya best; Tuesday completely rejected; Mercury fortification noted |
+| Medical treatment | Ch. XV | 16 sanctioned nakshatras; Mon/Wed/Thu/Fri; 4/9/14 + Purnima/Amavasya set aside |
+| General | Ch. II–IV | Tue/Sat avoided; 4/8/14 tithis unsuitable; Bharani avoided for all good work |
+
+`categoryDayScore(p, catKey, participants, eclipse)` builds the score from a base of 50, with weighted contributions (nakshatra ±25, tithi ±18, vara ±15, masa ±12, yoga −8, Vishti −8/−12, Panchaka −10, Adhika −12, Moudhyam −12, eclipse −15) and returns a **reasons array** — every result shows a "Why this ranking" breakdown quoting the rule applied. The day-level Panchaka is computed with a Mesha placeholder Lagna and flagged as such — the user finalises the hour against the Sky tab's Lagna card.
+
+**Participants (marriage & business).** When the purpose is Marriage, the form asks for the bride's and groom's birth details; for Business, up to four partners. Each slot accepts a directly-picked Janma nakshatra **or** birth date/time/city — `computeBirthStar()` resolves the timezone DST-aware via the city's IANA name, computes the sidereal Moon, and returns nakshatra, pada and Janma Rasi. Per participant, each candidate day then gains/loses points for **Tarabala** (9-count from the birth star, with Paryaya cycle softening ×1/×0.5/×0.15) and **Chandrabala** (day's Moon must not sit 6th/8th/12th from the Janma Rasi). For a marriage couple, the fixed **Ashtakuta** total is displayed once above the results — it qualifies the match, while the ranking addresses the timing. Birth details never leave the browser.
 
 ---
 

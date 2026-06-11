@@ -257,6 +257,30 @@ button.action:hover{background:var(--bg-tertiary);}
   </div>
   <div class="card" style="margin-bottom:1rem;">
     <div style="font-size:14px;font-weight:500;margin-bottom:1rem;">Search criteria</div>
+    <!-- Muhurtha purpose — category-specific rules from Shri B.V. Raman's Muhurtha -->
+    <div style="margin-bottom:12px;">
+      <label class="form-lbl">Purpose (applies Shri B.V. Raman's category rules &amp; ranks by favourability)</label>
+      <select id="scat" onchange="onCatChange()" style="width:100%;max-width:420px;font-size:13px;">
+        <option value="">— none · plain panchanga score —</option>
+        <option value="marriage">Marriage (Vivaha) — Ch. IX</option>
+        <option value="grihapravesha">House entry (Griha Pravesha) — Ch. XII</option>
+        <option value="foundation">Laying foundation (Vastu) — Ch. XII</option>
+        <option value="education">Beginning education (Vidyarambha) — Ch. XI</option>
+        <option value="travel">Travel (Yatra) — Ch. XIV</option>
+        <option value="business">Business / trade venture — Ch. X</option>
+        <option value="medical">Beginning medical treatment — Ch. XV</option>
+        <option value="general">General auspicious work — Ch. II–IV</option>
+      </select>
+    </div>
+    <!-- Participants — shown for marriage (bride & groom) and business (1–4 partners).
+         Birth star can be picked directly or computed from birth date/time/city. -->
+    <div id="scat-participants" style="display:none;margin-bottom:12px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 12px;">
+      <div id="scat-part-title" style="font-size:12px;font-weight:500;margin-bottom:8px;"></div>
+      <div id="scat-part-slots"></div>
+      <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px;line-height:1.5;">
+        Pick each person's Janma nakshatra directly, or enter birth date / time / city and press <strong>→ star</strong> to compute it from the Moon's sidereal position. Birth details stay in your browser — nothing is transmitted. Tarabala and Chandrabala for every participant are then folded into each day's ranking.
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div><label class="form-lbl">From date</label><input type="date" id="ss" style="width:100%;"/></div>
       <div><label class="form-lbl">To date</label><input type="date" id="se" style="width:100%;"/></div>
@@ -344,6 +368,11 @@ button.action:hover{background:var(--bg-tertiary);}
   <div class="card" style="margin-top:1rem;">
     <div class="sec-title">Sidereal longitudes</div>
     <div id="sky-lon-table" style="font-size:11px;"></div>
+  </div>
+  <!-- Lagna — the rising sign at the chosen moment, with strengthening guidance -->
+  <div class="card" style="margin-top:1rem;border-left:3px solid var(--accent);">
+    <div class="sec-title">Lagna (Ascendant) · how to strengthen it — Shri B.V. Raman</div>
+    <div id="sky-lagna" style="font-size:12px;line-height:1.65;color:var(--text-secondary);"></div>
   </div>
   <!-- Reference nakshatra & 9-Tara — only populated when reference overlay is active -->
   <div class="card" id="sky-ref-nak-card" style="margin-top:1rem;display:none;border-left:3px solid var(--info-text);">
@@ -692,6 +721,14 @@ button.action:hover{background:var(--bg-tertiary);}
       <div class="ab-elem">
         <div class="ab-el-name">Ashtakuta marriage compatibility <span class="ab-el-sub">8 kutas, 36 points</span></div>
         <div class="ab-el-note">Collapsible standalone widget — pick two nakshatras (and optionally their padas) and the eight kutas are scored: <strong>Varna 1, Vasya 2, Tara 3, Yoni 4, Graha Maitri 5, Gana 6, Bhakuta 7, Nadi 8</strong>. Verdict at 28+ excellent / 18+ acceptable / 14+ marginal. <code>ashtakuta()</code> uses the YONI_MATRIX, GANA_MATRIX, FRIEND_MATRIX, NADI_OF_NAK, GANA_OF_NAK and VASYA_AMENABLE tables transcribed from Shri B.V. Raman's <em>Muhurtha</em>. <strong>Pada exception:</strong> when both padas are provided and nakshatra-level Nadi would score zero, the 108-pada boustrophedon table (<code>padaNadi(nakIdx,pada)</code>, Shri B.V. Raman p.74) is consulted — if the padas fall in different Nadi columns the Nadi dosha is considered neutralised and the full 8 points awarded.</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Lagna card <span class="ab-el-sub">strengthening the ascendant</span></div>
+        <div class="ab-el-note">Shows the rising sign, degree, nature (movable/fixed/dual), lord and its house, plus live strength checks per Shri B.V. Raman: benefic in Lagna, malefics confined to 3/11, no papakartari hemming, Jupiter/Venus in kendra, and the <strong>Lagna tyajya</strong> zones (Bhujanga first 3° of Ar/Ta/Sg/Vi · Rahu last 3° of Pi/Cp/Cn/Sc · Gridhra 13°30′–16°30′ of Ge/Li/Le/Aq). Marriage-specific checks (7th unoccupied, Mars not in 8th, Venus not in 6th) shown alongside.</div>
+      </div>
+      <div class="ab-elem">
+        <div class="ab-el-name">Category muhurtha search <span class="ab-el-sub">Search tab · ranked &amp; explained</span></div>
+        <div class="ab-el-note">A "Purpose" selector on the Search tab applies Shri B.V. Raman's per-category rules — <strong>Marriage (Ch. IX), Griha Pravesha &amp; Foundation (Ch. XII), Vidyarambha (Ch. XI), Travel (Ch. XIV), Business (Ch. X), Medical (Ch. XV), General</strong> — scoring each day by its nakshatra, tithi, vara, lunar masa, yoga, Vishti, Panchaka, Adhika masa, Moudhyam and eclipse status, then ranking by favourability. Each result carries a "Why this ranking" breakdown citing the rule applied. For marriage (bride &amp; groom) and business (up to 4 partners) the search asks for participants' birth stars — entered directly or computed from birth date/time/city — and folds each person's <strong>Tarabala</strong> and <strong>Chandrabala</strong> into the ranking; a couple's Ashtakuta total is shown once above the results.</div>
       </div>
       <div class="ab-elem">
         <div class="ab-el-name">Panchaka <span class="ab-el-sub">five-source vibration</span></div>
@@ -1658,6 +1695,263 @@ function panchaka(tithiN,weekdayN,nakshatraN,lagnaN){
   return{sum,remainder:r,...PANCHAKA_TYPES[r]};
 }
 
+/* ─────────────────────────────────────────────────────────── */
+/*  LAGNA HELPERS + CATEGORY MUHURTHA (Shri B.V. Raman)        */
+/* ─────────────────────────────────────────────────────────── */
+// Sign nature by rashi index: 0 movable (Chara), 1 fixed (Sthira), 2 dual (Dwiswabhava).
+const SIGN_NATURE=['Movable (Chara)','Fixed (Sthira)','Dual (Dwiswabhava)'];
+// Lagna tyajya — parts of the rising sign to reject (Shri B.V. Raman Ch. II):
+//  • Aries, Taurus, Sagittarius, Virgo: first 3° (bhujanga — serpent, destructive)
+//  • Pisces, Capricorn, Cancer, Scorpio: last 3° (presided by Rahu)
+//  • Gemini, Libra, Leo, Aquarius: 13°30′–16°30′ (Gridhra — vulture)
+function lagnaTyajya(siderealLon){
+  const r=Math.floor(nm(siderealLon)/30)%12,d=nm(siderealLon)-30*r;
+  if([0,1,8,5].includes(r)&&d<3)return{zone:'Bhujanga',range:'first 3°'};
+  if([11,9,3,7].includes(r)&&d>27)return{zone:'Rahu',range:'last 3°'};
+  if([2,6,4,10].includes(r)&&d>=13.5&&d<=16.5)return{zone:'Gridhra',range:'13°30′–16°30′'};
+  return null;
+}
+
+// Category rules transcribed from Shri B.V. Raman's Muhurtha (Electional Astrology).
+// Nakshatra indices are 0-based (0=Ashwini..26=Revati); vara uses Date.getDay()
+// (0=Sun..6=Sat); masa uses HM indices (0=Chaitra..11=Phalguna); tithi rules are
+// functions of the panchanga object so paksha-sensitive rules stay readable.
+const MUHURTA_CATS={
+  marriage:{
+    name:'Marriage (Vivaha)',ref:'Ch. IX, "Electing a Time for Marriage"',
+    nak:{best:[3,4,9,11,12,14,16,18,20,25,26],unlistedAvoid:true,
+         note:'Rohini, Mrigasira, Magha, Uttara Phalguni, Hasta, Swati, Anuradha, Mula, Uttarashadha, Uttara Bhadrapada, Revati. First quarter of Magha and Mula and last quarter of Revati are rejected; constellations not mentioned are unsuitable.'},
+    padaAvoid:[{nak:9,pada:1},{nak:18,pada:1},{nak:26,pada:4}],
+    tithiFn:p=>{
+      const n=p.tithi.n,dark=p.tithi.pak==='Krishna';
+      if(dark&&n>=11)return{q:'avoid',why:'dark 11th through Amavasya rejected'};
+      if([4,6,8,9,12,14].includes(n))return{q:'avoid',why:'Riktha and 6/8/12 tithis rejected'};
+      if(!dark&&[2,3,5,7,10,11,13].includes(n))return{q:'best',why:'best bright-half tithi'};
+      return{q:'ok'};
+    },
+    vara:{best:[1,3,4,5],mid:[0,6],avoid:[2],note:'Mon, Wed, Thu, Fri best; Sun and Sat middling; Tuesday invariably rejected.'},
+    masa:{best:[10,11,1,2],mid:[7,8],avoid:[0,3,4,5,6,9],note:'Magha, Phalguna, Vaisakha, Jyeshtha good; Kartika and Margasira ordinary; the rest inauspicious.'},
+    yogaAvoid:[17,12,10,15,9,1,6,13,19],
+    yogaNote:'Vyatipata, Dhruva, Ganda, Vajra, Shula, Vishkambha, Atiganda, Vyaghata and Parigha yogas rejected.',
+    vishtiHard:true,panchakaAvoid:[8,1],moudhyamAvoid:true,adhikaAvoid:true,
+    participants:{count:2,labels:['Bride','Groom'],title:'Bride & groom birth details (for Tarabala, Chandrabala and kuta agreement)'},
+    lagnaNote:'Gemini, Virgo and Libra are the best rising signs; 7th house must be unoccupied, Mars not in the 8th, Venus not in the 6th — check the Lagna card on the Sky tab for the chosen hour.',
+  },
+  grihapravesha:{
+    name:'House entry (Griha Pravesha)',ref:'Ch. XII, "House Building"',
+    nak:{best:[3,4,12,13,16,21,20,25,26],unlistedAvoid:false,
+         note:'Entry favoured under steady, benefic stars; fixed-nature constellations preferred for permanence.'},
+    tithiFn:p=>{
+      const n=p.tithi.n,dark=p.tithi.pak==='Krishna';
+      if((dark&&n===1)||(!dark&&[2,3,5,7,10,11,13].includes(n)))return{q:'best',why:'auspicious tithi for entry'};
+      if([4,8,9,14].includes(n)||(n===15))return{q:'avoid',why:'Riktha / Purnima–Amavasya set aside'};
+      return{q:'ok'};
+    },
+    vara:{best:[1,3,4,5],mid:[0],avoid:[2,6],note:'Mon, Wed, Thu, Fri best; Tuesday and Saturday set aside.'},
+    masa:{best:[1,2,10,11],mid:[7,8],avoid:[0,3,4,5,6,9],note:'Vaisakha, Jyeshtha, Magha, Phalguna best; Kartika and Margasira neutral.'},
+    uttarayanaPref:true,
+    panchakaAvoid:[8,1],moudhyamAvoid:true,adhikaAvoid:true,
+    lagnaNote:'Choose a fixed rising sign for permanence; the Sun in Uttarayana; Jupiter and Venus strongly disposed.',
+  },
+  foundation:{
+    name:'Laying foundation (Vastu)',ref:'Ch. XII, "House Building"',
+    nak:{best:[3,4,13,12,17,11,20,21],mid:[14,7,16,0,23,25,26],unlistedAvoid:true,
+         note:'Rohini, Mrigasira, Chitta, Hasta, Jyeshtha, Uttara, Uttarashadha, Sravana best; Swati, Pushya, Anuradha, Ashwini, Satabhisha, Uttarabhadra, Revati middling; the remaining twelve invariably avoided.'},
+    tithiFn:p=>{
+      const n=p.tithi.n;
+      if(n===9)return{q:'avoid',why:'9th tithi set aside'};
+      if(n%2===1)return{q:'best',why:'odd tithis good'};
+      if([2,6,10].includes(n))return{q:'best',why:'2nd, 6th and 10th auspicious'};
+      return{q:'ok'};
+    },
+    vara:{best:[1,3,4,5],mid:[0],avoid:[2,6],note:'Mon, Wed, Thu, Fri best (Monday rejected when Moon is waning); Saturday rejected; Tuesday avoided.'},
+    masa:{best:[0,1,4,7,10],avoid:[2,3,5,6,8,9,11],note:'Chaitra, Vaisakha, Sravana, Kartika, Magha best; Jyeshtha, Ashadha, Bhadrapada, Aswayuja, Margasira, Pushya, Phalguna connote death, disease, quarrels, loss.'},
+    panchakaAvoid:[2,4],moudhyamAvoid:false,adhikaAvoid:true,
+    lagnaNote:'The Sun should occupy fixed or movable signs — never common signs. A fixed rising sign favours the permanence of the structure.',
+  },
+  education:{
+    name:'Beginning education (Vidyarambha)',ref:'Ch. XI, "Elections Pertaining to Education"',
+    nak:{best:[4,5,6,7,12,13,14,21,22,23,0],mid:[3,11,20,26],unlistedAvoid:false,
+         note:'Mrigasira, Aridra, Punarvasu, Pushya, Hasta, Chitta, Swati, Sravana, Dhanishta, Satabhisha (and Ashwini per some); Rohini, Uttara, Uttarashadha, Revati neutral.'},
+    tithiFn:p=>{
+      const n=p.tithi.n,dark=p.tithi.pak==='Krishna';
+      if(n===15)return{q:'avoid',why:'New and Full Moon days avoided'};
+      if([4,8,9,14].includes(n))return{q:'avoid',why:'4th, 8th, 9th, 14th avoided'};
+      if((dark&&n===1)||[2,3,5,6,10,11].includes(n))return{q:'best',why:'auspicious tithi for vidyarambha'};
+      return{q:'ok'};
+    },
+    vara:{best:[3,4,1,5],mid:[0],avoid:[2,6],note:'Wednesday morning is the best; Tuesday and Saturday invariably avoided; Sunday permissible.'},
+    panchakaAvoid:[],moudhyamAvoid:false,adhikaAvoid:false,
+    lagnaNote:'Common (dual) signs are the best rising signs, movable ordinary, fixed set aside; forenoon and noon favoured; fortify Mercury and Jupiter.',
+  },
+  travel:{
+    name:'Travel (Yatra)',ref:'Ch. XIV, "Travel"',
+    nak:{best:[4,0,7,6,12,16,21,18,22,26],unlistedAvoid:false,avoid:[2,1,8,15,10,24,5],
+         note:'Mrigasira, Ashwini, Pushya, Punarvasu, Hasta, Anuradha, Sravana, Mula, Dhanishtha, Revati — return safely after success. Krittika, Bharani, Ashlesha, Vishakha, P.Phalguni, P.Bhadrapada, Ardra avoided (Bharani and Krittika invariably).'},
+    tithiFn:p=>{
+      const n=p.tithi.n;
+      if(n===15)return{q:'avoid',why:'Full and New Moon days avoided at any cost'};
+      if(n===14||n===9)return{q:'avoid',why:'14th avoided; 9th prohibited for journeys'};
+      if([2,3,5,7,10,11,13].includes(n))return{q:'best',why:'best lunar day for journeys'};
+      return{q:'ok'};
+    },
+    vara:{best:[1,3,4,5],mid:[0,6],avoid:[2],note:'Tuesday preferably avoided; directional rules also apply (e.g. no eastward start on Sat/Mon).'},
+    panchakaAvoid:[6],moudhyamAvoid:false,adhikaAvoid:false,janmaNakAvoid:true,
+    lagnaNote:'Aries, Taurus, Cancer, Leo, Libra and Sagittarius favourable rising signs; Moon in 3/6/9/12 and Jupiter in a kendra from Lagna; never start when Lagna is the 5th, 7th or 9th from one’s Janma Lagna.',
+  },
+  business:{
+    name:'Business / trade venture',ref:'Ch. X, "Elections Concerning General Matters"',
+    nak:{best:[7,0,3,6,11,12,13,14,15,22,26],unlistedAvoid:false,
+         note:'Pushya is the best for buying/launching; Ashwini, Rohini, Punarvasu, Uttara, Hasta, Chitta, Swati, Vishakha, Dhanishta, Revati also favoured for trade dealings.'},
+    tithiFn:p=>{
+      const n=p.tithi.n;
+      if([4,8,9,14,15].includes(n)&&p.tithi.pak==='Krishna')return{q:'avoid',why:'Riktha tithis and dark-half endings avoided'};
+      if(n===10)return{q:'best',why:'10th lunar day is the best for trade'};
+      if([2,3,5,7,11,13].includes(n))return{q:'best',why:'auspicious tithi'};
+      return{q:'ok'};
+    },
+    vara:{best:[4],mid:[1,3,5,6],avoid:[2],note:'Thursday is the best; Tuesday completely rejected; Saturday passable.'},
+    panchakaAvoid:[4],moudhyamAvoid:false,adhikaAvoid:true,
+    participants:{count:0,max:4,labels:['Partner 1','Partner 2','Partner 3','Partner 4'],title:'Partners’ birth details (Tarabala & Chandrabala folded into ranking for every partner)'},
+    lagnaNote:'Fortify Mercury, the 2nd lord and the 2nd house; Mercury–Jupiter association in Lagna highly propitious; avoid Mercury afflicted by Mars.',
+  },
+  medical:{
+    name:'Beginning medical treatment',ref:'Ch. XV, "Medical Elections"',
+    nak:{best:[0,3,4,6,7,11,20,25,12,13,14,16,21,22,23,26],unlistedAvoid:false,
+         note:'Ashwini, Rohini, Mrigasira, Punarvasu, Pushya, Uttara, Uttarashadha, Uttarabhadra, Hasta, Chitta, Swati, Anuradha, Sravana, Dhanishta, Satabhisha, Revati.'},
+    tithiFn:p=>{
+      const n=p.tithi.n;
+      if([4,9,14,15].includes(n))return{q:'avoid',why:'4th, 9th, 14th and Purnima/Amavasya set aside'};
+      return{q:'ok'};
+    },
+    vara:{best:[1,3,4,5],mid:[0],avoid:[2,6],note:'Mon, Wed, Thu, Fri best for taking medicine (with Hasta, Ashwini, Chitta, Punarvasu respectively).'},
+    panchakaAvoid:[1,8],moudhyamAvoid:false,adhikaAvoid:false,
+    lagnaNote:'Movable rising sign or amsa favoured; Moon, Mercury, Jupiter, Venus in own vargas help recovery.',
+  },
+  general:{
+    name:'General auspicious work',ref:'Ch. II–IV, general hints',
+    nak:{best:[0,3,4,7,12,16,21,25,26,13,14,6],unlistedAvoid:false,
+         note:'The Laghu/Mridu/Sthira groups generally favoured; Bharani avoided for all good work.'},
+    avoid:[1],
+    tithiFn:p=>{
+      const n=p.tithi.n;
+      if([4,8,14].includes(n))return{q:'avoid',why:'4th, 8th and 14th unsuitable for auspicious work'};
+      return{q:'ok'};
+    },
+    vara:{best:[1,3,4,5],mid:[0],avoid:[2,6],note:'Tuesday and Saturday avoided for all good and auspicious works.'},
+    panchakaAvoid:[],moudhyamAvoid:false,adhikaAvoid:true,
+    lagnaNote:'Strengthen the ascendant, its lord and the Moon; avoid the Lagna tyajya zones.',
+  },
+};
+
+// Score one calendar day for a category. Returns {score, reasons:[{text, delta}]}.
+// `participants` = [{label, nak, rasi}] — Tarabala & Chandrabala applied per person.
+function categoryDayScore(p,catKey,participants,eclipseToday){
+  const cat=MUHURTA_CATS[catKey];if(!cat)return null;
+  const reasons=[];let score=50;
+  const add=(delta,text)=>{score+=delta;reasons.push({delta,text});};
+  const dayNak=p.naksh.n-1;
+  // Nakshatra
+  const nk=cat.nak||{};
+  if((nk.avoid||cat.avoid||[]).includes(dayNak))add(-25,`${p.naksh.name} is expressly avoided for ${cat.name.toLowerCase()} — ${nk.note||''}`);
+  else if((nk.best||[]).includes(dayNak))add(20,`${p.naksh.name} is among the best constellations for this purpose (${cat.ref})`);
+  else if((nk.mid||[]).includes(dayNak))add(8,`${p.naksh.name} is middling for this purpose`);
+  else if(nk.unlistedAvoid)add(-12,`${p.naksh.name} is not among the constellations sanctioned for this purpose — "constellations not mentioned are unsuitable"`);
+  else add(0,`${p.naksh.name} is neutral for this purpose`);
+  // Pada-specific rejections (e.g. first quarter of Magha/Mula, last of Revati for marriage)
+  if(cat.padaAvoid){
+    for(const pa of cat.padaAvoid){
+      if(dayNak===pa.nak&&p.naksh.pada===pa.pada)add(-15,`${p.naksh.name} pada ${pa.pada} is specifically rejected (noon pada — verify the pada at your chosen hour)`);
+    }
+  }
+  // Tithi
+  if(cat.tithiFn){
+    const t=cat.tithiFn(p);
+    if(t.q==='best')add(10,`${p.tithi.pak} ${p.tithi.name} — ${t.why}`);
+    else if(t.q==='avoid')add(-18,`${p.tithi.pak} ${p.tithi.name} — ${t.why}`);
+  }
+  // Vara
+  const day=p.vara.n;
+  if(cat.vara){
+    if(cat.vara.avoid.includes(day))add(-15,`${p.vara.en} — ${cat.vara.note}`);
+    else if(cat.vara.best.includes(day))add(8,`${p.vara.en} is among the best weekdays — ${cat.vara.note}`);
+    else if((cat.vara.mid||[]).includes(day))add(2,`${p.vara.en} is middling for this purpose`);
+  }
+  // Lunar masa (categories with month rules)
+  if(cat.masa){
+    const mi=p.masaInfo.masaIdx;
+    if(cat.masa.avoid&&cat.masa.avoid.includes(mi))add(-12,`Lunar month ${HM[mi]} is set aside for this purpose — ${cat.masa.note}`);
+    else if(cat.masa.best.includes(mi))add(8,`Lunar month ${HM[mi]} is among the best — ${cat.masa.note}`);
+    else if((cat.masa.mid||[]).includes(mi))add(3,`Lunar month ${HM[mi]} is ordinary for this purpose`);
+  }
+  // Adhika masa
+  if(cat.adhikaAvoid&&p.masaInfo.isAdhika)add(-12,'Adhika (intercalary) masa — traditionally set aside for new ventures; turn it toward inner work instead');
+  // Yoga rejections (marriage list)
+  if(cat.yogaAvoid&&cat.yogaAvoid.includes(p.yoga.n))add(-8,`${p.yoga.name} yoga is in the rejected list — ${cat.yogaNote||''}`);
+  // Vishti karana
+  if(p.karana.name==='Vishti')add(cat.vishtiHard?-12:-8,'Vishti (Bhadra) karana — "must invariably be discarded"');
+  // Panchaka (category-specific)
+  {
+    const pk=panchaka(p.tIdx+1,day+1,dayNak+1,1); // lagna unknown at day level — use 1 (Mesha) and flag
+    if(cat.panchakaAvoid&&cat.panchakaAvoid.includes(pk.remainder))
+      add(-10,`${pk.name} falls on this day (computed with Mesha lagna — confirm with your chosen hour's lagna on the Sky tab) — specifically avoided for this category`);
+    else if(!pk.good)add(-3,`${pk.name} (with Mesha lagna) — lighter caution for this category; the lagna you choose can change it`);
+  }
+  // Moudhyam
+  if(cat.moudhyamAvoid){
+    if(p.moudhyam.venus.active)add(-12,`Sukra Moudhyam (Venus combust, ${p.moudhyam.venus.elong}°) — marriages and major ceremonies set aside`);
+    if(p.moudhyam.jupiter.active)add(-12,`Guru Moudhyam (Jupiter combust, ${p.moudhyam.jupiter.elong}°) — initiations and sacred ceremonies set aside`);
+  }
+  // Eclipse
+  if(eclipseToday)add(-15,`${eclipseToday.type} eclipse on this day — universally set aside for auspicious beginnings`);
+  // Participants: Tarabala + Chandrabala (+ Janma star handling)
+  const ayApprox=nm(p.sl-p.sid);
+  const dayMoonRashi=Math.floor(nm(p.ml-ayApprox)/30)%12;
+  for(const pt of(participants||[])){
+    if(!Number.isFinite(pt.nak))continue;
+    const t=taraInfo(pt.nak,dayNak);
+    const soft=t.cycle===1?1:t.cycle===2?0.5:0.15;
+    if(t.idx===0){ // Janma
+      if(cat.janmaNakAvoid)add(-6,`${pt.label}: day is their Janma nakshatra — avoided for travel`);
+      else add(0,`${pt.label}: Janma nakshatra — acceptable for nuptials/upanayana-type rites, but the first ~3 h of the star are set aside`);
+    }
+    else if(t.good)add(Math.round(6*Math.max(soft,0.5)),`${pt.label}: Tarabala is ${t.name} (count ${t.count}) — favourable`);
+    else add(Math.round(-10*soft),`${pt.label}: Tarabala is ${t.name} (count ${t.count}, cycle ${t.cycle}${t.cycle>1?' — softened':''})`);
+    if(Number.isFinite(pt.rasi)){
+      const rel=((dayMoonRashi-pt.rasi+12)%12)+1;
+      if(rel===6||rel===8||rel===12)add(-8,`${pt.label}: Chandrabala absent — day's Moon is in the ${rel}th from their Janma Rasi (prayer and devotion help harmonise)`);
+      else add(3,`${pt.label}: Chandrabala present (Moon in the ${rel}th from Janma Rasi)`);
+    }
+  }
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  return{score,reasons};
+}
+
+// Compute a Janma nakshatra (and rasi) from birth date/time/city using the same
+// DST-aware timezone resolution as the Sky tab's reference moment.
+function computeBirthStar(dateStr,timeStr,cityName){
+  if(!dateStr||!timeStr)return null;
+  const[hh,mm]=timeStr.split(':').map(Number);
+  if(!Number.isFinite(hh)||!Number.isFinite(mm)||hh<0||hh>23||mm<0||mm>59)return null;
+  const dt=new Date(dateStr+'T'+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':00');
+  if(isNaN(dt.getTime()))return null;
+  const c=cityName?CITIES.find(x=>x.name===cityName):null;
+  let tz=c?c.tz:LOC.tz,iana=c?c.iana:LOC.iana;
+  if(iana){
+    try{
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone:iana,timeZoneName:'longOffset'}).formatToParts(dt);
+      const tzn=parts.find(x=>x.type==='timeZoneName');
+      if(tzn){const m=tzn.value.match(/GMT([+-])(\d+)(?::(\d+))?/);if(m){tz=(m[1]==='-'?-1:1)*(parseInt(m[2],10)*60+parseInt(m[3]||'0',10));}else if(/^GMT$/i.test(tzn.value))tz=0;}
+    }catch(e){}
+  }
+  if(typeof tz!=='number')tz=tzFromLon(c?c.lon:LOC.lon);
+  const J=jd(dt)-0.5+((hh*60+mm)-tz)/1440;
+  const moonSid=nm(mlong(J)-ayan(J));
+  const np=nakAndPada(moonSid);
+  if(np.invalid)return null;
+  return{nIdx:np.nIdx,pada:np.pada,rasi:Math.floor(moonSid/30)%12};
+}
+
 // Compute the (sidereal) nakshatra index and pada (1..4) for a given sidereal Moon longitude.
 // Defence-in-depth: if a non-finite longitude slips through (extreme dates, polar
 // edge cases) return a safe placeholder marked invalid so callers don't dereference
@@ -2529,6 +2823,77 @@ function buildChecks(){
   document.getElementById('vc').innerHTML=vh;
 }
 
+/* Participant slots for category muhurtha search (marriage / business). */
+function onCatChange(){
+  const cat=MUHURTA_CATS[document.getElementById('scat').value];
+  const box=document.getElementById('scat-participants');
+  if(!cat||!cat.participants){box.style.display='none';return;}
+  box.style.display='';
+  document.getElementById('scat-part-title').textContent=cat.participants.title;
+  buildParticipantSlots(cat.participants);
+}
+function buildParticipantSlots(pc){
+  const wrap=document.getElementById('scat-part-slots');
+  const n=pc.count||pc.max||2;
+  let h='';
+  for(let i=0;i<n;i++){
+    const label=pc.labels[i]||`Person ${i+1}`;
+    const optional=pc.count===0&&i>0;  // business: partners beyond the first are optional
+    h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+      <span style="font-size:11px;font-weight:500;width:64px;">${esc(label)}${optional?' <span style="color:var(--text-tertiary);font-weight:400;">(opt.)</span>':''}</span>
+      <select id="pstar${i}" style="font-size:11px;padding:4px 6px;width:150px;"></select>
+      <span style="font-size:10px;color:var(--text-tertiary);">or birth:</span>
+      <input type="date" id="pbd${i}" style="font-size:11px;padding:4px 6px;"/>
+      <input type="time" id="pbt${i}" style="font-size:11px;padding:4px 6px;width:90px;"/>
+      <select id="pbc${i}" style="font-size:11px;padding:4px 6px;width:120px;"></select>
+      <button class="ybtn" onclick="computeSlotStar(${i})" style="font-size:10px;">→ star</button>
+      <span id="pinfo${i}" style="font-size:10px;color:var(--info-text);"></span>
+    </div>`;
+  }
+  wrap.innerHTML=h;
+  // Populate the star and city selects — static NK / CITIES data, esc()-wrapped.
+  for(let i=0;i<n;i++){
+    let nakOpts='<option value="">— star —</option>';
+    for(let k=0;k<27;k++)nakOpts+=`<option value="${k}">${k+1}. ${esc(NK[k].name)}</option>`;
+    document.getElementById('pstar'+i).innerHTML=nakOpts;
+    let cityOpts='<option value="">— birth city —</option>';
+    for(const c of CITIES)cityOpts+=`<option value="${esc(c.name)}">${esc(c.name)}</option>`;
+    document.getElementById('pbc'+i).innerHTML=cityOpts;
+  }
+}
+function computeSlotStar(i){
+  const r=computeBirthStar(
+    document.getElementById('pbd'+i).value,
+    document.getElementById('pbt'+i).value,
+    document.getElementById('pbc'+i).value);
+  const info=document.getElementById('pinfo'+i);
+  if(!r){info.textContent='need valid birth date, time & city';info.style.color='var(--danger-text)';return;}
+  const sel=document.getElementById('pstar'+i);
+  sel.value=String(r.nIdx);
+  sel.dataset.rasi=String(r.rasi);
+  info.style.color='var(--info-text)';
+  info.textContent=`${NK[r.nIdx].name} pada ${r.pada} · Janma Rasi ${RASHI[r.rasi]}`;
+}
+// Read participants from the slots. Manual star picks derive an approximate
+// Janma Rasi from the nakshatra's mid-point; computed picks carry the exact rasi.
+function getParticipants(){
+  const cat=MUHURTA_CATS[document.getElementById('scat').value];
+  if(!cat||!cat.participants)return[];
+  const n=cat.participants.count||cat.participants.max||2;
+  const out=[];
+  for(let i=0;i<n;i++){
+    const sel=document.getElementById('pstar'+i);
+    if(!sel||sel.value==='')continue;
+    const nak=parseInt(sel.value,10);
+    if(!Number.isFinite(nak)||nak<0||nak>26)continue;
+    const rasi=sel.dataset.rasi!==undefined&&sel.dataset.rasi!==''
+      ?parseInt(sel.dataset.rasi,10)
+      :Math.floor(((nak+0.5)*NAK_SPAN)/30)%12;
+    out.push({label:cat.participants.labels[i]||`Person ${i+1}`,nak,rasi});
+  }
+  return out;
+}
+
 function runSearch(){
   const ss=document.getElementById('ss').value,se=document.getElementById('se').value,sr=document.getElementById('sr');
   if(!ss||!se){sr.innerHTML='<p style="color:var(--danger-text);font-size:13px;padding:6px 0;">Select a date range.</p>';return;}
@@ -2544,6 +2909,10 @@ function runSearch(){
   const tf=[...document.querySelectorAll('.tc:checked')].map(toInt).filter(Number.isFinite);
   const nf=[...document.querySelectorAll('.nc:checked')].map(toInt).filter(Number.isFinite);
   const vf=[...document.querySelectorAll('.vc:checked')].map(toInt).filter(Number.isFinite);
+  // Category mode — Shri B.V. Raman per-purpose rules, ranking, explanations.
+  const catKey=document.getElementById('scat').value;
+  const cat=MUHURTA_CATS[catKey]||null;
+  const participants=cat?getParticipants():[];
   const res=[];
   for(let d=new Date(s0);d<=s1;d.setDate(d.getDate()+1)){
     const p=gp(new Date(d));
@@ -2552,19 +2921,53 @@ function runSearch(){
     if(vf.length&&!vf.includes(p.vara.n))continue;
     if(nob&&p.karana.name==="Vishti")continue;
     if(nos&&!p.special.length)continue;
-    if(noe&&getDayEclipse(new Date(d)))continue;
+    const ecl=getDayEclipse(new Date(d));
+    if(noe&&ecl)continue;
     if(nosg&&p.moudhyam.jupiter.active)continue;
     if(noss&&p.moudhyam.venus.active)continue;
-    if(p.score<minSc)continue;
-    res.push(p);
+    let cs=null;
+    if(cat){
+      cs=categoryDayScore(p,catKey,participants,ecl);
+      if(cs.score<minSc)continue;
+    } else if(p.score<minSc)continue;
+    res.push({p,cs});
   }
-  res.sort((a,b)=>b.score-a.score);
+  res.sort((a,b)=>(b.cs?b.cs.score:b.p.score)-(a.cs?a.cs.score:a.p.score));
   if(!res.length){sr.innerHTML='<div class="card" style="text-align:center;color:var(--text-secondary);padding:2rem;font-size:13px;">No matches. Try relaxing filters or lowering the minimum score.</div>';return;}
-  let h=`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">${res.length} day${res.length>1?'s':''} found · sorted by score</div>`;
-  for(const p of res.slice(0,30)){
+  let h='';
+  if(cat){
+    h+=`<div style="background:var(--info-bg);border-radius:var(--radius-md);padding:9px 13px;margin-bottom:10px;font-size:11px;color:var(--info-text);line-height:1.6;">
+      Ranked by favourability for <strong>${esc(cat.name)}</strong> per Shri B.V. Raman's <em>Muhurtha</em> (${esc(cat.ref)}).
+      ${cat.lagnaNote?`<br/><strong style="color:var(--text-primary);">Lagna:</strong> ${esc(cat.lagnaNote)} The day-level ranking cannot fix the hour — once you pick a day, use the Sky tab's Lagna card to choose the rising time.`:''}
+    </div>`;
+    // Marriage: if both birth stars are present, show the couple's kuta agreement once.
+    if(catKey==='marriage'&&participants.length===2){
+      const k=ashtakuta(participants[1].nak,participants[0].nak); // boy=Groom(idx1), girl=Bride(idx0)
+      const kc=k.total>=28?'var(--success-text)':k.total>=18?'var(--info-text)':'var(--warn-text)';
+      h+=`<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:9px 13px;margin-bottom:10px;font-size:11px;color:var(--text-secondary);">
+        Couple's Ashtakuta agreement (${esc(NK[participants[1].nak].name)} × ${esc(NK[participants[0].nak].name)}):
+        <strong style="color:${kc};">${k.total}/36</strong> — ${esc(k.verdict)}. This is fixed for the couple; the day ranking below addresses the <em>timing</em>.
+      </div>`;
+    }
+    if(cat.participants&&!participants.length){
+      h+=`<div style="background:var(--warn-bg);border-radius:var(--radius-md);padding:8px 13px;margin-bottom:10px;font-size:11px;color:var(--warn-text);">
+        No participant birth stars entered — Tarabala and Chandrabala are not yet part of this ranking. Add them above for a personalised result.
+      </div>`;
+    }
+  }
+  h+=`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">${res.length} day${res.length>1?'s':''} found · sorted by ${cat?'category favourability':'score'}</div>`;
+  for(const{p,cs}of res.slice(0,30)){
     const tr=gt(p.date),ecl=getDayEclipse(p.date),fest=FEST.filter(r=>r.check(p,null));
     const md=p.moudhyam,ds=p.date.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
     const mdWarn=(md.venus.active||md.jupiter.active)?`<div style="font-size:10px;color:var(--danger-text);margin-top:2px;">⚠ ${[md.venus.active?`☿ Sukra Moudhyam ${md.venus.elong}°`:'',md.jupiter.active?`♃ Guru Moudhyam ${md.jupiter.elong}°`:''].filter(Boolean).join(' · ')}</div>`:'';
+    const dispScore=cs?cs.score:p.score;
+    // Per-day explanation from Shri B.V. Raman's principles (category mode only).
+    const explain=cs?`<details style="margin-top:6px;" onclick="event.stopPropagation();">
+        <summary style="cursor:pointer;font-size:10px;color:var(--text-tertiary);">Why this ranking — ${cs.reasons.length} factors ▾</summary>
+        <div style="font-size:10px;line-height:1.7;margin-top:4px;">
+          ${cs.reasons.map(rr=>`<div style="color:${rr.delta>0?'var(--success-text)':rr.delta<0?'var(--danger-text)':'var(--text-tertiary)'};">${rr.delta>0?'+':''}${rr.delta} · ${esc(rr.text)}</div>`).join('')}
+        </div>
+      </details>`:'';
     h+=`<div class="res-item" onclick="viewResult('${p.date.toISOString().split('T')[0]}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px;">
         <div>
@@ -2580,14 +2983,17 @@ function runSearch(){
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          ${showNeg||p.score>=75?`<div style="font-size:22px;font-weight:500;color:${scC(p.score)}">${p.score}</div><div style="font-size:10px;color:var(--text-tertiary);">score</div>`:''}
+          ${cs?`<div style="font-size:22px;font-weight:500;color:${scC(dispScore)}">${dispScore}</div><div style="font-size:10px;color:var(--text-tertiary);">favourability</div>`
+              :(showNeg||p.score>=75?`<div style="font-size:22px;font-weight:500;color:${scC(p.score)}">${p.score}</div><div style="font-size:10px;color:var(--text-tertiary);">score</div>`:'')}
         </div>
       </div>
       <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap;color:var(--text-secondary);">
         <span>${bdg(p.yoga.q)} ${p.yoga.name}</span><span>· ${bdg(p.karana.q)} ${p.karana.name}</span>
         <span>· Abhijit ${p.abhijit.s}–${p.abhijit.e}</span>
       </div>
-      ${showNeg||p.score>=75?`<div class="sbar"><div class="sfill" style="width:${p.score}%;background:${scB(p.score)};"></div></div>`:''}
+      ${cs?`<div class="sbar"><div class="sfill" style="width:${dispScore}%;background:${scB(dispScore)};"></div></div>`
+          :(showNeg||p.score>=75?`<div class="sbar"><div class="sfill" style="width:${p.score}%;background:${scB(p.score)};"></div></div>`:'')}
+      ${explain}
     </div>`;
   }
   if(res.length>30)h+=`<div style="text-align:center;font-size:11px;color:var(--text-secondary);padding:8px;">…and ${res.length-30} more.</div>`;
@@ -2723,9 +3129,72 @@ function renderSky(){
   drawSkyTable(pos,refPos,ref&&ref.label);
   drawViewingGuide(J,LOC.lat,LOC.lon,localMin,tz);
   drawReferenceNak(ref,refPos);
+  drawLagnaPanel(pos);
   drawPanchakaPanel(J,pos,dt);
   drawTaraPanel();
   drawKutaPanel();
+}
+
+// Lagna card — the rising sign at the chosen Sky-tab moment, with dynamic
+// strength checks and Shri B.V. Raman's guidance on fortifying the ascendant.
+function drawLagnaPanel(pos){
+  const el=document.getElementById('sky-lagna');
+  if(!el)return;
+  const L=pos.asc.lon;
+  if(!Number.isFinite(L)){el.innerHTML='<div style="color:var(--text-tertiary);font-style:italic;">Lagna undefined for this moment.</div>';return;}
+  const r=Math.floor(nm(L)/30)%12,d=nm(L)-30*r;
+  const lord=PLANET_NAMES[RASHI_LORD[r]];
+  const nature=SIGN_NATURE[r%3];
+  const ty=lagnaTyajya(L);
+  // Whole-sign house of each graha counted from the Lagna rashi.
+  const houseOf=k=>((Math.floor(nm(pos[k].lon)/30)-r+12)%12)+1;
+  const benefics=['jupiter','venus','mercury'],malefics=['sun','mars','saturn','rahu','ketu'];
+  const inH=(keys,h)=>keys.filter(k=>houseOf(k)===h);
+  const inAny=(keys,hs)=>keys.filter(k=>hs.includes(houseOf(k)));
+  const nm2=k=>GRAHAS.find(g=>g.key===k).name;
+  const checks=[];
+  const ck=(ok,good,text)=>checks.push({ok,good,text});
+  const benIn1=inH(benefics,1);
+  ck(benIn1.length>0,true,benIn1.length?`Benefic in Lagna: ${benIn1.map(nm2).join(', ')} — "Jupiter, Mercury or Venus in Lagna … a formidable force in rendering the Lagna strong"`:'No benefic (Jupiter / Venus / Mercury) in Lagna');
+  const malIn1=inH(malefics,1);
+  ck(malIn1.length===0,true,malIn1.length?`Malefic in Lagna: ${malIn1.map(nm2).join(', ')} — "malefics should not occupy Lagna"`:'Lagna free of malefics ✓');
+  const malIn311=inAny(malefics,[3,11]);
+  ck(malIn311.length>0,true,malIn311.length?`Malefics in 3rd/11th: ${malIn311.map(nm2).join(', ')} — strengthens the election`:'No malefic in the 3rd or 11th (optional fortifier absent)');
+  const hemmed=inH(malefics,12).length>0&&inH(malefics,2).length>0;
+  ck(!hemmed,true,hemmed?'Lagna is hemmed between malefics (papakartari) — "the Lagna should not be hemmed in between malefics"':'Lagna not hemmed between malefics ✓');
+  const jvKendra=inAny(['jupiter','venus'],[1,4,7,10]);
+  ck(jvKendra.length>0,true,jvKendra.length?`Jupiter/Venus in a kendra: ${jvKendra.map(nm2).join(', ')}`:'Neither Jupiter nor Venus in a kendra (1/4/7/10)');
+  // Marriage-specific trio (shown for information)
+  const h7=inAny([...benefics,...malefics,'moon','sun'].filter((v,i,a)=>a.indexOf(v)===i),[7]);
+  const marriageBits=[
+    `7th house ${h7.length?'occupied by '+h7.map(nm2).join(', ')+' ✗':'unoccupied ✓'}`,
+    `Mars ${houseOf('mars')===8?'in the 8th ✗':'not in the 8th ✓'}`,
+    `Venus ${houseOf('venus')===6?'in the 6th ✗':'not in the 6th ✓'}`,
+  ];
+  const lordHouse=(()=>{const key={Sun:'sun',Moon:'moon',Mars:'mars',Mercury:'mercury',Jupiter:'jupiter',Venus:'venus',Saturn:'saturn'}[lord];return houseOf(key);})();
+  el.innerHTML=`
+    <div style="margin-bottom:8px;">
+      <strong style="color:var(--text-primary);font-size:15px;">${esc(RASHI[r])}</strong>
+      <span style="color:var(--text-tertiary);">rising · ${d.toFixed(2)}° · ${esc(nature)} · lord ${esc(lord)} (in house ${lordHouse})</span>
+    </div>
+    ${ty?`<div style="padding:7px 10px;background:var(--danger-bg);border-radius:var(--radius-md);margin-bottom:8px;font-size:11px;color:var(--danger-text);"><strong>Lagna tyajya:</strong> the rising degree falls in the ${esc(ty.zone)} zone (${esc(ty.range)} of ${esc(RASHI[r])}) — this slice of the ascendant is rejected even when the sign is otherwise strong. Shift the time slightly to move past it.</div>`
+        :`<div style="padding:7px 10px;background:var(--success-bg);border-radius:var(--radius-md);margin-bottom:8px;font-size:11px;color:var(--success-text);">Clear of the Lagna tyajya zones (Bhujanga / Rahu / Gridhra) ✓</div>`}
+    <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Strength checks at this moment</div>
+    ${checks.map(c=>`<div style="margin:2px 0;color:${c.ok?'var(--success-text)':'var(--text-secondary)'};">${c.ok?'✓':'·'} ${esc(c.text)}</div>`).join('')}
+    <div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px;">For marriage elections</div>
+    <div style="font-size:11px;">${marriageBits.map(esc).join(' · ')}</div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;line-height:1.7;background:var(--bg-secondary);padding:8px 10px;border-radius:var(--radius-md);">
+      <strong style="color:var(--text-primary);">How to strengthen the Lagna (Shri B.V. Raman, Ch. II &amp; IX).</strong>
+      "In Muhurtha, it is always advisable to strengthen the ascendant and its lord and the Moon."
+      Practical levers: <em>(i)</em> shift the time so a benefic — Jupiter, Venus or Mercury — rises in the Lagna or stands in a kendra;
+      <em>(ii)</em> let malefics fall in the 3rd or 11th, where they fortify rather than afflict;
+      <em>(iii)</em> keep the Lagna free of malefics and not hemmed between them;
+      <em>(iv)</em> avoid the tyajya degrees above;
+      <em>(v)</em> match the sign's nature to the purpose — <strong>fixed</strong> signs for permanence (house entry, foundation, coronation), <strong>movable</strong> for travel, <strong>common (dual)</strong> for education; for marriage, Gemini, Virgo and Libra are the best;
+      <em>(vi)</em> prefer the forenoon, and let the Moon be well placed and unassociated with other planets.
+      Because the Lagna changes roughly every two hours, small shifts of the chosen time are usually enough to satisfy these.
+    </div>
+  `;
 }
 
 // Panchaka panel — five-source vibration for the chosen Sky-tab moment.
