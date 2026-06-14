@@ -1,0 +1,13 @@
+{
+  "name": "abhijit-calculator",
+  "version": "1.0.0",
+  "description": "Hindu Panchanga Calculator — single-file in-browser app",
+  "private": true,
+  "license": "CC0-1.0",
+  "scripts": {
+    "test": "node test/regression.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}
