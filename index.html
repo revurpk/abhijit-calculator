@@ -151,7 +151,6 @@ button.action:hover{background:var(--bg-tertiary);}
 .csign-ref{color:var(--info-text);font-style:italic;font-size:10.5px;margin-top:2px;padding-top:2px;border-top:.5px dashed var(--border-light);}
 .csign-ref .lagna{color:var(--info-text);font-weight:600;}
 .csign.has-ref-lagna{box-shadow:inset 0 0 0 1px var(--info-text);}
-.ref-card{background:var(--info-bg);border:.5px solid var(--info-text);}
 </style>
 </head>
 <body>
@@ -178,6 +177,21 @@ button.action:hover{background:var(--bg-tertiary);}
       <button class="ybtn" onclick="detectLoc()"><i class="ti ti-current-location" style="font-size:11px;" aria-hidden="true"></i> Auto-detect</button>
     </div>
   </div>
+  <!-- Safely import a named location: validated (name ≤40 chars, lat/lon ranges,
+       IANA verified via Intl), capped at 25, stored in localStorage only. -->
+  <details style="margin-top:10px;">
+    <summary style="cursor:pointer;font-size:11px;color:var(--text-secondary);">＋ Save a new named location…</summary>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;">
+      <div><label class="form-lbl">Name</label><input type="text" id="cc-name" maxlength="40" placeholder="My Town" style="width:130px;font-size:12px;padding:5px 8px;"/></div>
+      <div><label class="form-lbl">Latitude</label><input type="number" id="cc-lat" step="0.001" placeholder="14.443" style="width:88px;font-size:12px;padding:5px 8px;"/></div>
+      <div><label class="form-lbl">Longitude</label><input type="number" id="cc-lon" step="0.001" placeholder="79.987" style="width:88px;font-size:12px;padding:5px 8px;"/></div>
+      <div><label class="form-lbl">IANA tz (optional)</label><input type="text" id="cc-iana" maxlength="64" placeholder="Asia/Kolkata" style="width:140px;font-size:12px;padding:5px 8px;"/></div>
+      <button class="ybtn" onclick="addCustomCity()">Save</button>
+      <span id="cc-status" style="font-size:11px;color:var(--text-tertiary);"></span>
+    </div>
+    <div style="margin-top:6px;font-size:10px;color:var(--text-tertiary);">Saved locations appear in every city dropdown (incl. <code>?loc=</code> and birth cities). Without an IANA name the timezone is estimated from longitude (no DST). Stored only in this browser.</div>
+    <div id="cc-list" style="margin-top:6px;"></div>
+  </details>
 </div>
 
 <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem;">
@@ -190,7 +204,6 @@ button.action:hover{background:var(--bg-tertiary);}
   <button class="tab" onclick="showTab('panchanga',this)"><i class="ti ti-sun" aria-hidden="true"></i> Panchanga</button>
   <button class="tab" onclick="showTab('festivals',this)"><i class="ti ti-confetti" aria-hidden="true"></i> Festivals</button>
   <button class="tab" onclick="showTab('eclipses',this)"><i class="ti ti-moon-stars" aria-hidden="true"></i> Eclipses</button>
-  <button class="tab" onclick="showTab('search',this)"><i class="ti ti-search" aria-hidden="true"></i> Search</button>
   <button class="tab" onclick="showTab('sky',this)"><i class="ti ti-sparkles" aria-hidden="true"></i> Sky</button>
   <button class="tab" onclick="showTab('about',this)"><i class="ti ti-info-circle" aria-hidden="true"></i> About</button>
 </div>
@@ -250,13 +263,52 @@ button.action:hover{background:var(--bg-tertiary);}
   <div id="ecl-list">Loading…</div>
 </div>
 
-<!-- Muhurtha search -->
-<div class="panel" id="panel-search">
-  <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:11px 15px;margin-bottom:1rem;font-size:12px;color:var(--info-text);line-height:1.65;">
-    In the ordinary flow of life there is no need to consult an almanac before every action; doing what must be done, with sincere intent and clear purpose, is itself the highest auspice. Read these results as gentle suggestions for alignment — pointers, not pronouncements. Even moments the rules label "challenging" can be transformed by devotion, preparation, and the spirit of the shloka on the Sky tab. No app can account for personal planetary periods, birth-chart conditions, or the nuanced judgement of a trained astrologer. <strong style="color:var(--text-primary);">For significant occasions — a wedding, griha pravesha, naming ceremony, or upanayana — always consult a qualified astrologer</strong> who can weigh all the relevant factors holistically.
+<!-- Sky (planetary positions + divisional charts + muhurtha search) -->
+<div class="panel" id="panel-sky">
+  <!-- Invocation & guidance — moved to the head of the tab: the shloka stays
+       visible in the summary; the long guidance opens on demand. -->
+  <details class="card" style="margin-bottom:1rem;padding:0;background:var(--info-bg);" id="sky-guidance-card">
+    <summary style="padding:.6rem 1rem;cursor:pointer;list-style:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--info-text);text-transform:uppercase;letter-spacing:.06em;font-weight:500;">Invocation &amp; guidance · Shri B.V. Raman's <em>Muhurtha</em></span>
+        <span style="display:flex;gap:3px;">
+          <button id="shl-dev" class="ybtn" onclick="event.preventDefault();event.stopPropagation();setShlokaScript('dev');" style="font-size:9px;padding:1px 6px;font-family:serif;font-weight:600;color:var(--text-primary);border-color:var(--border-med);">देव</button>
+          <button id="shl-tel" class="ybtn" onclick="event.preventDefault();event.stopPropagation();setShlokaScript('tel');" style="font-size:9px;padding:1px 6px;">తె</button>
+          <button id="shl-iast" class="ybtn" onclick="event.preventDefault();event.stopPropagation();setShlokaScript('iast');" style="font-size:9px;padding:1px 6px;font-style:italic;">IAST</button>
+        </span>
+      </div>
+      <div id="shloka-text" style="font-size:clamp(10px,2.8vw,13px);line-height:1.65;color:var(--text-primary);font-family:serif;letter-spacing:.02em;text-align:center;margin-top:4px;">
+        तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>
+        विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥
+      </div>
+      <div style="font-size:9px;color:var(--text-tertiary);margin-top:4px;font-style:italic;line-height:1.45;text-align:center;">
+        "That alone is the auspicious ascendant, that alone the auspicious day; that alone the strength of stars, that alone the strength of the Moon. That alone the strength of knowledge, that alone divine grace — that very moment when I meditate on your divine feet, O Lord Lakshmi-pati."
+        <span style="color:var(--info-text);">· tap for guidance ▾</span>
+      </div>
+    </summary>
+    <div id="sky-guidance-body" style="padding:.4rem 1rem 1rem;"></div>
+  </details>
+  <div class="card" id="sky-moment-card" style="margin-bottom:1rem;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div><label class="form-lbl">Date</label><input type="date" id="sky-date" onchange="renderSky()"/></div>
+      <div><label class="form-lbl">Time</label><input type="time" id="sky-time" onchange="renderSky()" style="width:110px;"/></div>
+      <div style="display:flex;gap:2px;align-self:flex-end;" aria-label="Step the selected time">
+        <button class="ybtn" onclick="bumpSkyTime(-60)" title="Back one hour">−1h</button>
+        <button class="ybtn" onclick="bumpSkyTime(-15)" title="Back 15 minutes">−15m</button>
+        <button class="ybtn" onclick="bumpSkyTime(15)" title="Forward 15 minutes">+15m</button>
+        <button class="ybtn" onclick="bumpSkyTime(60)" title="Forward one hour">+1h</button>
+      </div>
+      <button class="ybtn" onclick="setSkyNow()">Now</button>
+      <div style="flex:1;min-width:140px;font-size:11px;color:var(--text-tertiary);align-self:flex-end;padding-bottom:6px;">Computed for <strong id="sky-loc-name" style="color:var(--text-secondary);"></strong> · sidereal longitudes shown using Lahiri ayanamsha.</div>
+    </div>
   </div>
-  <div class="card" style="margin-bottom:1rem;">
-    <div style="font-size:14px;font-weight:500;margin-bottom:1rem;">Search criteria</div>
+  <!-- Muhurtha search — collapsible; participants' birth moments become chart overlays below. -->
+  <details class="ab-sec" id="sky-search-card" style="margin-bottom:1rem;">
+    <summary><i class="ti ti-search" aria-hidden="true"></i> Search for auspicious days — Shri B.V. Raman's category rules</summary>
+    <div class="ab-body">
+    <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:9px 13px;margin-bottom:12px;font-size:11px;color:var(--info-text);line-height:1.6;">
+      In the ordinary flow of life there is no need to consult an almanac before every action; doing what must be done, with sincere intent and clear purpose, is itself the highest auspice. Read these results as gentle suggestions for alignment — pointers, not pronouncements. No app can account for personal planetary periods, birth-chart conditions, or the nuanced judgement of a trained astrologer. <strong style="color:var(--text-primary);">For significant occasions always consult a qualified astrologer.</strong>
+    </div>
     <!-- Muhurtha purpose — category-specific rules from Shri B.V. Raman's Muhurtha -->
     <div style="margin-bottom:12px;">
       <label class="form-lbl">Purpose (applies Shri B.V. Raman's category rules &amp; ranks by favourability)</label>
@@ -305,39 +357,7 @@ button.action:hover{background:var(--bg-tertiary);}
       </div>
     </div>
     <button class="action" onclick="runSearch()"><i class="ti ti-search" aria-hidden="true"></i> Find auspicious days</button>
-  </div>
-  <div id="sr"></div>
-</div>
-
-<!-- Sky (planetary positions + divisional charts) -->
-<div class="panel" id="panel-sky">
-  <div class="card" style="margin-bottom:1rem;">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-      <div><label class="form-lbl">Date</label><input type="date" id="sky-date" onchange="renderSky()"/></div>
-      <div><label class="form-lbl">Time</label><input type="time" id="sky-time" onchange="renderSky()" style="width:110px;"/></div>
-      <button class="ybtn" onclick="setSkyNow()">Now</button>
-      <div style="flex:1;min-width:140px;font-size:11px;color:var(--text-tertiary);align-self:flex-end;padding-bottom:6px;">Computed for <strong id="sky-loc-name" style="color:var(--text-secondary);"></strong> · sidereal longitudes shown using Lahiri ayanamsha.</div>
-    </div>
-  </div>
-  <!-- Optional reference / overlay (e.g. birth chart vs transit) -->
-  <details class="card ref-card" style="margin-bottom:1rem;padding:0;" id="sky-ref-card">
-    <summary style="padding:.7rem 1.1rem;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--info-text);">
-      <input type="checkbox" id="sky-ref-on" onchange="renderSky();event.stopPropagation();" onclick="event.stopPropagation();" style="margin:0;"/>
-      <span>Overlay a reference moment (e.g. birth chart, past event)</span>
-      <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--text-tertiary);">click to expand</span>
-    </summary>
-    <div style="padding:.2rem 1.1rem 1rem;">
-      <div style="font-size:11px;color:var(--text-secondary);line-height:1.55;margin-bottom:10px;">
-        When enabled, planets from the reference moment are overlaid on both charts in <em style="color:var(--info-text);">blue italic</em> below the primary set. Useful for comparing a birth chart against the current transit, or seeing how a past horoscope maps onto a divisional chart.
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
-        <div><label class="form-lbl">Reference date</label><input type="date" id="sky-ref-date" onchange="renderSky()" style="width:100%;"/></div>
-        <div><label class="form-lbl">Reference time</label><input type="time" id="sky-ref-time" onchange="renderSky()" style="width:100%;"/></div>
-        <div><label class="form-lbl">Reference city</label><select id="sky-ref-city" onchange="renderSky()" style="width:100%;font-size:12px;padding:5px 8px;"><option value="">(same as primary)</option></select></div>
-        <div><label class="form-lbl">Reference lat</label><input type="number" id="sky-ref-lat" step="0.001" onchange="renderSky()" placeholder="(same)" style="width:100%;font-size:12px;padding:5px 8px;"/></div>
-        <div><label class="form-lbl">Reference lon</label><input type="number" id="sky-ref-lon" step="0.001" onchange="renderSky()" placeholder="(same)" style="width:100%;font-size:12px;padding:5px 8px;"/></div>
-      </div>
-      <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">If a city is chosen, lat/lon/tz come from it. If lat & lon are filled, they override the city. If everything is blank, the primary location is reused.</div>
+    <div id="sr" style="margin-top:12px;"></div>
     </div>
   </details>
   <div class="sky-wrap">
@@ -374,9 +394,9 @@ button.action:hover{background:var(--bg-tertiary);}
     <div class="sec-title">Lagna (Ascendant) · how to strengthen it — Shri B.V. Raman</div>
     <div id="sky-lagna" style="font-size:12px;line-height:1.65;color:var(--text-secondary);"></div>
   </div>
-  <!-- Reference nakshatra & 9-Tara — only populated when reference overlay is active -->
+  <!-- Participants — one row per computed birth moment from the Search card above -->
   <div class="card" id="sky-ref-nak-card" style="margin-top:1rem;display:none;border-left:3px solid var(--info-text);">
-    <div class="sec-title" style="color:var(--info-text);">Reference Moon · nakshatra &amp; pada</div>
+    <div class="sec-title" style="color:var(--info-text);">Participants · Janma nakshatra &amp; pada</div>
     <div id="sky-ref-nak" style="font-size:12px;line-height:1.65;color:var(--text-secondary);"></div>
   </div>
   <!-- Panchaka — five-source vibration analysis for the chosen Sky-tab moment. -->
@@ -432,23 +452,8 @@ button.action:hover{background:var(--bg-tertiary);}
       <div id="sky-kuta" style="font-size:12px;line-height:1.6;color:var(--text-secondary);"></div>
     </div>
   </details>
-  <div class="card" style="margin-top:1rem;background:var(--info-bg);">
-    <div class="sec-title" style="color:var(--info-text);">Guidance · adapted from Shri B.V. Raman's <em>Muhurtha (Electional Astrology)</em></div>
-    <!-- Muhurtha shloka — invocation at the head of the guidance, with script toggle. -->
-    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:8px 12px;margin-bottom:12px;border-left:2px solid var(--accent);text-align:center;">
-      <div style="display:flex;justify-content:flex-end;gap:3px;margin-bottom:4px;">
-        <button id="shl-dev" class="ybtn" onclick="setShlokaScript('dev')" style="font-size:9px;padding:1px 6px;font-family:serif;font-weight:600;color:var(--text-primary);border-color:var(--border-med);">देव</button>
-        <button id="shl-tel" class="ybtn" onclick="setShlokaScript('tel')" style="font-size:9px;padding:1px 6px;">తె</button>
-        <button id="shl-iast" class="ybtn" onclick="setShlokaScript('iast')" style="font-size:9px;padding:1px 6px;font-style:italic;">IAST</button>
-      </div>
-      <div id="shloka-text" style="font-size:clamp(10px,2.8vw,13px);line-height:1.65;color:var(--text-primary);font-family:serif;letter-spacing:.02em;">
-        तदेव लग्नं सुदिनं तदेव ताराबलं चन्द्रबलं तदेव ।<br/>
-        विद्याबलं दैवबलं तदेव लक्ष्मीपते तेंऽघ्रियुगं स्मरामि ॥
-      </div>
-      <div style="font-size:9px;color:var(--text-tertiary);margin-top:4px;font-style:italic;line-height:1.45;">
-        "That alone is the auspicious ascendant, that alone the auspicious day; that alone the strength of stars, that alone the strength of the Moon. That alone the strength of knowledge, that alone divine grace — that very moment when I meditate on your divine feet, O Lord Lakshmi-pati."
-      </div>
-    </div>
+  <!-- (moved) Guidance content now lives in the collapsible invocation card at the top of this tab -->
+  <div style="display:none;" id="sky-guidance-old">
     <div style="font-size:12px;line-height:1.7;color:var(--text-secondary);margin-bottom:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:var(--radius-md);">
       <strong style="color:var(--text-primary);">In this spirit.</strong> The verse teaches that the truest <em>bala</em> — strength of moment, star, Moon, knowledge — arises from sincere intention and remembrance of the Divine. No timing chart can confer success on action lacking integrity; equally, an action undertaken with devotion, clear purpose, and ethical care draws auspiciousness to itself even when the classical indicators are mixed. The rules below are aids to alignment, not verdicts. Where they signal challenges, treat them as invitations to greater care, prayer, and preparation — not as closed doors.
     </div>
@@ -464,10 +469,13 @@ button.action:hover{background:var(--bg-tertiary);}
         <li><strong style="color:var(--text-primary);">When the indications are mixed.</strong> Three classical neutralisers carry weight beyond the daily panchanga: <em>(i)</em> a strong, well-placed Lagna at the moment of action, <em>(ii)</em> Abhijit muhurta around solar noon (which overrides most negative influences), and <em>(iii)</em> the spirit of the shloka above — work begun with sincere remembrance, clarity of intent, and surrender of fruit to the Divine attracts its own auspiciousness, often quietly transcending what the chart appeared to forbid.</li>
         <li><strong style="color:var(--text-primary);">Caveats.</strong> Muhurta is preventive and supportive, not a guarantee — and it is not a verdict against any soul. Its task is to <em>not add</em> to existing afflictions and to gently amplify what is already good. For weighty decisions, consult an experienced astrologer who can weigh the full birth chart, dashas, and family context alongside these indications.</li>
       </ul>
-      <div style="text-align:center;margin-top:14px;padding-top:10px;border-top:.5px solid var(--border-light);font-family:serif;font-size:13px;color:var(--info-text);letter-spacing:.05em;line-height:1.8;">
-        ॐ तत् सत्<br/>
-        ఓం తత్ సత్<br/>
-        Om Tat Sat
+      <div style="text-align:center;margin-top:14px;padding-top:10px;border-top:.5px solid var(--border-light);">
+        <div style="display:flex;justify-content:center;gap:3px;margin-bottom:4px;">
+          <button id="ots-dev" class="ybtn" onclick="setOtsScript('dev')" style="font-size:9px;padding:1px 6px;font-family:serif;font-weight:600;color:var(--text-primary);border-color:var(--border-med);">देव</button>
+          <button id="ots-tel" class="ybtn" onclick="setOtsScript('tel')" style="font-size:9px;padding:1px 6px;">తె</button>
+          <button id="ots-iast" class="ybtn" onclick="setOtsScript('iast')" style="font-size:9px;padding:1px 6px;font-style:italic;">IAST</button>
+        </div>
+        <div id="ots-text" style="font-family:serif;font-size:13px;color:var(--info-text);letter-spacing:.05em;line-height:1.8;">ॐ तत् सत्</div>
       </div>
     </div>
   </div>
@@ -509,7 +517,7 @@ button.action:hover{background:var(--bg-tertiary);}
         <tr><td><code>vargaRashi()</code></td><td>Divisional chart placement for D-1 / 2 / 3 / 4 / 7 / 9 / 10 / 12 / 16 / 20 / 24 / 27 per Parashara rules</td><td>exact (rule-based)</td></tr>
         <tr><td><code>eclToHor()</code></td><td>Ecliptic (λ, β) → horizontal (alt, az) coords at observer; used by the Sky-tab viewing guide</td><td>±0.05°</td></tr>
         <tr><td><code>findRiseTime()</code></td><td>Steps forward and bisects the first 0°-altitude crossing for any body within 24 h</td><td>±30 s</td></tr>
-        <tr><td><code>getRefMoment()</code></td><td>Resolves the optional Sky-tab reference: date, time, location (city or lat/lon override), DST-aware tz via the reference's own IANA name</td><td>exact</td></tr>
+        <tr><td><code>computeBirthStar()</code></td><td>Resolves a participant's birth moment: date, time, location (city or lat/lon override), DST-aware tz via the birth city's IANA name; returns J + nakshatra/pada/rasi</td><td>exact</td></tr>
       </table>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;line-height:1.6;">
         <strong style="color:var(--text-primary);">Sidereal vs tropical:</strong>
@@ -707,16 +715,12 @@ button.action:hover{background:var(--bg-tertiary);}
         <div class="ab-el-note">D-1 (Rashi), D-2 (Hora), D-3 (Drekkana), D-4 (Chaturthamsa), D-7 (Saptamsa), D-9 (Navamsa), D-10 (Dasamsa), D-12 (Dwadasamsa), D-16 (Shodasamsa), D-20 (Vimshamsa), D-24 (Siddhamsa), D-27 (Bhamsa). All rule-based per Parashara. D-30 (Trimshamsa, non-uniform) and D-60 are omitted.</div>
       </div>
       <div class="ab-elem">
-        <div class="ab-el-name">Reference overlay <span class="ab-el-sub">birth chart vs transit</span></div>
-        <div class="ab-el-note">Optional second moment (date / time / city or lat-lon) shown <em style="color:var(--info-text);">in blue italic</em> beneath the primary planets in every chart cell. The cell gets a blue inset border when the reference Lagna falls there. The longitudes table gains a fourth column with reference values. Each side has its own DST-aware timezone via <code>Intl.DateTimeFormat</code> with the relevant IANA name — so a 1990 Delhi birth chart vs a 2026 NJ transit each use their correct offset.</div>
-      </div>
-      <div class="ab-elem">
-        <div class="ab-el-name">Reference nakshatra &amp; pada <span class="ab-el-sub">when overlay is on</span></div>
-        <div class="ab-el-note">A card shows the reference Moon's nakshatra, pada (1–4), exact degree within nakshatra, and the nakshatra's principal stars. Computed by <code>nakAndPada(siderealMoonLon)</code> using the 13°20' / 4 = 3°20' pada span.</div>
+        <div class="ab-el-name">Participant overlays <span class="ab-el-sub">birth charts vs transit · marked ¹ ² ³ ⁴</span></div>
+        <div class="ab-el-note">Each participant's computed birth moment (date / time / city or lat-lon from the Search card) is shown <em style="color:var(--info-text);">in blue italic</em> beneath the primary planets in every chart cell, prefixed with its numbered mark; the cell gets a blue inset border when a participant's Lagna falls there, and the chart centre lists each mark with its label. Each birth uses its own DST-aware timezone via <code>Intl.DateTimeFormat</code> with the birth city's IANA name — so a 1990 Delhi birth chart vs a 2026 NJ transit each use their correct offset. A "Participants · Janma nakshatra &amp; pada" card lists each person's star, pada, Janma Rasi and principal stars (via <code>nakAndPada()</code>, 13°20' / 4 = 3°20' pada span). Time spinners (−1h/−15m/+15m/+1h) step the primary moment live.</div>
       </div>
       <div class="ab-elem">
         <div class="ab-el-name">9-Tara · Mitra &amp; Parama-Mitra <span class="ab-el-sub">Shri B.V. Raman Ch. III</span></div>
-        <div class="ab-el-note">For the reference nakshatra <code>B</code>, the 9-Tara cycle classifies every other nakshatra <code>N</code> by <code>(count − 1) mod 9</code> where <code>count = ((N − B + 27) mod 27) + 1</code>. Mitra stars sit at offsets <strong>B+7, B+16, B+25</strong>; Parama-Mitra at <strong>B+8, B+17, B+26</strong>. Today's Moon nakshatra is also classified against the reference to show the current Tarabala (Sampat/Vipat/Kshema/Pratyak/Sadhana/Naidhana/Mitra/Parama-Mitra) and which cycle (Paryaya) softens it.</div>
+        <div class="ab-el-note">For a birth nakshatra <code>B</code>, the 9-Tara cycle classifies every other nakshatra <code>N</code> by <code>(count − 1) mod 9</code> where <code>count = ((N − B + 27) mod 27) + 1</code>. Mitra stars sit at offsets <strong>B+7, B+16, B+25</strong>; Parama-Mitra at <strong>B+8, B+17, B+26</strong>. Today's Moon nakshatra is also classified against the chosen birth star to show the current Tarabala (Sampat/Vipat/Kshema/Pratyak/Sadhana/Naidhana/Mitra/Parama-Mitra) and which cycle (Paryaya) softens it.</div>
       </div>
       <div class="ab-elem">
         <div class="ab-el-name">Ashtakuta marriage compatibility <span class="ab-el-sub">8 kutas, 36 points</span></div>
@@ -727,8 +731,8 @@ button.action:hover{background:var(--bg-tertiary);}
         <div class="ab-el-note">Shows the rising sign, degree, nature (movable/fixed/dual), lord and its house, plus live strength checks per Shri B.V. Raman: benefic in Lagna, malefics confined to 3/11, no papakartari hemming, Jupiter/Venus in kendra, and the <strong>Lagna tyajya</strong> zones (Bhujanga first 3° of Ar/Ta/Sg/Vi · Rahu last 3° of Pi/Cp/Cn/Sc · Gridhra 13°30′–16°30′ of Ge/Li/Le/Aq). Marriage-specific checks (7th unoccupied, Mars not in 8th, Venus not in 6th) shown alongside.</div>
       </div>
       <div class="ab-elem">
-        <div class="ab-el-name">Category muhurtha search <span class="ab-el-sub">Search tab · ranked &amp; explained</span></div>
-        <div class="ab-el-note">A "Purpose" selector on the Search tab applies Shri B.V. Raman's per-category rules — <strong>Marriage (Ch. IX), Griha Pravesha &amp; Foundation (Ch. XII), Vidyarambha (Ch. XI), Travel (Ch. XIV), Business (Ch. X), Medical (Ch. XV), General</strong> — scoring each day by its nakshatra, tithi, vara, lunar masa, yoga, Vishti, Panchaka, Adhika masa, Moudhyam and eclipse status, then ranking by favourability. Each result carries a "Why this ranking" breakdown citing the rule applied. For marriage (bride &amp; groom) and business (up to 4 partners) the search asks for participants' birth stars — entered directly or computed from birth date/time/city — and folds each person's <strong>Tarabala</strong> and <strong>Chandrabala</strong> into the ranking; a couple's Ashtakuta total is shown once above the results.</div>
+        <div class="ab-el-name">Category muhurtha search <span class="ab-el-sub">Sky tab · collapsible card · ranked &amp; explained</span></div>
+        <div class="ab-el-note">The collapsible <strong>Search</strong> card on the Sky tab (the former Search tab) applies Shri B.V. Raman's per-category rules — <strong>Marriage (Ch. IX), Griha Pravesha &amp; Foundation (Ch. XII), Vidyarambha (Ch. XI), Travel (Ch. XIV), Business (Ch. X), Medical (Ch. XV), General</strong> — scoring each day by its nakshatra, tithi, vara, lunar masa, yoga, Vishti, Panchaka, Adhika masa, Moudhyam and eclipse status, then ranking by favourability. Each result carries a "Why this ranking" breakdown citing the rule applied; clicking a result sets the Sky charts to that day (the inner "Panchanga »" button opens the day detail). <strong>Every purpose</strong> (except the plain panchanga score) asks for the relevant participants' birth details — Bride &amp; Groom for marriage, up to 4 partners for business, a single person otherwise — entered as a star directly or computed from birth date/time and a city <em>or</em> lat/lon. Each computed birth moment is overlaid on both charts with a numbered mark (¹ ² ³ ⁴), and each person's <strong>Tarabala</strong> and <strong>Chandrabala</strong> are folded into the ranking; a couple's Ashtakuta total is shown once above the results.</div>
       </div>
       <div class="ab-elem">
         <div class="ab-el-name">Panchaka <span class="ab-el-sub">five-source vibration</span></div>
@@ -770,7 +774,7 @@ button.action:hover{background:var(--bg-tertiary);}
     <summary><i class="ti ti-lock" aria-hidden="true"></i> Security &amp; Privacy</summary>
     <div class="ab-body">
       <div style="font-size:12px;color:var(--text-secondary);line-height:1.65;margin-bottom:10px;">
-        Everything you see is computed in your browser. The app has <strong style="color:var(--text-primary);">no backend</strong>, makes <strong style="color:var(--text-primary);">no network requests</strong> after the initial page load, and stores <strong style="color:var(--text-primary);">nothing</strong> across sessions (no cookies, no localStorage, no telemetry). Your location, dates, and searches never leave this tab.
+        Everything you see is computed in your browser. The app has <strong style="color:var(--text-primary);">no backend</strong>, makes <strong style="color:var(--text-primary);">no network requests</strong> after the initial page load, and uses <strong style="color:var(--text-primary);">no cookies and no telemetry</strong>. The single piece of persisted state is one localStorage key (<code>pcCustomCities</code>) holding your saved custom locations — schema-validated on every load (name ≤ 40 chars, lat/lon range-checked, IANA verified via <code>Intl</code>, 25-entry cap, malformed JSON discarded) and escaped wherever rendered. Birth details, dates, and searches never leave this tab and are never persisted.
       </div>
       <table class="ab-tbl">
         <tr><th>Defence</th><th>What it does</th></tr>
@@ -1751,6 +1755,7 @@ const MUHURTA_CATS={
     masa:{best:[1,2,10,11],mid:[7,8],avoid:[0,3,4,5,6,9],note:'Vaisakha, Jyeshtha, Magha, Phalguna best; Kartika and Margasira neutral.'},
     uttarayanaPref:true,
     panchakaAvoid:[8,1],moudhyamAvoid:true,adhikaAvoid:true,
+    participants:{count:1,labels:['Householder'],title:'Householder’s birth details (Tarabala & Chandrabala folded into the ranking)'},
     lagnaNote:'Choose a fixed rising sign for permanence; the Sun in Uttarayana; Jupiter and Venus strongly disposed.',
   },
   foundation:{
@@ -1767,6 +1772,7 @@ const MUHURTA_CATS={
     vara:{best:[1,3,4,5],mid:[0],avoid:[2,6],note:'Mon, Wed, Thu, Fri best (Monday rejected when Moon is waning); Saturday rejected; Tuesday avoided.'},
     masa:{best:[0,1,4,7,10],avoid:[2,3,5,6,8,9,11],note:'Chaitra, Vaisakha, Sravana, Kartika, Magha best; Jyeshtha, Ashadha, Bhadrapada, Aswayuja, Margasira, Pushya, Phalguna connote death, disease, quarrels, loss.'},
     panchakaAvoid:[2,4],moudhyamAvoid:false,adhikaAvoid:true,
+    participants:{count:1,labels:['Builder'],title:'Builder/owner’s birth details (Tarabala & Chandrabala folded into the ranking)'},
     lagnaNote:'The Sun should occupy fixed or movable signs — never common signs. A fixed rising sign favours the permanence of the structure.',
   },
   education:{
@@ -1782,6 +1788,7 @@ const MUHURTA_CATS={
     },
     vara:{best:[3,4,1,5],mid:[0],avoid:[2,6],note:'Wednesday morning is the best; Tuesday and Saturday invariably avoided; Sunday permissible.'},
     panchakaAvoid:[],moudhyamAvoid:false,adhikaAvoid:false,
+    participants:{count:1,labels:['Student'],title:'Student’s birth details (Tarabala & Chandrabala folded into the ranking)'},
     lagnaNote:'Common (dual) signs are the best rising signs, movable ordinary, fixed set aside; forenoon and noon favoured; fortify Mercury and Jupiter.',
   },
   travel:{
@@ -1797,6 +1804,7 @@ const MUHURTA_CATS={
     },
     vara:{best:[1,3,4,5],mid:[0,6],avoid:[2],note:'Tuesday preferably avoided; directional rules also apply (e.g. no eastward start on Sat/Mon).'},
     panchakaAvoid:[6],moudhyamAvoid:false,adhikaAvoid:false,janmaNakAvoid:true,
+    participants:{count:1,labels:['Traveller'],title:'Traveller’s birth details (Janma star avoided for travel; Tarabala & Chandrabala folded into the ranking)'},
     lagnaNote:'Aries, Taurus, Cancer, Leo, Libra and Sagittarius favourable rising signs; Moon in 3/6/9/12 and Jupiter in a kendra from Lagna; never start when Lagna is the 5th, 7th or 9th from one’s Janma Lagna.',
   },
   business:{
@@ -1826,6 +1834,7 @@ const MUHURTA_CATS={
     },
     vara:{best:[1,3,4,5],mid:[0],avoid:[2,6],note:'Mon, Wed, Thu, Fri best for taking medicine (with Hasta, Ashwini, Chitta, Punarvasu respectively).'},
     panchakaAvoid:[1,8],moudhyamAvoid:false,adhikaAvoid:false,
+    participants:{count:1,labels:['Patient'],title:'Patient’s birth details (Tarabala & Chandrabala folded into the ranking)'},
     lagnaNote:'Movable rising sign or amsa favoured; Moon, Mercury, Jupiter, Venus in own vargas help recovery.',
   },
   general:{
@@ -1840,6 +1849,7 @@ const MUHURTA_CATS={
     },
     vara:{best:[1,3,4,5],mid:[0],avoid:[2,6],note:'Tuesday and Saturday avoided for all good and auspicious works.'},
     panchakaAvoid:[],moudhyamAvoid:false,adhikaAvoid:true,
+    participants:{count:1,labels:['Person undertaking'],title:'Birth details of the person undertaking the work (Tarabala & Chandrabala folded into the ranking)'},
     lagnaNote:'Strengthen the ascendant, its lord and the Moon; avoid the Lagna tyajya zones.',
   },
 };
@@ -1927,16 +1937,27 @@ function categoryDayScore(p,catKey,participants,eclipseToday){
   return{score,reasons};
 }
 
-// Compute a Janma nakshatra (and rasi) from birth date/time/city using the same
-// DST-aware timezone resolution as the Sky tab's reference moment.
-function computeBirthStar(dateStr,timeStr,cityName){
+// Compute a full birth moment from date/time and a location (city OR lat/lon),
+// with the same DST-aware timezone resolution as the rest of the Sky tab.
+// Location priority: explicit lat+lon (tz from longitude) > city (tz/iana from
+// CITIES) > the primary LOC. Returns {J, lat, lon, nIdx, pada, rasi} or null.
+function computeBirthStar(dateStr,timeStr,cityName,latRaw,lonRaw){
   if(!dateStr||!timeStr)return null;
   const[hh,mm]=timeStr.split(':').map(Number);
   if(!Number.isFinite(hh)||!Number.isFinite(mm)||hh<0||hh>23||mm<0||mm>59)return null;
   const dt=new Date(dateStr+'T'+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':00');
   if(isNaN(dt.getTime()))return null;
-  const c=cityName?CITIES.find(x=>x.name===cityName):null;
-  let tz=c?c.tz:LOC.tz,iana=c?c.iana:LOC.iana;
+  let lat=null,lon=null,tz=null,iana=null;
+  if(latRaw!==undefined&&latRaw!==''&&lonRaw!==undefined&&lonRaw!==''){
+    const la=parseFloat(latRaw),lo=parseFloat(lonRaw);
+    if(!isFinite(la)||!isFinite(lo)||la<-90||la>90||lo<-180||lo>180)return null;
+    lat=la;lon=lo;tz=tzFromLon(lo);
+  }
+  if(lat===null){
+    const c=cityName?CITIES.find(x=>x.name===cityName):null;
+    if(c){lat=c.lat;lon=c.lon;tz=c.tz;iana=c.iana;}
+    else{lat=LOC.lat;lon=LOC.lon;tz=LOC.tz;iana=LOC.iana;}
+  }
   if(iana){
     try{
       const parts=new Intl.DateTimeFormat('en-US',{timeZone:iana,timeZoneName:'longOffset'}).formatToParts(dt);
@@ -1944,12 +1965,12 @@ function computeBirthStar(dateStr,timeStr,cityName){
       if(tzn){const m=tzn.value.match(/GMT([+-])(\d+)(?::(\d+))?/);if(m){tz=(m[1]==='-'?-1:1)*(parseInt(m[2],10)*60+parseInt(m[3]||'0',10));}else if(/^GMT$/i.test(tzn.value))tz=0;}
     }catch(e){}
   }
-  if(typeof tz!=='number')tz=tzFromLon(c?c.lon:LOC.lon);
+  if(typeof tz!=='number')tz=tzFromLon(lon);
   const J=jd(dt)-0.5+((hh*60+mm)-tz)/1440;
   const moonSid=nm(mlong(J)-ayan(J));
   const np=nakAndPada(moonSid);
   if(np.invalid)return null;
-  return{nIdx:np.nIdx,pada:np.pada,rasi:Math.floor(moonSid/30)%12};
+  return{J,lat,lon,nIdx:np.nIdx,pada:np.pada,rasi:Math.floor(moonSid/30)%12};
 }
 
 // Compute the (sidereal) nakshatra index and pada (1..4) for a given sidereal Moon longitude.
@@ -2451,15 +2472,82 @@ function buildCitySelect(){
   let h='<option value="">— select city —</option>';
   for(const c of CITIES){const n=esc(c.name);h+=`<option value="${n}">${n}</option>`;}
   document.getElementById('city-sel').innerHTML=h;
-  // Populate the Sky-tab reference city dropdown with the same list plus a
-  // "same as primary" sentinel; the option order is preserved so the user
-  // sees identical familiar names.
-  const refSel=document.getElementById('sky-ref-city');
-  if(refSel){
-    let rh='<option value="">(same as primary)</option>';
-    for(const c of CITIES){const n=esc(c.name);rh+=`<option value="${n}">${n}</option>`;}
-    refSel.innerHTML=rh;
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  CUSTOM LOCATIONS — safely imported, validated, persisted   */
+/* ─────────────────────────────────────────────────────────── */
+// The ONLY localStorage key this app uses. Loaded once at startup through a
+// strict validator: every entry must pass the schema below or the whole record
+// is dropped. Renders are esc()-wrapped everywhere city names appear.
+const CUSTOM_CITIES_KEY='pcCustomCities';
+const CUSTOM_CITIES_MAX=25;
+function _validCustomCity(c){
+  return c&&typeof c==='object'
+    &&typeof c.name==='string'&&c.name.trim().length>=1&&c.name.length<=40
+    &&typeof c.lat==='number'&&isFinite(c.lat)&&c.lat>=-90&&c.lat<=90
+    &&typeof c.lon==='number'&&isFinite(c.lon)&&c.lon>=-180&&c.lon<=180
+    &&(c.iana===undefined||c.iana===''||(typeof c.iana==='string'&&c.iana.length<=64&&_validIana(c.iana)));
+}
+function _validIana(iana){
+  try{new Intl.DateTimeFormat('en-US',{timeZone:iana});return true;}catch(e){return false;}
+}
+function loadCustomCities(){
+  let arr=[];
+  try{
+    const raw=localStorage.getItem(CUSTOM_CITIES_KEY);
+    if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed))arr=parsed;}
+  }catch(e){/* malformed JSON or storage unavailable — start clean */}
+  const seen=new Set(CITIES.map(c=>c.name.toLowerCase()));
+  const out=[];
+  for(const c of arr){
+    if(out.length>=CUSTOM_CITIES_MAX)break;
+    if(!_validCustomCity(c))continue;
+    const name=c.name.trim();
+    if(seen.has(name.toLowerCase()))continue;
+    seen.add(name.toLowerCase());
+    out.push({name,lat:c.lat,lon:c.lon,tz:tzFromLon(c.lon),iana:c.iana||undefined,custom:true});
   }
+  return out;
+}
+function saveCustomCities(){
+  try{
+    const customs=CITIES.filter(c=>c.custom).map(c=>({name:c.name,lat:c.lat,lon:c.lon,iana:c.iana||''}));
+    localStorage.setItem(CUSTOM_CITIES_KEY,JSON.stringify(customs.slice(0,CUSTOM_CITIES_MAX)));
+  }catch(e){/* storage full/unavailable — non-fatal */}
+}
+function addCustomCity(){
+  const name=(document.getElementById('cc-name').value||'').trim();
+  const la=parseFloat(document.getElementById('cc-lat').value);
+  const lo=parseFloat(document.getElementById('cc-lon').value);
+  const iana=(document.getElementById('cc-iana').value||'').trim();
+  const st=document.getElementById('cc-status');
+  if(name.length<1||name.length>40){st.textContent='Name must be 1–40 characters';return;}
+  if(!isFinite(la)||la<-90||la>90||!isFinite(lo)||lo<-180||lo>180){st.textContent='Lat must be ±90, lon ±180';return;}
+  if(iana&&!_validIana(iana)){st.textContent='Unrecognised IANA timezone (e.g. Asia/Kolkata)';return;}
+  if(CITIES.some(c=>c.name.toLowerCase()===name.toLowerCase())){st.textContent='That name already exists';return;}
+  if(CITIES.filter(c=>c.custom).length>=CUSTOM_CITIES_MAX){st.textContent=`Limit of ${CUSTOM_CITIES_MAX} custom locations reached`;return;}
+  CITIES.push({name,lat:la,lon:lo,tz:tzFromLon(lo),iana:iana||undefined,custom:true});
+  saveCustomCities();
+  buildCitySelect();renderCustomCityList();
+  st.textContent='Added ✓';
+  document.getElementById('cc-name').value='';document.getElementById('cc-lat').value='';
+  document.getElementById('cc-lon').value='';document.getElementById('cc-iana').value='';
+}
+function removeCustomCity(name){
+  const i=CITIES.findIndex(c=>c.custom&&c.name===name);
+  if(i<0)return;
+  CITIES.splice(i,1);
+  saveCustomCities();
+  buildCitySelect();renderCustomCityList();
+}
+function renderCustomCityList(){
+  const el=document.getElementById('cc-list');
+  if(!el)return;
+  const customs=CITIES.filter(c=>c.custom);
+  el.innerHTML=customs.length
+    ?customs.map(c=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-secondary);border:.5px solid var(--border-light);border-radius:12px;padding:2px 4px 2px 10px;font-size:11px;margin:2px;">${esc(c.name)} <button class="ybtn" style="font-size:9px;padding:0 6px;" data-ccname="${esc(c.name)}" onclick="removeCustomCity(this.dataset.ccname)" title="Remove">×</button></span>`).join('')
+    :'<span style="font-size:10px;color:var(--text-tertiary);">none yet</span>';
 }
 
 /* ─────────────────────────────────────────────────────────── */
@@ -2827,10 +2915,18 @@ function buildChecks(){
 function onCatChange(){
   const cat=MUHURTA_CATS[document.getElementById('scat').value];
   const box=document.getElementById('scat-participants');
-  if(!cat||!cat.participants){box.style.display='none';return;}
+  if(!cat||!cat.participants){
+    // Clear the slots too — otherwise hidden selects (and their datasets) would
+    // keep feeding participant overlays and scoring after the category is cleared.
+    box.style.display='none';
+    document.getElementById('scat-part-slots').innerHTML='';
+    renderSky();
+    return;
+  }
   box.style.display='';
   document.getElementById('scat-part-title').textContent=cat.participants.title;
   buildParticipantSlots(cat.participants);
+  renderSky();  // drop the previous category's overlays immediately
 }
 function buildParticipantSlots(pc){
   const wrap=document.getElementById('scat-part-slots');
@@ -2841,11 +2937,13 @@ function buildParticipantSlots(pc){
     const optional=pc.count===0&&i>0;  // business: partners beyond the first are optional
     h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
       <span style="font-size:11px;font-weight:500;width:64px;">${esc(label)}${optional?' <span style="color:var(--text-tertiary);font-weight:400;">(opt.)</span>':''}</span>
-      <select id="pstar${i}" style="font-size:11px;padding:4px 6px;width:150px;"></select>
+      <select id="pstar${i}" onchange="clearSlotMoment(${i})" style="font-size:11px;padding:4px 6px;width:150px;"></select>
       <span style="font-size:10px;color:var(--text-tertiary);">or birth:</span>
       <input type="date" id="pbd${i}" style="font-size:11px;padding:4px 6px;"/>
       <input type="time" id="pbt${i}" style="font-size:11px;padding:4px 6px;width:90px;"/>
       <select id="pbc${i}" style="font-size:11px;padding:4px 6px;width:120px;"></select>
+      <input type="number" id="pblat${i}" step="0.001" placeholder="lat" title="Birth latitude (overrides city with lon)" style="font-size:11px;padding:4px 6px;width:64px;"/>
+      <input type="number" id="pblon${i}" step="0.001" placeholder="lon" title="Birth longitude (overrides city with lat)" style="font-size:11px;padding:4px 6px;width:64px;"/>
       <button class="ybtn" onclick="computeSlotStar(${i})" style="font-size:10px;">→ star</button>
       <span id="pinfo${i}" style="font-size:10px;color:var(--info-text);"></span>
     </div>`;
@@ -2861,18 +2959,41 @@ function buildParticipantSlots(pc){
     document.getElementById('pbc'+i).innerHTML=cityOpts;
   }
 }
+// Manually picking a star invalidates any previously computed birth moment for
+// that slot: otherwise getParticipants() would mix the NEW nakshatra with the
+// STALE dataset rasi, and the charts would keep overlaying the old birth chart.
+function clearSlotMoment(i){
+  const sel=document.getElementById('pstar'+i);
+  if(!sel)return;
+  delete sel.dataset.j;delete sel.dataset.lat;delete sel.dataset.lon;
+  delete sel.dataset.nidx;delete sel.dataset.pada;delete sel.dataset.rasi;delete sel.dataset.label;
+  const info=document.getElementById('pinfo'+i);
+  if(info){info.textContent=sel.value!==''?'star picked manually — no chart overlay (rasi approximated from the star)':'';info.style.color='var(--text-tertiary)';}
+  renderSky();
+}
 function computeSlotStar(i){
+  const cat=MUHURTA_CATS[document.getElementById('scat').value];
   const r=computeBirthStar(
     document.getElementById('pbd'+i).value,
     document.getElementById('pbt'+i).value,
-    document.getElementById('pbc'+i).value);
+    document.getElementById('pbc'+i).value,
+    document.getElementById('pblat'+i).value,
+    document.getElementById('pblon'+i).value);
   const info=document.getElementById('pinfo'+i);
-  if(!r){info.textContent='need valid birth date, time & city';info.style.color='var(--danger-text)';return;}
+  if(!r){info.textContent='need valid birth date, time & city (or lat+lon)';info.style.color='var(--danger-text)';return;}
   const sel=document.getElementById('pstar'+i);
   sel.value=String(r.nIdx);
+  // Stash the full birth moment so the charts can overlay it (marked ¹ ² ³ ⁴).
   sel.dataset.rasi=String(r.rasi);
+  sel.dataset.j=String(r.J);
+  sel.dataset.lat=String(r.lat);
+  sel.dataset.lon=String(r.lon);
+  sel.dataset.nidx=String(r.nIdx);
+  sel.dataset.pada=String(r.pada);
+  sel.dataset.label=(cat&&cat.participants&&cat.participants.labels[i])||`Person ${i+1}`;
   info.style.color='var(--info-text)';
-  info.textContent=`${NK[r.nIdx].name} pada ${r.pada} · Janma Rasi ${RASHI[r.rasi]}`;
+  info.textContent=`${NK[r.nIdx].name} pada ${r.pada} · Janma Rasi ${RASHI[r.rasi]} · overlaid on charts`;
+  renderSky();  // live overlay update
 }
 // Read participants from the slots. Manual star picks derive an approximate
 // Janma Rasi from the nakshatra's mid-point; computed picks carry the exact rasi.
@@ -2956,6 +3077,12 @@ function runSearch(){
     }
   }
   h+=`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">${res.length} day${res.length>1?'s':''} found · sorted by ${cat?'category favourability':'score'}</div>`;
+  // Hidden until a result is selected: restores the collapsed list.
+  h+=`<div id="sr-expand" style="display:none;margin-bottom:8px;">
+    <button class="ybtn" onclick="expandSearchResults()" style="width:100%;justify-content:center;display:flex;gap:6px;">
+      <i class="ti ti-chevron-down" aria-hidden="true"></i> Show all results (<span id="sr-expand-count">0</span> hidden) — pick a different day
+    </button>
+  </div>`;
   for(const{p,cs}of res.slice(0,30)){
     const tr=gt(p.date),ecl=getDayEclipse(p.date),fest=FEST.filter(r=>r.check(p,null));
     const md=p.moudhyam,ds=p.date.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
@@ -2968,10 +3095,12 @@ function runSearch(){
           ${cs.reasons.map(rr=>`<div style="color:${rr.delta>0?'var(--success-text)':rr.delta<0?'var(--danger-text)':'var(--text-tertiary)'};">${rr.delta>0?'+':''}${rr.delta} · ${esc(rr.text)}</div>`).join('')}
         </div>
       </details>`:'';
-    h+=`<div class="res-item" onclick="viewResult('${p.date.toISOString().split('T')[0]}')">
+    h+=`<div class="res-item" data-ds="${p.date.toISOString().split('T')[0]}" onclick="viewSkyResult('${p.date.toISOString().split('T')[0]}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px;">
         <div>
-          <div style="font-weight:500;font-size:13px;">${ds}${ecl?` <span style="font-size:10px;color:${eclC(ecl)};">[${ecl.type}]</span>`:''}</div>
+          <div style="font-weight:500;font-size:13px;">${ds}${ecl?` <span style="font-size:10px;color:${eclC(ecl)};">[${ecl.type}]</span>`:''}
+            <button class="ybtn" style="font-size:9px;padding:1px 7px;margin-left:6px;" onclick="event.stopPropagation();viewResult('${p.date.toISOString().split('T')[0]}')" title="Open this day on the Panchanga tab">Panchanga »</button>
+          </div>
           ${fest.length?`<div style="font-size:10px;color:var(--accent);margin-top:1px;">${fest.map(f=>f.name).join(' · ')}</div>`:''}
           ${mdWarn}
           <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;">${p.vara.name} · ${p.tithi.pak} ${p.tithi.name} · ${p.naksh.name}</div>
@@ -3010,6 +3139,48 @@ function viewResult(ds){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('panel-panchanga').classList.add('on');
   document.querySelectorAll('.tab')[1].classList.add('on');
+}
+// Search now lives on the Sky tab: clicking a result sets the Sky date (keeping
+// the chosen time) and refreshes the charts in place; the inner "Panchanga »"
+// button still opens the full-day detail on the Panchanga tab.
+// To keep the picker and charts visible without endless scrolling, all OTHER
+// results collapse on selection; a "Show all results" bar restores the list.
+function viewSkyResult(ds){
+  const dEl=document.getElementById('sky-date');
+  if(!dEl)return;
+  dEl.value=ds;
+  renderSky();
+  // Collapse the unselected results; highlight the chosen one.
+  const sr=document.getElementById('sr');
+  if(sr){
+    const items=sr.querySelectorAll('.res-item');
+    let hidden=0;
+    items.forEach(it=>{
+      const sel=it.dataset.ds===ds;
+      it.style.display=sel?'':'none';
+      it.style.borderColor=sel?'var(--accent)':'';
+      if(!sel)hidden++;
+    });
+    const exp=document.getElementById('sr-expand');
+    if(exp){
+      exp.style.display=hidden>0?'':'none';
+      const cnt=document.getElementById('sr-expand-count');
+      if(cnt)cnt.textContent=String(hidden);
+    }
+  }
+  // Scroll to the moment picker so the date/time selector AND the charts are in view.
+  const anchor=document.getElementById('sky-moment-card')||document.querySelector('.sky-wrap');
+  if(anchor&&anchor.scrollIntoView)anchor.scrollIntoView({behavior:'smooth',block:'start'});
+}
+// Restore the full result list to pick a different day.
+function expandSearchResults(){
+  const sr=document.getElementById('sr');
+  if(!sr)return;
+  sr.querySelectorAll('.res-item').forEach(it=>{it.style.display='';it.style.borderColor='';});
+  const exp=document.getElementById('sr-expand');
+  if(exp)exp.style.display='none';
+  const card=document.getElementById('sky-search-card');
+  if(card)card.open=true;
 }
 function updateNegDisplay(){
   showNeg=document.getElementById('sneg').checked;
@@ -3059,48 +3230,60 @@ function setSkyNow(){
   document.getElementById('sky-time').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   renderSky();
 }
-// Resolve the active reference moment + location. Returns null if not enabled
-// or required fields are missing. Otherwise returns {J, lat, lon, name, label}.
-function getRefMoment(){
-  const onEl=document.getElementById('sky-ref-on');
-  if(!onEl||!onEl.checked)return null;
-  const dStr=document.getElementById('sky-ref-date').value;
-  const tStr=document.getElementById('sky-ref-time').value;
-  if(!dStr||!tStr)return null;
-  const [hh,mm]=tStr.split(':').map(Number);
-  if(!Number.isFinite(hh)||!Number.isFinite(mm)||hh<0||hh>23||mm<0||mm>59)return null;
-  const dt=new Date(dStr+'T'+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':00');
-  if(isNaN(dt.getTime()))return null;
-  // Resolve location: lat/lon override > city > primary LOC.
-  const latRaw=document.getElementById('sky-ref-lat').value;
-  const lonRaw=document.getElementById('sky-ref-lon').value;
-  const cityName=document.getElementById('sky-ref-city').value;
-  let lat=null,lon=null,name=null,iana=null,tzMin=null;
-  if(latRaw!==''&&lonRaw!==''){
-    const la=parseFloat(latRaw),lo=parseFloat(lonRaw);
-    if(isFinite(la)&&isFinite(lo)&&la>=-90&&la<=90&&lo>=-180&&lo<=180){
-      lat=la;lon=lo;name=`${la.toFixed(2)}°, ${lo.toFixed(2)}°`;tzMin=tzFromLon(lo);
-    }
+// Step the selected Sky-tab time by `mins` minutes (negative = back), rolling the
+// date across midnight in either direction, and re-render the charts live.
+// Note: the roll uses a browser-local Date for calendar arithmetic, so on the
+// BROWSER's own DST-transition days a +60 step can show a wall-clock jump of
+// 0 or 120 min. The value is then re-interpreted by renderSky as LOC wall-clock
+// (via resolveTz), so the astronomy stays correct — it's only a stepping quirk.
+function bumpSkyTime(mins){
+  const dEl=document.getElementById('sky-date'),tEl=document.getElementById('sky-time');
+  if(!dEl.value||!tEl.value){setSkyNow();return;}
+  const[hh,mm]=tEl.value.split(':').map(Number);
+  if(!Number.isFinite(hh)||!Number.isFinite(mm)){setSkyNow();return;}
+  const dt=new Date(dEl.value+'T00:00:00');
+  if(isNaN(dt.getTime())){setSkyNow();return;}
+  dt.setMinutes(hh*60+mm+mins);
+  const p2=n=>String(n).padStart(2,'0');
+  dEl.value=`${dt.getFullYear()}-${p2(dt.getMonth()+1)}-${p2(dt.getDate())}`;
+  tEl.value=`${p2(dt.getHours())}:${p2(dt.getMinutes())}`;
+  renderSky();
+}
+// "Om Tat Sat" benediction script selector (mirrors the shloka toggle).
+const OTS_TEXTS={
+  dev:{text:'ॐ तत् सत्',font:'serif'},
+  tel:{text:'ఓం తత్ సత్',font:"'Baloo Tammudu 2','Nirmala UI',serif"},
+  iast:{text:'Om Tat Sat',font:'Georgia,serif'}
+};
+function setOtsScript(s){
+  const d=OTS_TEXTS[s],el=document.getElementById('ots-text');
+  if(!d||!el)return;
+  el.textContent=d.text;el.style.fontFamily=d.font;
+  ['dev','tel','iast'].forEach(k=>{
+    const b=document.getElementById('ots-'+k);
+    if(!b)return;
+    b.style.fontWeight=k===s?'600':'';
+    b.style.color=k===s?'var(--text-primary)':'';
+    b.style.borderColor=k===s?'var(--border-med)':'';
+  });
+}
+// Participant birth moments (computed via "→ star" in the Search card).
+// Each computed slot stores J/lat/lon/nIdx/pada/rasi in the star-select's dataset;
+// those become the chart overlays, identified ¹ ² ³ ⁴.
+const REF_MARKS=['¹','²','³','⁴'];
+function getParticipantMoments(){
+  const out=[];
+  for(let i=0;i<4;i++){
+    const sel=document.getElementById('pstar'+i);
+    if(!sel||sel.dataset.j===undefined||sel.dataset.j==='')continue;
+    const J=parseFloat(sel.dataset.j),lat=parseFloat(sel.dataset.lat),lon=parseFloat(sel.dataset.lon);
+    if(!Number.isFinite(J)||!Number.isFinite(lat)||!Number.isFinite(lon))continue;
+    out.push({J,lat,lon,id:out.length+1,mark:REF_MARKS[out.length]||'',
+      label:sel.dataset.label||`Person ${i+1}`,
+      nIdx:parseInt(sel.dataset.nidx,10),pada:parseInt(sel.dataset.pada,10),rasi:parseInt(sel.dataset.rasi,10)});
+    if(out.length>=4)break;
   }
-  if(lat===null&&cityName){
-    const c=CITIES.find(x=>x.name===cityName);
-    if(c){lat=c.lat;lon=c.lon;name=c.name;iana=c.iana;tzMin=c.tz;}
-  }
-  if(lat===null){lat=LOC.lat;lon=LOC.lon;name=LOC.name+' (same)';iana=LOC.iana;tzMin=LOC.tz;}
-  // Compute UT offset for the ref date using its own iana/tz (DST-aware via Intl).
-  let tz=tzMin;
-  if(iana){
-    try{
-      const parts=new Intl.DateTimeFormat('en-US',{timeZone:iana,timeZoneName:'longOffset'}).formatToParts(dt);
-      const tzn=parts.find(p=>p.type==='timeZoneName');
-      if(tzn){const m=tzn.value.match(/GMT([+-])(\d+)(?::(\d+))?/);if(m){const s=m[1]==='-'?-1:1;tz=s*(parseInt(m[2],10)*60+parseInt(m[3]||'0',10));}else if(/^GMT$/i.test(tzn.value))tz=0;}
-    }catch(e){}
-  }
-  if(typeof tz!=='number')tz=tzFromLon(lon);
-  const localMin=hh*60+mm,J0=jd(dt)-0.5;
-  const J=J0+(localMin-tz)/1440;
-  const label=`${dStr} ${tStr} · ${name}`;
-  return{J,lat,lon,name,label,tz};
+  return out;
 }
 
 function renderSky(){
@@ -3121,14 +3304,14 @@ function renderSky(){
   const J=J0+(localMin-tz)/1440;
   const pos=getSkyPositions(J,LOC.lat,LOC.lon);
   const vargaN=parseInt(document.getElementById('sky-varga').value,10)||9;
-  // Optional reference overlay
-  const ref=getRefMoment();
-  const refPos=ref?getSkyPositions(ref.J,ref.lat,ref.lon):null;
-  drawChart('sky-d1',pos,refPos,1,'Rashi (D-1)',ref&&ref.label);
-  drawChart('sky-dn',pos,refPos,vargaN,document.getElementById('sky-varga').selectedOptions[0].text,ref&&ref.label);
-  drawSkyTable(pos,refPos,ref&&ref.label);
+  // Participant birth moments → chart overlays with numbered identifiers.
+  const moments=getParticipantMoments();
+  const refs=moments.map(m=>({pos:getSkyPositions(m.J,m.lat,m.lon),label:m.label,mark:m.mark}));
+  drawChart('sky-d1',pos,refs,1,'Rashi (D-1)');
+  drawChart('sky-dn',pos,refs,vargaN,document.getElementById('sky-varga').selectedOptions[0].text);
+  drawSkyTable(pos);
   drawViewingGuide(J,LOC.lat,LOC.lon,localMin,tz);
-  drawReferenceNak(ref,refPos);
+  drawParticipantsNak(moments);
   drawLagnaPanel(pos);
   drawPanchakaPanel(J,pos,dt);
   drawTaraPanel();
@@ -3255,27 +3438,25 @@ function drawPanchakaPanel(J,pos,dt){
   `;
 }
 
-// "Reference Moon · nakshatra & pada" card — populated only when overlay is on.
-// Independent of the 9-Tara panel below (which has its own birth-star input).
-function drawReferenceNak(ref,refPos){
+// "Participants · Janma nakshatra" card — one row per computed birth moment
+// from the Search card. Hidden when no participant has computed details.
+function drawParticipantsNak(moments){
   const card=document.getElementById('sky-ref-nak-card');
-  if(!ref||!refPos){card.style.display='none';return;}
+  if(!card)return;
+  if(!moments||!moments.length){card.style.display='none';return;}
   card.style.display='';
-  const np=nakAndPada(refPos.moon.lon);
-  if(np.invalid){
-    card.querySelector('#sky-ref-nak').innerHTML='<div style="color:var(--text-tertiary);font-style:italic;">Reference Moon longitude is undefined — likely an extreme date or pathological coordinates.</div>';
-    return;
+  let h='';
+  for(const m of moments){
+    if(!Number.isFinite(m.nIdx)||m.nIdx<0||m.nIdx>26)continue;
+    const sub=NAKSHATRA_STARS[m.nIdx];
+    h+=`<div style="padding:6px 0;border-bottom:.5px solid var(--border-light);">
+      <strong style="color:var(--info-text);">${esc(m.mark)} ${esc(m.label)}</strong> —
+      <strong style="color:var(--text-primary);">${esc(NK[m.nIdx].name)}${Number.isFinite(m.pada)?` · Pada ${m.pada}`:''}</strong>
+      ${Number.isFinite(m.rasi)?` · Janma Rasi ${esc(RASHI[m.rasi])}`:''}
+      <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">Principal stars: ${esc(sub.stars)} · ${esc(sub.hint)}</div>
+    </div>`;
   }
-  const nakName=NK[np.nIdx].name;
-  const rashi=Math.floor(refPos.moon.lon/30)%12;
-  const degInRashi=refPos.moon.lon-30*rashi;
-  const sub=NAKSHATRA_STARS[np.nIdx];
-  card.querySelector('#sky-ref-nak').innerHTML=`
-    <div style="margin-bottom:6px;"><strong style="color:var(--text-primary);font-size:14px;">${esc(nakName)} · Pada ${np.pada}</strong></div>
-    <div>Sidereal Moon: <code style="font-family:ui-monospace,monospace;">${refPos.moon.lon.toFixed(2)}°</code> · ${esc(RASHI[rashi])} ${degInRashi.toFixed(2)}° · within-nakshatra ${np.degInNak.toFixed(2)}° of 13.33°</div>
-    <div style="margin-top:5px;font-size:11px;color:var(--text-tertiary);">Principal stars: <strong style="color:var(--text-secondary);">${esc(sub.stars)}</strong> · ${esc(sub.hint)}</div>
-    <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px;">Reference: ${esc(ref.label)}</div>
-  `;
+  card.querySelector('#sky-ref-nak').innerHTML=h||'<div style="color:var(--text-tertiary);font-style:italic;">No computed birth moments yet.</div>';
 }
 
 // Independent 9-Tara panel — user picks any birth nakshatra and sees all nine
@@ -3529,8 +3710,10 @@ function drawViewingGuide(J,lat,lon,localMin,tzOff){
   </div>`;
   document.getElementById('sky-view').innerHTML=h;
 }
-function drawChart(elId,pos,refPos,vargaN,label,refLabel){
-  // Group grahas by rashi for primary and (optional) reference.
+// Draw a South-Indian chart. `refs` is an array of participant overlays:
+// [{pos, label, mark}] — each rendered below the primary planets in blue italic,
+// prefixed with its numbered identifier (¹ ² ³ ⁴).
+function drawChart(elId,pos,refs,vargaN,label){
   function bucket(positions){
     const cells={};
     for(const g of GRAHAS){
@@ -3540,7 +3723,7 @@ function drawChart(elId,pos,refPos,vargaN,label,refLabel){
     return cells;
   }
   const cells=bucket(pos);
-  const refCells=refPos?bucket(refPos):null;
+  const refList=(refs||[]).map(rf=>({...rf,cells:bucket(rf.pos)}));
   function row(positions,list){
     return list.map(g=>{
       const retro=positions[g.key].retro&&g.key!=='asc';
@@ -3551,45 +3734,38 @@ function drawChart(elId,pos,refPos,vargaN,label,refLabel){
   let h='';
   for(const[idx,col,row_]of SKY_CELLS){
     const list=cells[idx]||[],hasLagna=list.some(g=>g.key==='asc');
-    const refList=refCells?(refCells[idx]||[]):[];
-    const hasRefLagna=refList.some(g=>g.key==='asc');
-    const bodies=row(pos,list);
-    const refBodies=refList.length?`<div class="csign-ref">${row(refPos,refList)}</div>`:'';
+    let refBodies='',hasRefLagna=false;
+    for(const rf of refList){
+      const rl=rf.cells[idx]||[];
+      if(!rl.length)continue;
+      if(rl.some(g=>g.key==='asc'))hasRefLagna=true;
+      refBodies+=`<div class="csign-ref"><sup>${esc(rf.mark)}</sup> ${row(rf.pos,rl)}</div>`;
+    }
     h+=`<div class="csign${hasLagna?' has-lagna':''}${hasRefLagna?' has-ref-lagna':''}" style="grid-column:${col};grid-row:${row_};">
       <div class="csign-name">${RASHI[idx]}</div>
-      <div class="csign-bodies">${bodies||'&nbsp;'}</div>
+      <div class="csign-bodies">${row(pos,list)||'&nbsp;'}</div>
       ${refBodies}
     </div>`;
   }
-  const refLine=refLabel?`<div style="margin-top:4px;font-size:9px;color:var(--info-text);font-style:italic;">ref: ${esc(refLabel)}</div>`:'';
-  h+=`<div class="cmid"><div class="cmid-title">${label}</div><div style="margin-top:3px;">${esc(LOC.name)}</div>${refLine}</div>`;
+  const refLines=refList.map(rf=>`<div style="margin-top:2px;font-size:9px;color:var(--info-text);font-style:italic;">${esc(rf.mark)} ${esc(rf.label)}</div>`).join('');
+  h+=`<div class="cmid"><div class="cmid-title">${label}</div><div style="margin-top:3px;">${esc(LOC.name)}</div>${refLines}</div>`;
   document.getElementById(elId).innerHTML=h;
 }
-function drawSkyTable(pos,refPos,refLabel){
-  const refHdr=refPos?`<th style="text-align:left;color:var(--info-text);font-weight:500;padding:3px 0;font-style:italic;">Ref ° rashi</th>`:'';
+function drawSkyTable(pos){
   let h=`<table style="width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;">
     <tr>
       <th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Graha</th>
       <th style="text-align:right;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Sidereal</th>
       <th style="text-align:left;color:var(--text-tertiary);font-weight:500;padding:3px 8px 3px 0;">Rashi · deg</th>
-      ${refHdr}
     </tr>`;
   for(const g of GRAHAS){
     const p=pos[g.key],r=Math.floor(p.lon/30)%12,d=p.lon-30*r;
     const retro=p.retro&&g.key!=='asc';
-    let refCell='';
-    if(refPos){
-      const rp=refPos[g.key],rr=Math.floor(rp.lon/30)%12,rd=rp.lon-30*rr;
-      const rRetro=rp.retro&&g.key!=='asc';
-      refCell=`<td style="padding:2px 0;color:var(--info-text);font-style:italic;">${rp.lon.toFixed(2)}° · ${RASHI[rr]} ${rd.toFixed(2)}°${rRetro?' R':''}</td>`;
-    }
     h+=`<tr><td style="padding:2px 8px 2px 0;">${esc(g.abbr)} ${esc(g.name)}${retro?' <span style="color:var(--danger-text);">R</span>':''}</td>
         <td style="text-align:right;padding:2px 8px 2px 0;">${p.lon.toFixed(2)}°</td>
-        <td style="padding:2px 8px 2px 0;color:var(--text-secondary);">${RASHI[r]} ${d.toFixed(2)}°</td>
-        ${refCell}</tr>`;
+        <td style="padding:2px 8px 2px 0;color:var(--text-secondary);">${RASHI[r]} ${d.toFixed(2)}°</td></tr>`;
   }
   h+='</table>';
-  if(refLabel)h+=`<div style="font-size:10px;color:var(--info-text);font-style:italic;margin-top:6px;">Reference: ${esc(refLabel)}</div>`;
   document.getElementById('sky-lon-table').innerHTML=h;
 }
 
@@ -3690,7 +3866,14 @@ function parseLocFromURL(){
 
 function init(){
   setIcons();
-  buildCitySelect();buildChecks();
+  // Load validated custom locations (the app's only localStorage use) into CITIES
+  // BEFORE any dropdown is built or the ?loc= param is matched.
+  for(const c of loadCustomCities())CITIES.push(c);
+  buildCitySelect();buildChecks();renderCustomCityList();
+  // Relocate the guidance content (authored lower in the document for readability)
+  // into the collapsible invocation card at the top of the Sky tab.
+  const gOld=document.getElementById('sky-guidance-old'),gBody=document.getElementById('sky-guidance-body');
+  if(gOld&&gBody){gBody.appendChild(gOld);gOld.style.display='';}
   // Apply ?loc=… URL param BEFORE any panchanga compute so caches key on the
   // right location. Strictly matched against CITIES — bad/unknown names ignored.
   const urlCity=parseLocFromURL();

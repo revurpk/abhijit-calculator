@@ -71,8 +71,7 @@ All calculations are done in the browser at runtime. Panchanga results are cache
 | **Panchanga** | Full five-anga detail for any date with transition end times, solar times, nakshatra metadata, lunar month (with adhika/nija labels), eclipse card, festival card, moudhyam card |
 | **Festivals** | 35+ named festivals + all Ekadashis + Pradosh Vrat, grouped by month, filterable by category, countdown to each |
 | **Eclipses** | All solar & lunar eclipses for 3 years with visibility computed for the selected location |
-| **Search** | Date-range search with tithi / nakshatra / vara filters, min-score slider, moudhyam exclusion filters, optional eclipse exclusion. Headed by the muhurtha shloka *तदेव लग्नं सुदिनं तदेव…* |
-| **Sky** | Two side-by-side South-Indian Rashi charts for any date & time at the chosen location: a fixed D-1 Rashi chart and a switchable divisional chart (D-2 Hora through D-27 Bhamsa). All nine grahas + Lagna are placed by their sidereal longitude. Optional **reference overlay** lets you superimpose a second moment (birth chart, past event) onto both charts in blue italic. Includes a table of exact longitudes and a **viewing guide** with each body's altitude/azimuth, twilight phase, rise times for bodies below the horizon, and the Moon's current nakshatra with its principal stars. |
+| **Sky** | The invocation & guidance card (collapsible, shloka always visible) heads the tab. A date/time picker with **±1h / ±15m spinners** updates everything live. A collapsible **Search card** (the former Search tab) ranks days by Shri B.V. Raman's category rules with per-result explanations, asking each purpose's participants for birth date/time and city or lat/lon. Two side-by-side South-Indian Rashi charts (fixed D-1 + switchable D-2…D-27) show the chosen moment with **participants' birth moments overlaid**, marked ¹ ² ³ ⁴ in blue italic. Plus exact longitudes, Lagna strength card, Panchaka, 9-Tara, Ashtakuta, and a **viewing guide** (altitude/azimuth, twilight phase, rise times, the Moon's nakshatra stars). |
 | **About** | Astronomical engine table, panchanga formulas, lunar-month rules, score weights, daily periods, planetary combustion, known limitations, security/privacy, references |
 
 ---
@@ -971,7 +970,9 @@ After changing location, call `clearPCache()` to invalidate cached panchanga (so
 
 **Auto-detect** uses the browser's `navigator.geolocation` API. The closest city within 3° is automatically selected as the display name; the matched city's `iana` and `tz` are copied into `LOC`. When no city matches, the **browser's resolved timezone** (`Intl.DateTimeFormat().resolvedOptions().timeZone`) is used as the IANA name — because for auto-detect, the user is physically at that location, so the browser's timezone is authoritative. **No DST prompt is ever shown.**
 
-**URL parameter** `?loc=CityName` (case-insensitive) sets the default location at load time. `parseLocFromURL()` strictly matches against the static `CITIES` list and never accepts raw lat/lon from the URL — bad or unknown values are silently ignored and the default (Boston) is used. The URL string itself is never interpolated into HTML or any other sensitive sink; only the matched `CITIES` entry's pre-validated fields (lat, lon, name, tz, iana) are used. Example: `index.html?loc=Delhi` or `index.html?loc=mumbai`.
+**URL parameter** `?loc=CityName` (case-insensitive) sets the default location at load time. `parseLocFromURL()` strictly matches against the `CITIES` list (built-ins plus validated custom locations) and never accepts raw lat/lon from the URL — bad or unknown values are silently ignored and the default (Boston) is used. The URL string itself is never interpolated into HTML or any other sensitive sink; only the matched `CITIES` entry's pre-validated fields (lat, lon, name, tz, iana) are used. Example: `index.html?loc=Delhi` or `index.html?loc=mumbai`.
+
+**Custom locations (safe import).** The location picker's *"＋ Save a new named location…"* form adds a named place (name ≤ 40 chars, lat ∈ ±90, lon ∈ ±180, optional IANA timezone validated by attempting `Intl.DateTimeFormat`). Saved entries land in `CITIES` (flagged `custom: true`), appear in every city dropdown — including `?loc=` matching and participants' birth cities — and persist in the single localStorage key `pcCustomCities`, capped at 25 entries. `loadCustomCities()` re-validates the whole array on every start: schema-checked per entry, duplicates of built-ins dropped, malformed JSON discarded wholesale, and names `esc()`-escaped at every render site. Removal chips are listed under the form. Without an IANA name the timezone is estimated from longitude (no DST).
 
 Solar times are returned in **the location's local wall-clock minutes from midnight** (not the browser's). `resolveTz(date)` provides DST-aware offsets via `Intl.DateTimeFormat` with `LOC.iana`, so US/EU summer dates show DST times automatically.
 
@@ -1662,25 +1663,20 @@ The card is a standalone collapsible widget with two nakshatra dropdowns (plus o
 
 **4. Guidance card** — a condensed adaptation of Shri B.V. Raman's *Muhurtha* covering Tarabala, Chandrabala, the Cycle softening rule, marriage caveats, and stars/days to avoid for important events. Cited inline; the user is directed to consult an experienced astrologer for decisions of real consequence.
 
-### Reference / overlay chart
+### Participant overlays (replaces the old "reference moment" section)
 
-The Sky tab has an **optional reference moment** that is overlaid on both charts. Common use cases:
+The standalone "Overlay a reference moment" card has been removed — its role is now played by the **Search card's participants**. When a participant's birth moment is computed via "→ star" (`computeBirthStar(date, time, city, lat?, lon?)` returns `{J, lat, lon, nIdx, pada, rasi}`), the full moment is stashed in the slot's dataset and:
 
-- **Birth chart vs current transit** — pin the birth moment as reference; the primary date/time tracks "now" so you can see how the current sky maps onto the natal placements
-- **Comparing two events** — set primary = event A, reference = event B
-- **Comparing locations** — same date/time but different lat/lon to see how Lagna shifts
+- both charts overlay that birth chart in *blue italic* below the primary planets, **prefixed with a numbered identifier** (¹ ² ³ ⁴ — up to four participants), with a blue inset border where a participant's Lagna falls;
+- the chart centre lists each mark with its participant label;
+- a "Participants · Janma nakshatra & pada" card lists each person's star, pada, Janma Rasi and the nakshatra's principal stars;
+- the participant's Tarabala and Chandrabala feed the day ranking.
 
-**UI:** a collapsible `<details>` card with a checkbox toggle, separate reference date / time / city / lat / lon inputs. Location resolution priority:
+Location resolution per participant: explicit lat+lon (tz estimated from longitude) > birth city (DST-aware via the city's IANA name) > the primary `LOC`. So a 1990 Delhi birth uses +5:30 IST and a 2010 Boston birth correctly chooses EST or EDT. The sidereal-longitudes table and viewing guide remain primary-only — "where to look" answers one moment at a time.
 
-1. If both `sky-ref-lat` and `sky-ref-lon` are filled → use those (longitude-estimated tz)
-2. Else if a city is chosen → use the city's lat / lon / iana / tz
-3. Else → reuse the primary `LOC`
+**Time spinners.** The moment picker carries −1h / −15m / +15m / +1h buttons (`bumpSkyTime(mins)`) that roll the date across midnight in either direction and re-render every card live — useful for nudging the Lagna past a tyajya zone or watching a varga flip.
 
-The reference's UTC offset is resolved via `Intl.DateTimeFormat` against its own IANA tz (DST-aware), so a 1990 Delhi reference uses +5:30 IST and a 2010 Boston reference correctly chooses EST or EDT for the date.
-
-**`getRefMoment()`** returns `{J, lat, lon, name, label, tz}` when the overlay is enabled and inputs are valid, otherwise `null`.
-
-**Display:** reference planets are rendered in the chart cells in *blue italic* below the primary set, with a dashed separator. The cell gets a blue inset border when the reference Lagna falls in that rashi. The sidereal-longitudes table gains a fourth column showing the reference position. The viewing guide remains primary-only — "where to look" answers only one moment at a time.
+**Invocation & guidance placement.** The guidance card now heads the Sky tab as a collapsible `<details>`: the shloka (with its देव / తె / IAST toggle) stays always visible in the summary; the long guidance bullets and the closing **Om Tat Sat** (which has its own matching script toggle, `setOtsScript`) open on demand. Rationale: an invocation belongs at the head of the work, and collapsing the bullets keeps the interactive tools above the fold.
 
 ### Viewing guide (where to look)
 
@@ -1724,9 +1720,9 @@ The Sky tab shows a **Lagna card** for the chosen moment: rising sign, degree, s
 - **Marriage-specific trio**: 7th house unoccupied, Mars not in the 8th, Venus not in the 6th.
 - **Guidance text**: match the sign nature to the purpose — fixed for permanence (house entry, foundation, coronation), movable for travel, common for education; Gemini/Virgo/Libra best for marriage; prefer the forenoon; strengthen the ascendant, its lord, and the Moon. Because the Lagna changes roughly every two hours, small time shifts usually suffice.
 
-### Category muhurtha search (Search tab)
+### Category muhurtha search (Sky tab · collapsible Search card)
 
-The Search tab's **Purpose** selector applies Shri B.V. Raman's per-category election rules and ranks every day in the chosen range by favourability:
+The former Search tab now lives as a **collapsible Search card on the Sky tab**, placed between the moment picker and the charts — a search produces a day, the charts directly below visualise it. Clicking a result sets the Sky charts to that day (an inner "Panchanga »" button opens the full day detail on the Panchanga tab). The card's **Purpose** selector applies Shri B.V. Raman's per-category election rules and ranks every day in the chosen range by favourability:
 
 | Category | Source | Key rules encoded |
 |---|---|---|
@@ -1741,7 +1737,7 @@ The Search tab's **Purpose** selector applies Shri B.V. Raman's per-category ele
 
 `categoryDayScore(p, catKey, participants, eclipse)` builds the score from a base of 50, with weighted contributions (nakshatra ±25, tithi ±18, vara ±15, masa ±12, yoga −8, Vishti −8/−12, Panchaka −10, Adhika −12, Moudhyam −12, eclipse −15) and returns a **reasons array** — every result shows a "Why this ranking" breakdown quoting the rule applied. The day-level Panchaka is computed with a Mesha placeholder Lagna and flagged as such — the user finalises the hour against the Sky tab's Lagna card.
 
-**Participants (marriage & business).** When the purpose is Marriage, the form asks for the bride's and groom's birth details; for Business, up to four partners. Each slot accepts a directly-picked Janma nakshatra **or** birth date/time/city — `computeBirthStar()` resolves the timezone DST-aware via the city's IANA name, computes the sidereal Moon, and returns nakshatra, pada and Janma Rasi. Per participant, each candidate day then gains/loses points for **Tarabala** (9-count from the birth star, with Paryaya cycle softening ×1/×0.5/×0.15) and **Chandrabala** (day's Moon must not sit 6th/8th/12th from the Janma Rasi). For a marriage couple, the fixed **Ashtakuta** total is displayed once above the results — it qualifies the match, while the ranking addresses the timing. Birth details never leave the browser.
+**Participants (every purpose).** Each category asks for the relevant people's birth details: Bride & Groom for Marriage, up to four partners for Business, and a single appropriately-labelled person for the rest (Householder, Builder, Student, Traveller, Patient, Person undertaking). Each slot accepts a directly-picked Janma nakshatra **or** birth date/time plus a city *or* lat/lon — `computeBirthStar()` resolves the timezone DST-aware (city's IANA name, or a longitude estimate for raw coordinates), computes the sidereal Moon, and returns the full birth moment `{J, lat, lon, nIdx, pada, rasi}`, which also becomes a numbered chart overlay (see *Participant overlays* above). Per participant, each candidate day then gains/loses points for **Tarabala** (9-count from the birth star, with Paryaya cycle softening ×1/×0.5/×0.15) and **Chandrabala** (day's Moon must not sit 6th/8th/12th from the Janma Rasi). For a marriage couple, the fixed **Ashtakuta** total is displayed once above the results — it qualifies the match, while the ranking addresses the timing. Birth details never leave the browser and are never persisted.
 
 ---
 
@@ -1766,12 +1762,12 @@ The Search tab's **Purpose** selector applies Shri B.V. Raman's per-category ele
 
 ## 13. Security & Privacy
 
-This is a fully static, in-browser app — no backend, no `fetch`, no `localStorage`, no telemetry, no analytics. Everything you see is computed in your browser from your inputs. Here is the deliberate posture:
+This is a fully static, in-browser app — no backend, no `fetch`, no telemetry, no analytics. Everything you see is computed in your browser from your inputs. Here is the deliberate posture:
 
 ### What the app does NOT do
 
 - **No network requests after page load.** The HTML is loaded once; CSS/font CDNs are fetched per request, but the JavaScript itself never makes XHR/`fetch` calls.
-- **No data persistence.** Your location, dates, and search filters are not stored across sessions.
+- **Minimal data persistence.** One localStorage key (`pcCustomCities`) holds user-saved custom locations. It is loaded through a strict validator on every start: schema check per entry (name ≤ 40 chars, finite lat ∈ ±90, lon ∈ ±180, optional IANA name verified by attempting `Intl.DateTimeFormat`), 25-entry cap, duplicates of built-in cities dropped, malformed JSON silently discarded, names `esc()`-escaped wherever rendered. Birth details, dates, and search filters are **never** persisted.
 - **No third-party scripts.** Only stylesheet/font CDNs (Tabler Icons, Google Fonts) are loaded, and Tabler is pinned with SRI.
 - **No reverse-geocoding.** When you click "Auto-detect", your coordinates stay in the browser — they are matched against the static `CITIES` list locally to pick a nearby name.
 
