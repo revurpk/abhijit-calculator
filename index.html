@@ -292,14 +292,23 @@ button.action:hover{background:var(--bg-tertiary);}
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
       <div><label class="form-lbl">Date</label><input type="date" id="sky-date" onchange="renderSky()"/></div>
       <div><label class="form-lbl">Time</label><input type="time" id="sky-time" onchange="renderSky()" style="width:110px;"/></div>
-      <div style="display:flex;gap:2px;align-self:flex-end;" aria-label="Step the selected time">
-        <button class="ybtn" onclick="bumpSkyTime(-60)" title="Back one hour">−1h</button>
-        <button class="ybtn" onclick="bumpSkyTime(-15)" title="Back 15 minutes">−15m</button>
-        <button class="ybtn" onclick="bumpSkyTime(15)" title="Forward 15 minutes">+15m</button>
-        <button class="ybtn" onclick="bumpSkyTime(60)" title="Forward one hour">+1h</button>
-      </div>
       <button class="ybtn" onclick="setSkyNow()">Now</button>
       <div style="flex:1;min-width:140px;font-size:11px;color:var(--text-tertiary);align-self:flex-end;padding-bottom:6px;">Computed for <strong id="sky-loc-name" style="color:var(--text-secondary);"></strong> · sidereal longitudes shown using Lahiri ayanamsha.</div>
+    </div>
+    <!-- Time slider centred on solar noon: thumb at the middle = solar noon, drag
+         left toward sunrise/midnight, right toward sunset/midnight. Updates the
+         time field and re-renders the charts live (oninput). -->
+    <div style="margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary);margin-bottom:2px;">
+        <span>◀ earlier</span>
+        <span id="sky-slider-label" style="color:var(--text-secondary);font-weight:500;"></span>
+        <span>later ▶</span>
+      </div>
+      <input type="range" id="sky-slider" min="-720" max="720" step="5" value="0" oninput="skySliderInput()"
+        aria-label="Time relative to solar noon" style="width:100%;"/>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-tertiary);margin-top:1px;">
+        <span>midnight</span><span>sunrise</span><span>☉ solar noon</span><span>sunset</span><span>midnight</span>
+      </div>
     </div>
   </div>
   <!-- Muhurtha search — collapsible; participants' birth moments become chart overlays below. -->
@@ -716,7 +725,7 @@ button.action:hover{background:var(--bg-tertiary);}
       </div>
       <div class="ab-elem">
         <div class="ab-el-name">Participant overlays <span class="ab-el-sub">birth charts vs transit · marked ¹ ² ³ ⁴</span></div>
-        <div class="ab-el-note">Each participant's computed birth moment (date / time / city or lat-lon from the Search card) is shown <em style="color:var(--info-text);">in blue italic</em> beneath the primary planets in every chart cell, prefixed with its numbered mark; the cell gets a blue inset border when a participant's Lagna falls there, and the chart centre lists each mark with its label. Each birth uses its own DST-aware timezone via <code>Intl.DateTimeFormat</code> with the birth city's IANA name — so a 1990 Delhi birth chart vs a 2026 NJ transit each use their correct offset. A "Participants · Janma nakshatra &amp; pada" card lists each person's star, pada, Janma Rasi and principal stars (via <code>nakAndPada()</code>, 13°20' / 4 = 3°20' pada span). Time spinners (−1h/−15m/+15m/+1h) step the primary moment live.</div>
+        <div class="ab-el-note">Each participant's computed birth moment (date / time / city or lat-lon from the Search card) is shown <em style="color:var(--info-text);">in blue italic</em> beneath the primary planets in every chart cell, prefixed with its numbered mark; the cell gets a blue inset border when a participant's Lagna falls there, and the chart centre lists each mark with its label. Each birth uses its own DST-aware timezone via <code>Intl.DateTimeFormat</code> with the birth city's IANA name — so a 1990 Delhi birth chart vs a 2026 NJ transit each use their correct offset. A "Participants · Janma nakshatra &amp; pada" card lists each person's star, pada, Janma Rasi and principal stars (via <code>nakAndPada()</code>, 13°20' / 4 = 3°20' pada span). Overlays <strong>auto-compute</strong> as the birth fields are filled (no button needed); a bare nakshatra pick scores Tarabala/Chandrabala but draws no overlay. A <strong>solar-noon-centred time slider</strong> (thumb at the middle = solar noon) steps the primary moment live and stays in sync with any time change.</div>
       </div>
       <div class="ab-elem">
         <div class="ab-el-name">9-Tara · Mitra &amp; Parama-Mitra <span class="ab-el-sub">Shri B.V. Raman Ch. III</span></div>
@@ -2939,11 +2948,11 @@ function buildParticipantSlots(pc){
       <span style="font-size:11px;font-weight:500;width:64px;">${esc(label)}${optional?' <span style="color:var(--text-tertiary);font-weight:400;">(opt.)</span>':''}</span>
       <select id="pstar${i}" onchange="clearSlotMoment(${i})" style="font-size:11px;padding:4px 6px;width:150px;"></select>
       <span style="font-size:10px;color:var(--text-tertiary);">or birth:</span>
-      <input type="date" id="pbd${i}" style="font-size:11px;padding:4px 6px;"/>
-      <input type="time" id="pbt${i}" style="font-size:11px;padding:4px 6px;width:90px;"/>
-      <select id="pbc${i}" style="font-size:11px;padding:4px 6px;width:120px;"></select>
-      <input type="number" id="pblat${i}" step="0.001" placeholder="lat" title="Birth latitude (overrides city with lon)" style="font-size:11px;padding:4px 6px;width:64px;"/>
-      <input type="number" id="pblon${i}" step="0.001" placeholder="lon" title="Birth longitude (overrides city with lat)" style="font-size:11px;padding:4px 6px;width:64px;"/>
+      <input type="date" id="pbd${i}" onchange="autoSlotStar(${i})" style="font-size:11px;padding:4px 6px;"/>
+      <input type="time" id="pbt${i}" onchange="autoSlotStar(${i})" style="font-size:11px;padding:4px 6px;width:90px;"/>
+      <select id="pbc${i}" onchange="autoSlotStar(${i})" style="font-size:11px;padding:4px 6px;width:120px;"></select>
+      <input type="number" id="pblat${i}" step="0.001" placeholder="lat" onchange="autoSlotStar(${i})" title="Birth latitude (overrides city with lon)" style="font-size:11px;padding:4px 6px;width:64px;"/>
+      <input type="number" id="pblon${i}" step="0.001" placeholder="lon" onchange="autoSlotStar(${i})" title="Birth longitude (overrides city with lat)" style="font-size:11px;padding:4px 6px;width:64px;"/>
       <button class="ybtn" onclick="computeSlotStar(${i})" style="font-size:10px;">→ star</button>
       <span id="pinfo${i}" style="font-size:10px;color:var(--info-text);"></span>
     </div>`;
@@ -2970,6 +2979,18 @@ function clearSlotMoment(i){
   const info=document.getElementById('pinfo'+i);
   if(info){info.textContent=sel.value!==''?'star picked manually — no chart overlay (rasi approximated from the star)':'';info.style.color='var(--text-tertiary)';}
   renderSky();
+}
+// Auto-compute the overlay as birth fields are filled, so the overlay appears
+// without requiring the "→ star" button. Only fires once enough is present
+// (date + time + a city or lat/lon) and stays silent otherwise — no error spam
+// while the user is mid-entry.
+function autoSlotStar(i){
+  const d=document.getElementById('pbd'+i).value;
+  const t=document.getElementById('pbt'+i).value;
+  const c=document.getElementById('pbc'+i).value;
+  const la=document.getElementById('pblat'+i).value;
+  const lo=document.getElementById('pblon'+i).value;
+  if(d&&t&&(c||(la!==''&&lo!==''))) computeSlotStar(i);
 }
 function computeSlotStar(i){
   const cat=MUHURTA_CATS[document.getElementById('scat').value];
@@ -3230,24 +3251,38 @@ function setSkyNow(){
   document.getElementById('sky-time').value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   renderSky();
 }
-// Step the selected Sky-tab time by `mins` minutes (negative = back), rolling the
-// date across midnight in either direction, and re-render the charts live.
-// Note: the roll uses a browser-local Date for calendar arithmetic, so on the
-// BROWSER's own DST-transition days a +60 step can show a wall-clock jump of
-// 0 or 120 min. The value is then re-interpreted by renderSky as LOC wall-clock
-// (via resolveTz), so the astronomy stays correct — it's only a stepping quirk.
-function bumpSkyTime(mins){
-  const dEl=document.getElementById('sky-date'),tEl=document.getElementById('sky-time');
-  if(!dEl.value||!tEl.value){setSkyNow();return;}
-  const[hh,mm]=tEl.value.split(':').map(Number);
-  if(!Number.isFinite(hh)||!Number.isFinite(mm)){setSkyNow();return;}
-  const dt=new Date(dEl.value+'T00:00:00');
-  if(isNaN(dt.getTime())){setSkyNow();return;}
-  dt.setMinutes(hh*60+mm+mins);
+// Time slider centred on solar noon. The slider value is an offset in minutes
+// from that day's solar noon (−720…+720); the resulting wall-clock time is
+// solarNoon + offset, clamped within the day, and the charts re-render live.
+function skySliderInput(){
+  const dEl=document.getElementById('sky-date');
+  if(!dEl||!dEl.value)return;
+  const dt=new Date(dEl.value+'T12:00:00');
+  if(isNaN(dt.getTime()))return;
+  const st=getSunTimes(dt,LOC.lat,LOC.lon);
+  const off=parseInt(document.getElementById('sky-slider').value,10)||0;
+  let mins=Math.round(st.solarNoon+off);
+  mins=Math.max(0,Math.min(1439,mins));  // keep within the selected calendar day
   const p2=n=>String(n).padStart(2,'0');
-  dEl.value=`${dt.getFullYear()}-${p2(dt.getMonth()+1)}-${p2(dt.getDate())}`;
-  tEl.value=`${p2(dt.getHours())}:${p2(dt.getMinutes())}`;
+  document.getElementById('sky-time').value=`${p2(Math.floor(mins/60))}:${p2(mins%60)}`;
   renderSky();
+}
+// Reflect the current time on the slider (thumb position + readout). Called from
+// renderSky so typing a time, clicking "Now", or selecting a search result all
+// move the thumb to the right place relative to solar noon.
+function syncSkySlider(solarNoonMin,localMin){
+  const sl=document.getElementById('sky-slider');if(!sl)return;
+  let off=Math.round(localMin-solarNoonMin);
+  off=Math.max(-720,Math.min(720,off));
+  sl.value=String(off);
+  const lab=document.getElementById('sky-slider-label');
+  if(lab){
+    if(off===0){lab.textContent='at solar noon';}
+    else{
+      const a=Math.abs(off),hh=Math.floor(a/60),mm=a%60;
+      lab.textContent=`${hh?hh+'h ':''}${mm}m ${off>0?'after':'before'} solar noon`;
+    }
+  }
 }
 // "Om Tat Sat" benediction script selector (mirrors the shloka toggle).
 const OTS_TEXTS={
@@ -3304,6 +3339,8 @@ function renderSky(){
   const J=J0+(localMin-tz)/1440;
   const pos=getSkyPositions(J,LOC.lat,LOC.lon);
   const vargaN=parseInt(document.getElementById('sky-varga').value,10)||9;
+  // Keep the solar-noon-centred slider in sync with the chosen time.
+  syncSkySlider(getSunTimes(dt,LOC.lat,LOC.lon).solarNoon,localMin);
   // Participant birth moments → chart overlays with numbered identifiers.
   const moments=getParticipantMoments();
   const refs=moments.map(m=>({pos:getSkyPositions(m.J,m.lat,m.lon),label:m.label,mark:m.mark}));
