@@ -21,8 +21,7 @@ unfixed vulnerability.
 - Alternative: email the maintainer (Pradyumna Revur).
 
 Please include: affected file/line or feature, reproduction steps, browser and
-version, and the impact you observed. We aim to acknowledge within **7 days** and
-to ship a fix or mitigation on `main` as soon as it is validated. As a small
+version, and the impact you observed. As a small
 public-domain project there is no bug-bounty program; credit is gladly given in
 the commit and release notes if you wish.
 
