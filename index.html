@@ -2368,13 +2368,24 @@ function cacheSet(cache,k,v){
   const keys=Object.keys(cache);
   if(keys.length>CACHE_MAX){for(let i=0;i<1000;i++)delete cache[keys[i]];}
 }
+// Reference instant for a day's panchanga: the moment of local sunrise, the
+// traditional anchor for reckoning tithi/nakshatra/etc. of the day. Both the
+// element NAME (calcP) and its END time (calcTr) MUST use this same instant —
+// otherwise, when a transition falls between sunrise and noon, the named element
+// and the displayed end time refer to different elements (e.g. the calendar
+// would show "Mrigashira … ends 06:43 (next day)" when 06:43 is actually when
+// the following Ardra ends). Mirrors the Panchanga tab's Jsr.
+function sunriseJD(date){
+  const st=getSunTimes(date,LOC.lat,LOC.lon);
+  return jd(date)-0.5+(st.sunrise-st.tz)/1440;       // JD at local sunrise
+}
 function gp(date){
   const k=`${LOC.lat.toFixed(1)}${LOC.lon.toFixed(1)}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-  if(!pcache[k])cacheSet(pcache,k,calcP(date));return pcache[k];
+  if(!pcache[k])cacheSet(pcache,k,calcP(date,sunriseJD(date)));return pcache[k];
 }
 function gt(date){
-  const k=`tr-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-  if(!tcache[k])cacheSet(tcache,k,calcTr(date));return tcache[k];
+  const k=`tr-${LOC.lat.toFixed(1)}${LOC.lon.toFixed(1)}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  if(!tcache[k])cacheSet(tcache,k,calcTr(date,sunriseJD(date)));return tcache[k];
 }
 function clearPCache(){for(const k in pcache)delete pcache[k];for(const k in tcache)delete tcache[k];for(const k in edCache)delete edCache[k];for(const k in festDayCache)delete festDayCache[k];}
 

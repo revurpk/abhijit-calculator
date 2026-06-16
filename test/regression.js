@@ -154,6 +154,21 @@ for (const [d, label] of [['2026-06-21','polar summer'], ['2026-12-21','polar wi
 }
 check('LOC.name HTML-escaped in panel', !doc.getElementById('panel-sky').innerHTML.includes('Polar<x>'));
 
+// ── Calendar ⇄ Panchanga consistency (sunrise-anchored gp/gt) ─
+// Regression: the calendar's element NAME (gp) and its END time (gt) must use
+// the same sunrise instant. Boston, 6/15/2026: nakshatra at sunrise is
+// Mrigashira ending 09:39; only afterward does Ardra begin (ending 06:43 next
+// day). The old noon-anchored gt() mislabelled it "Mrigashira … ends 06:43
+// (next day)" — Ardra's end on Mrigashira's name.
+sec('Calendar ⇄ Panchanga (sunrise-anchored)');
+X("LOC.lat=42.3601;LOC.lon=-71.0589;LOC.tz=-240;LOC.iana='America/New_York';LOC.name='Boston';clearPCache();");
+{ const d = new Date(2026, 5, 15);
+  const p = X(`gp(new Date(2026,5,15))`), tr = X(`gt(new Date(2026,5,15))`);
+  check('Boston 6/15/2026 name = Mrigashira p4', p.naksh.name === 'Mrigashira' && p.naksh.pada === 4, `(got ${p.naksh.name} p${p.naksh.pada})`);
+  check('  ends 09:39 same day (not Ardra\'s 06:43 next day)', tr.naksh.fmted === '09:39' && tr.naksh.dayDelta === 0, `(got ${tr.naksh.fmted} +${tr.naksh.dayDelta}d)`);
+  const after = X(`calcP(new Date(2026,5,15), sunriseJD(new Date(2026,5,15))+0.5).naksh.name`);
+  check('  Ardra is the following nakshatra', after === 'Ardra', `(got ${after})`); }
+
 // ── Result ──────────────────────────────────────────────────
 console.log('\n— runtime errors: ' + (errors.length || 'none'));
 errors.slice(0, 8).forEach(e => console.log('   ' + e.slice(0, 300)));
